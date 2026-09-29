@@ -1,0 +1,29 @@
+{
+  "id": "luis_arraez_2025",
+  "name": "Luis Arraez",
+  "team": "San Diego Padres (SD)",
+  "season": 2025,
+  "league": "MLB",
+  "verified": true,
+  "source": {
+    "provider": "Baseball Savant / Baseball-Reference (相互に数値が一致することを確認済み)",
+    "url": "https://baseballsavant.mlb.com/savant-player/luis-arraez-650333",
+    "retrieved_at": "2026-09-29"
+  },
+  "stats": {
+    "PA": 675,
+    "AB": 620,
+    "H": 181,
+    "2B": 30,
+    "3B": 4,
+    "HR": 8,
+    "BB": 34,
+    "HBP": 2,
+    "SO": 21,
+    "SF": 7,
+    "SH": 12,
+    "GIDP": 12,
+    "SB": 11,
+    "CS": 4
+  }
+}

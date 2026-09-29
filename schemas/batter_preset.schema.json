@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BatterPreset",
+  "type": "object",
+  "required": ["id", "name", "season", "league", "source", "stats"],
+  "properties": {
+    "id": { "type": "string", "description": "一意なID(例: shohei_ohtani_2025)" },
+    "name": { "type": "string" },
+    "team": { "type": "string" },
+    "season": { "type": "integer" },
+    "league": { "type": "string", "enum": ["MLB"] },
+    "verified": {
+      "type": "boolean",
+      "description": "statsが公式ソースで裏取り済みの実データかどうか。falseの場合はプレースホルダー扱い。"
+    },
+    "source": {
+      "type": "object",
+      "required": ["provider", "url", "retrieved_at"],
+      "properties": {
+        "provider": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string", "format": "date" }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SF", "GIDP", "SB", "CS"],
+      "properties": {
+        "PA": { "type": "integer", "minimum": 0 },
+        "AB": { "type": "integer", "minimum": 0 },
+        "H": { "type": "integer", "minimum": 0 },
+        "2B": { "type": "integer", "minimum": 0 },
+        "3B": { "type": "integer", "minimum": 0 },
+        "HR": { "type": "integer", "minimum": 0 },
+        "BB": { "type": "integer", "minimum": 0 },
+        "HBP": { "type": "integer", "minimum": 0 },
+        "SO": { "type": "integer", "minimum": 0 },
+        "SF": { "type": "integer", "minimum": 0 },
+        "SH": { "type": "integer", "minimum": 0 },
+        "GIDP": { "type": "integer", "minimum": 0 },
+        "SB": { "type": "integer", "minimum": 0 },
+        "CS": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

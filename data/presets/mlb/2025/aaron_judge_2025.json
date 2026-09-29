@@ -1,0 +1,29 @@
+{
+  "id": "aaron_judge_2025",
+  "name": "Aaron Judge",
+  "team": "New York Yankees (NYY)",
+  "season": 2025,
+  "league": "MLB",
+  "verified": true,
+  "source": {
+    "provider": "Baseball Savant / Baseball-Reference (相互に数値が一致することを確認済み)",
+    "url": "https://baseballsavant.mlb.com/savant-player/aaron-judge-592450",
+    "retrieved_at": "2026-09-29"
+  },
+  "stats": {
+    "PA": 679,
+    "AB": 541,
+    "H": 179,
+    "2B": 30,
+    "3B": 2,
+    "HR": 53,
+    "BB": 124,
+    "HBP": 7,
+    "SO": 160,
+    "SF": 7,
+    "SH": 0,
+    "GIDP": 16,
+    "SB": 12,
+    "CS": 5
+  }
+}
