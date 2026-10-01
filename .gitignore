@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 仮想環境
+.venv/
+venv/
+env/
+
+# 秘密情報
+.env
+.env.*
+
+# OS・同期ツール（Macの .DS_Store、OneDrive・Windows が作るファイル）
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# エディタ
+.idea/
+.vscode/
+
+# フロントエンド（今後の実装に備えて）
+node_modules/
+frontend/dist/
