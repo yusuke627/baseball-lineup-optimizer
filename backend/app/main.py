@@ -17,7 +17,7 @@ from app.core.metrics import (
 from app.core.monte_carlo import estimate_expected_runs
 from app.core.optimizer import evaluate_lineup, inefficiency_percent, multi_restart_hill_climb
 from app.data_loader import list_presets
-from app.schemas.batter import LineupEvaluationRequest, LineupEvaluationResponse
+from app.schemas.batter import BatterCountStats, LineupEvaluationRequest, LineupEvaluationResponse
 
 app = FastAPI(
     title="Baseball Lineup Run-Expectancy API",
@@ -40,11 +40,27 @@ def health():
 
 @app.get("/presets")
 def get_presets(league: str = "mlb", season: int = 2025):
-    return list_presets(league=league, season=season)
+    """プリセット一覧。各プリセットに表示用指標 (summary) をアプリ側で計算して付与する"""
+    presets = list_presets(league=league, season=season)
+    for preset in presets:
+        stats = _to_basic_stats(BatterCountStats.model_validate(preset["stats"]))
+        preset["summary"] = _stats_to_summary(stats)
+    return presets
+
+
+def _to_basic_stats(stats_model: BatterCountStats) -> BasicStats:
+    return BasicStats(
+        PA=stats_model.PA, AB=stats_model.AB, H=stats_model.H,
+        doubles=stats_model.doubles, triples=stats_model.triples, HR=stats_model.HR,
+        BB=stats_model.BB, HBP=stats_model.HBP, SO=stats_model.SO, SF=stats_model.SF,
+        SH=stats_model.SH, GIDP=stats_model.GIDP, SB=stats_model.SB, CS=stats_model.CS,
+    )
 
 
 def _stats_to_summary(stats: BasicStats) -> dict:
     return {
+        "PA": stats.PA,
+        "HR": stats.HR,
         "AVG": round(batting_average(stats), 3),
         "OBP": round(on_base_percentage(stats), 3),
         "SLG": round(slugging_percentage(stats), 3),
@@ -65,12 +81,7 @@ def evaluate(req: LineupEvaluationRequest):
 
     event_probs_by_id = {}
     for bid, stats_model in req.batters.items():
-        stats = BasicStats(
-            PA=stats_model.PA, AB=stats_model.AB, H=stats_model.H,
-            doubles=stats_model.doubles, triples=stats_model.triples, HR=stats_model.HR,
-            BB=stats_model.BB, HBP=stats_model.HBP, SO=stats_model.SO, SF=stats_model.SF,
-            SH=stats_model.SH, GIDP=stats_model.GIDP, SB=stats_model.SB, CS=stats_model.CS,
-        )
+        stats = _to_basic_stats(stats_model)
         event_probs_by_id[bid] = event_probabilities(stats)
 
     input_runs = evaluate_lineup(event_probs_by_id, req.input_order)
