@@ -28,6 +28,10 @@ desktop.ini
 .idea/
 .vscode/
 
+# Claude Code のローカル用指示・設定（公開しない）
+CLAUDE.md
+.claude/
+
 # フロントエンド（今後の実装に備えて）
 node_modules/
 frontend/dist/
