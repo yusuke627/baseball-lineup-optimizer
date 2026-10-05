@@ -184,6 +184,23 @@ def apply_steal_step(base_code: int, outs: int, sb_prob: float, cs_prob_given_at
     return [(base_code, outs, 1.0)]
 
 
+def build_steal_transition(sb_prob: float, cs_prob_given_attempt: float) -> np.ndarray:
+    """
+    打席前の盗塁ステップを表す遷移行列 S (25x25) を構築する。
+    各状態に apply_steal_step を適用したもので、盗塁を試みない状態は自己ループになる。
+    盗塁死で3アウトになった場合は終端状態 (TERMINAL_STATE) へ遷移する。
+    """
+    size = NUM_TRANSIENT_STATES + 1
+    S = np.zeros((size, size))
+    for idx in range(NUM_TRANSIENT_STATES):
+        base_code, outs = decode_base_out_index(idx)
+        for new_code, new_outs, p in apply_steal_step(base_code, outs, sb_prob, cs_prob_given_attempt):
+            j = TERMINAL_STATE if new_outs >= 3 else base_out_index(new_code, new_outs)
+            S[idx, j] += p
+    S[TERMINAL_STATE, TERMINAL_STATE] = 1.0
+    return S
+
+
 EVENT_KEYS = ["BB", "HBP", "1B", "2B", "3B", "HR", "SO", "OUT", "SF", "SH", "GIDP"]
 
 

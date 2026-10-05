@@ -15,6 +15,7 @@ from .states import Bases
 from .transitions import DEFAULT_ADVANCE_PROBS, EVENT_KEYS, apply_steal_step, resolve_event
 
 NUM_BATTERS = 9
+NO_STEAL = {"sb_prob": 0.0, "cs_prob_given_attempt": 0.0}
 
 
 def _sample_event(event_probs: dict, rng: random.Random) -> str:
@@ -38,25 +39,26 @@ def simulate_one_game(
     """1試合(9イニング)をシミュレートし、総得点を返す"""
     rng = rng or random.Random()
     adv = adv or DEFAULT_ADVANCE_PROBS
-    steal_probs = steal_probs or [{"sb_prob": 0.0, "cs_prob_given_attempt": 0.0} for _ in range(NUM_BATTERS)]
+    steal_probs = steal_probs or [NO_STEAL for _ in range(NUM_BATTERS)]
 
     batter_idx = 0
     total_runs = 0
     for _inning in range(9):
         bases = Bases(False, False, False)
         outs = 0
+        first_runner: int | None = None  # 一塁走者の打順index (一塁が空なら None)
         while outs < 3:
-            # 盗塁ステップ(一塁のみ走者がいる場合のみ対象)
-            # 簡略化のため、走者個人を追跡せず「現在打席に立つ打者」の盗塁確率を暫定使用している。
-            # 本来は走者(=前の打者)の盗塁能力を使うべきであり、既知の簡略化点として
-            # docs/DESIGN.md に追記が必要。
-            sp = steal_probs[batter_idx]
+            # 盗塁ステップ(一塁のみ走者がいる場合のみ対象)。一塁走者本人の盗塁確率を使う。
+            # 走者がいなくても毎打席1回抽選し、盗塁なしの場合の乱数列を従来と同一に保つ。
+            sp = steal_probs[first_runner] if first_runner is not None else NO_STEAL
             steal_results = apply_steal_step(
                 bases.code, outs, sp.get("sb_prob", 0.0), sp.get("cs_prob_given_attempt", 0.0), adv
             )
             new_code, new_outs, _p = _weighted_choice(steal_results, rng)
             bases = Bases.from_code(new_code)
             outs = new_outs
+            if not bases.on1:
+                first_runner = None
             if outs >= 3:
                 break
 
@@ -67,6 +69,10 @@ def simulate_one_game(
             total_runs += branch.runs
             bases = branch.new_bases
             outs = branch.new_outs
+            if event in ("BB", "HBP", "1B"):
+                first_runner = batter_idx  # 打者自身が一塁へ
+            elif not bases.on1:
+                first_runner = None
             batter_idx = (batter_idx + 1) % NUM_BATTERS
     return total_runs
 

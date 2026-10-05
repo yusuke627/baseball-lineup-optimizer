@@ -19,17 +19,24 @@ from __future__ import annotations
 import numpy as np
 
 from .states import NUM_TRANSIENT_STATES, TERMINAL_STATE, base_out_index
-from .transitions import build_batter_transition
+from .transitions import build_batter_transition, build_steal_transition
 
 NUM_BATTERS = 9
 
 
-def _half_inning_chain(batter_transitions: list[np.ndarray], batter_rewards: list[np.ndarray]):
+def _half_inning_chain(
+    batter_transitions: list[np.ndarray],
+    batter_rewards: list[np.ndarray],
+    steal_transitions: list[np.ndarray] | None = None,
+):
     """
     1イニング分の合成状態 (base_out 0-23, batter 0-8) からなる
     吸収マルコフ連鎖を構築し、以下を返す:
       V: shape (9,)  各打者が先頭に立った場合の、そのイニングの期待得点
       M: shape (9,9) 先頭打者kのとき、次のイニングの先頭打者がjになる確率
+
+    steal_transitions[k] は打者kの打席「前」に挟む盗塁ステップの遷移行列 (25x25)。
+    盗塁死で3アウトになった場合、打者kは打席を完了していないため次イニングの先頭は打者kになる。
     """
     n_transient = NUM_TRANSIENT_STATES * NUM_BATTERS  # 24 * 9 = 216
     Q = np.zeros((n_transient, n_transient))
@@ -44,6 +51,14 @@ def _half_inning_chain(batter_transitions: list[np.ndarray], batter_rewards: lis
         T = batter_transitions[batter]
         reward = batter_rewards[batter]
         next_batter = (batter + 1) % NUM_BATTERS
+        if steal_transitions is not None:
+            S = steal_transitions[batter]
+            S_transient = S[:NUM_TRANSIENT_STATES, :NUM_TRANSIENT_STATES]
+            # 盗塁ステップ → 打席 の順に合成する (盗塁自体では得点は入らない)
+            T = S_transient @ T[:NUM_TRANSIENT_STATES, :]
+            reward = S_transient @ reward
+            for bo in range(NUM_TRANSIENT_STATES):
+                R_absorb[idx(bo, batter), batter] += S[bo, TERMINAL_STATE]
         for bo in range(NUM_TRANSIENT_STATES):
             i = idx(bo, batter)
             reward_vec[i] = reward[bo]
@@ -70,13 +85,25 @@ def _half_inning_chain(batter_transitions: list[np.ndarray], batter_rewards: lis
     return V, M
 
 
-def expected_runs_per_game(lineup_event_probs: list[dict], innings: int = 9, adv: dict | None = None) -> float:
+def expected_runs_per_game(
+    lineup_event_probs: list[dict],
+    innings: int = 9,
+    adv: dict | None = None,
+    steal_probs: list[dict] | None = None,
+) -> float:
     """
     打順(9人分のイベント確率のリスト、1番から9番の順)から
-    1試合(デフォルト9イニング)の期待得点を厳密計算する。
+    1試合(デフォルト9イニング)の期待得点を計算する。
+
+    steal_probs (打順順、metrics.steal_probabilities の戻り値) を渡すと盗塁を反映する。
+    案Aは走者個人を状態に持たないため、打者kの打席前の一塁走者は
+    「直前の打者 k-1」とみなして、その打者の盗塁確率を使う近似を行う (docs/DESIGN.md 1章)。
+    steal_probs が None なら盗塁なし (従来と同一の厳密計算)。
     """
     if len(lineup_event_probs) != NUM_BATTERS:
         raise ValueError("lineup must contain exactly 9 batters")
+    if steal_probs is not None and len(steal_probs) != NUM_BATTERS:
+        raise ValueError("steal_probs must contain exactly 9 entries")
 
     batter_transitions = []
     batter_rewards = []
@@ -85,7 +112,16 @@ def expected_runs_per_game(lineup_event_probs: list[dict], innings: int = 9, adv
         batter_transitions.append(T)
         batter_rewards.append(reward)
 
-    V, M = _half_inning_chain(batter_transitions, batter_rewards)
+    steal_transitions = None
+    if steal_probs is not None:
+        steal_transitions = []
+        for batter in range(NUM_BATTERS):
+            runner = steal_probs[(batter - 1) % NUM_BATTERS]
+            steal_transitions.append(
+                build_steal_transition(runner["sb_prob"], runner["cs_prob_given_attempt"])
+            )
+
+    V, M = _half_inning_chain(batter_transitions, batter_rewards, steal_transitions)
 
     dist = np.zeros(NUM_BATTERS)
     dist[0] = 1.0  # 1回表は必ず1番打者から

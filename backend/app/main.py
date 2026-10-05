@@ -80,21 +80,26 @@ def evaluate(req: LineupEvaluationRequest):
         raise HTTPException(400, "exactly 9 batters are required")
 
     event_probs_by_id = {}
+    steal_probs_by_id = {}
     for bid, stats_model in req.batters.items():
         stats = _to_basic_stats(stats_model)
         event_probs_by_id[bid] = event_probabilities(stats)
+        steal_probs_by_id[bid] = steal_probabilities(stats)
 
-    input_runs = evaluate_lineup(event_probs_by_id, req.input_order)
+    input_runs = evaluate_lineup(event_probs_by_id, req.input_order, steal_probs_by_id)
 
     # 全探索(362,880通り)は同期APIには重すぎるため、複数回のランダム再スタートによる
     # 山登り法(適応的停止: 最低10回・最大50回、連続10回改善なしで打ち切り)を使用する。
     # 厳密解が必要な場合は別途バックグラウンドジョブでの全探索エンドポイントを用意する想定。
-    optimized = multi_restart_hill_climb(event_probs_by_id, start_order=req.input_order)
+    optimized = multi_restart_hill_climb(
+        event_probs_by_id, start_order=req.input_order, steals=steal_probs_by_id
+    )
     best_order = optimized["best_order"]
     best_runs = optimized["best_runs"]
 
     lineup = [event_probs_by_id[bid] for bid in req.input_order]
-    mc = estimate_expected_runs(lineup, n_trials=5000)
+    lineup_steals = [steal_probs_by_id[bid] for bid in req.input_order]
+    mc = estimate_expected_runs(lineup, steal_probs=lineup_steals, n_trials=5000)
 
     return LineupEvaluationResponse(
         input_order=req.input_order,

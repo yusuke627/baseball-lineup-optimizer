@@ -123,11 +123,17 @@ def event_probabilities(s: BasicStats) -> dict:
 
 
 def steal_probabilities(s: BasicStats) -> dict:
+    """
+    盗塁企図率・盗塁死率を算出する。
+
+    企図率は「一塁に出塁した回数」を盗塁機会とみなし、(SB+CS) / (単打+四球+死球) で近似する。
+    モデルではこの確率を「一塁走者がいて二塁が空いている打席」ごとに適用するため、
+    一塁に滞在したまま複数打席を迎える場合はやや過大になりうる (docs/DESIGN.md 1章)。
+    """
     attempts = s.SB + s.CS
-    if attempts == 0:
+    opportunities = s.singles + s.BB + s.HBP
+    if attempts == 0 or opportunities <= 0:
         return {"sb_prob": 0.0, "cs_prob_given_attempt": 0.0}
-    # 簡易的に「一塁に単独で出塁した機会のうち、どれくらいの割合で盗塁企図するか」を
-    # PA に対する比率として近似する(厳密な盗塁企図機会数の算出は未実装)。
-    sb_prob = attempts / s.PA if s.PA else 0.0
+    sb_prob = min(attempts / opportunities, 1.0)
     cs_prob_given_attempt = s.CS / attempts
     return {"sb_prob": sb_prob, "cs_prob_given_attempt": cs_prob_given_attempt}
