@@ -1,8 +1,24 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.schemas.batter import BatterCountStats
 
 client = TestClient(app)
+
+STATS_BY_ALIAS = {
+    "PA": 600, "AB": 540, "H": 150, "2B": 30, "3B": 5, "HR": 15, "BB": 40, "HBP": 10,
+    "SO": 100, "SF": 5, "SH": 5, "GIDP": 10, "SB": 10, "CS": 3,
+}
+
+
+def test_batter_stats_accept_alias_and_field_names():
+    by_alias = BatterCountStats.model_validate(STATS_BY_ALIAS)
+    by_name = dict(STATS_BY_ALIAS)
+    by_name["doubles"] = by_name.pop("2B")
+    by_name["triples"] = by_name.pop("3B")
+    by_field = BatterCountStats.model_validate(by_name)
+    assert by_alias == by_field
+    assert (by_alias.doubles, by_alias.triples) == (30, 5)
 
 
 def test_health():

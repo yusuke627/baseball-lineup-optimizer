@@ -68,6 +68,14 @@
 - 依頼内容: mypy の指摘8件を修正し、設定を pyproject.toml に明記する（報告6）
 - 変更ファイル: backend/pyproject.toml, backend/app/core/transitions.py, backend/app/core/optimizer.py, docs/EDIT_LOG.md
 - 変更理由: `[tool.mypy] python_version = "3.12"` を明記し、dev依存を `mypy>=2.3,<2.4` に固定（CIで新しい版が入って結果が変わるのを防ぐ）。指摘はいずれも型の絞り込み不足で、実行時に None が入る経路は無かった。transitions.py `_single_branches` は二塁・一塁走者がいるときだけ進塁確率を取り出して選択肢を作る形に書き換え（値・選択肢の順序は同一）、optimizer.py `find_optimal_lineup` は最良打順が必ず決まることを assert で明示
+- コミット: 79a4a57
+- 戻し方: git revert 79a4a57
+- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットの確率の差が最大0）。`mypy app` は指摘0件で、残した指摘は無い。find_optimal_lineup（全探索、約20分）は実行していない
+
+## 2026-10-06 15:57 非推奨警告を解消（pydanticのConfigDict移行・httpx2への置き換え）
+- 依頼内容: pytest で出ていた非推奨警告2件を解消する（報告7）
+- 変更ファイル: backend/app/schemas/batter.py, backend/pyproject.toml, backend/tests/test_api.py, docs/EDIT_LOG.md
+- 変更理由: pydantic 2.13 で非推奨の class-based `Config`(populate_by_name) を、2.11 以降で推奨される `model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)` に移行。starlette 1.7 の TestClient が httpx の使用を非推奨としているため、dev依存の `httpx>=0.27` を `httpx2>=2.0` に置き換え（コード内に httpx の直接 import は無い）。"2B"/"3B" と "doubles"/"triples" のどちらでも入力できることを確認するテストを追加
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットの確率の差が最大0）。`mypy app` は指摘0件で、残した指摘は無い。find_optimal_lineup（全探索、約20分）は実行していない
+- 注意点: 警告は抑制していない。プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"` 後、ruff・mypy 指摘0件、pytest 24件通過・警告0件を確認。計算結果の比較（案A 16パターン・案B 3通り・プリセット確率）も差なし

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BatterCountStats(BaseModel):
+    # "2B"/"3B"(別名) と "doubles"/"triples"(フィールド名) のどちらでも入力できるようにする
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
+
     PA: int = Field(ge=0)
     AB: int = Field(ge=0)
     H: int = Field(ge=0)
@@ -18,9 +21,6 @@ class BatterCountStats(BaseModel):
     GIDP: int = Field(ge=0)
     SB: int = Field(ge=0)
     CS: int = Field(ge=0)
-
-    class Config:
-        populate_by_name = True
 
 
 class SourceInfo(BaseModel):
