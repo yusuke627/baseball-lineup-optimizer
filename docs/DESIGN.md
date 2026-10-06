@@ -100,6 +100,7 @@ MLBの実データ（打撃成績）を用いて、任意の打順9人分から�
 
 | 項目 | 説明 |
 |---|---|
+| 打席数 (PA) | 入力必須。0 を入力した場合のみ下記の式で自動計算する |
 | 打数 (AB) | |
 | 安打 (H) | |
 | 二塁打 (2B) | |
@@ -114,11 +115,11 @@ MLBの実データ（打撃成績）を用いて、任意の打順9人分から�
 | 盗塁 (SB) | |
 | 盗塁死 (CS) | |
 
-内部で以下を自動計算する。
+犠打 (SH) は省略可能（省略時は 0）。それ以外の項目は API（`POST /lineup/evaluate`）で入力必須。内部で以下を計算する（`metrics.event_probabilities`）。
 
 - 単打数 = 安打 − 二塁打 − 三塁打 − 本塁打
-- 打席数(PA) = 打数 + 四球 + 死球 + 犠飛 (+ 犠打)
-- 各イベント確率 = イベント数 ÷ PA
+- 打席数(PA)：入力値を使う。0 が入力された場合のみ、打数 + 四球 + 死球 + 犠飛 + 犠打 で自動計算する
+- 各イベント確率 = イベント数 ÷ PA（端数を調整して合計を1に正規化）
 
 ### 2-2. プリセット選択モード
 
@@ -261,6 +262,7 @@ Statcastのx系指標（xBA, xwOBA等）は「運を除いた実力評価」を�
 - Statcast x系指標を用いた「真の実力」ベースの代替シミュレーションモード
 - 対戦投手を考慮したプラットーン効果の反映
 - パークファクター補正
+- フロントエンド作成時に、手入力モードの打席数(PA)を任意入力にする（未入力なら自動計算する）かを検討する
 
 ---
 
@@ -400,49 +402,6 @@ function estimate_season_runs(batter_list, N_trials=100000):
 
 ## 10. プリセットデータのJSON Schema
 
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "BatterPreset",
-  "type": "object",
-  "required": ["id", "name", "season", "source", "stats"],
-  "properties": {
-    "id": { "type": "string", "description": "一意なID(例: shohei_ohtani_2025)" },
-    "name": { "type": "string" },
-    "team": { "type": "string" },
-    "season": { "type": "integer" },
-    "league": { "type": "string", "enum": ["MLB"] },
-    "source": {
-      "type": "object",
-      "required": ["provider", "url", "retrieved_at"],
-      "properties": {
-        "provider": { "type": "string", "example": "FanGraphs" },
-        "url": { "type": "string", "format": "uri" },
-        "retrieved_at": { "type": "string", "format": "date" }
-      }
-    },
-    "stats": {
-      "type": "object",
-      "required": ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SF", "GIDP", "SB", "CS"],
-      "properties": {
-        "PA": { "type": "integer", "minimum": 0 },
-        "AB": { "type": "integer", "minimum": 0 },
-        "H": { "type": "integer", "minimum": 0 },
-        "2B": { "type": "integer", "minimum": 0 },
-        "3B": { "type": "integer", "minimum": 0 },
-        "HR": { "type": "integer", "minimum": 0 },
-        "BB": { "type": "integer", "minimum": 0 },
-        "HBP": { "type": "integer", "minimum": 0 },
-        "SO": { "type": "integer", "minimum": 0 },
-        "SF": { "type": "integer", "minimum": 0 },
-        "SH": { "type": "integer", "minimum": 0 },
-        "GIDP": { "type": "integer", "minimum": 0 },
-        "SB": { "type": "integer", "minimum": 0 },
-        "CS": { "type": "integer", "minimum": 0 }
-      }
-    }
-  }
-}
-```
+スキーマの実体は [`schemas/batter_preset.schema.json`](../schemas/batter_preset.schema.json) を参照（二重管理を避けるため、本書には転載しない）。全プリセットがこのスキーマに合うことは `backend/tests/test_preset_schema.py` とCI（`preset-validation`）で検証している。
 
-wOBA・wRC+・打率などの表示用指標はこのJSONには含めず、アプリ側が`stats`とGuts!係数から起動時に計算する。管理者はこのSchemaに沿ったJSONファイルを`data/presets/mlb/2025/`に追加するだけで新規選手を追加できる。
+wOBA・wRC+・打率などの表示用指標はこのJSONには含めず、アプリ側が`stats`とGuts!係数から計算する（`GET /presets` のレスポンス時に `summary` として付与）。管理者はこのSchemaに沿ったJSONファイルを`data/presets/mlb/2025/`に追加するだけで新規選手を追加できる。
