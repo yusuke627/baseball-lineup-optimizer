@@ -76,6 +76,14 @@
 - 依頼内容: pytest で出ていた非推奨警告2件を解消する（報告7）
 - 変更ファイル: backend/app/schemas/batter.py, backend/pyproject.toml, backend/tests/test_api.py, docs/EDIT_LOG.md
 - 変更理由: pydantic 2.13 で非推奨の class-based `Config`(populate_by_name) を、2.11 以降で推奨される `model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)` に移行。starlette 1.7 の TestClient が httpx の使用を非推奨としているため、dev依存の `httpx>=0.27` を `httpx2>=2.0` に置き換え（コード内に httpx の直接 import は無い）。"2B"/"3B" と "doubles"/"triples" のどちらでも入力できることを確認するテストを追加
+- コミット: 2b20464
+- 戻し方: git revert 2b20464
+- 注意点: 警告は抑制していない。プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"` 後、ruff・mypy 指摘0件、pytest 24件通過・警告0件を確認。計算結果の比較（案A 16パターン・案B 3通り・プリセット確率）も差なし
+
+## 2026-10-06 17:01 遷移行列のキャッシュとOpenBLASのスレッド数の既定値でテスト・APIを高速化
+- 依頼内容: テストが遅い問題を計測に基づいて改善する（報告9）
+- 変更ファイル: backend/app/core/transitions.py, backend/app/__init__.py, backend/tests/conftest.py, backend/tests/test_transition_probabilities.py, docs/DESIGN.md, README.md, docs/EDIT_LOG.md
+- 変更理由: 計測の結果、時間の大半は216x216の逆行列計算で、OpenBLASのマルチスレッド化が小さな行列でかえって遅くしていた。指示どおりまず遷移行列のキャッシュ(lru_cache、既定adv時のみ、配列は読み取り専用)を入れて計測し、次に `OPENBLAS_NUM_THREADS` の既定値1(setdefault、利用者の設定が優先)を追加して明確な追加効果を確認したため両方を採用。numpyを先にimportするテストファイルでも効くよう conftest.py で app を先に読み込む。キャッシュの同一性・読み取り専用を確認するテストを追加。DESIGN.md 9章に実測結果、READMEの「約20.5分」に改善前の値である旨を追記
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 警告は抑制していない。プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"` 後、ruff・mypy 指摘0件、pytest 24件通過・警告0件を確認。計算結果の比較（案A 16パターン・案B 3通り・プリセット確率）も差なし
+- 注意点: テスト全体 194.1秒→54.8秒(キャッシュのみ)→13.4秒、POST /lineup/evaluate 18.5〜29.0秒→11.0〜14.1秒→1.84〜1.90秒（Windows・Python 3.13.14・OpenBLAS 0.3.31）。案Aの期待得点の改善前との最大差 キャッシュのみ0・最終構成1.8e-15、seed固定の案Bは完全一致。BLASスレッド数1は pytest(全体・単独ファイル) と uvicorn 起動プロセスで threadpoolctl により確認（threadpoolctl は確認後にアンインストール、依存には未追加）。uvicorn --reload 起動、Mac(Accelerate等)環境での効果、改善後の全探索時間は未確認。slow マーカーは全体13秒のため導入していない

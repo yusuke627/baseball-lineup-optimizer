@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from app.core.states import NUM_TRANSIENT_STATES
-from app.core.transitions import build_batter_transition
+from app.core.transitions import DEFAULT_ADVANCE_PROBS, build_batter_transition
 
 SAMPLE_EVENT_PROBS = {
     "BB": 0.085,
@@ -33,3 +33,13 @@ def test_transition_rows_sum_to_one():
 def test_reward_non_negative():
     _T, reward = build_batter_transition(SAMPLE_EVENT_PROBS)
     assert np.all(reward >= 0)
+
+
+def test_cached_transition_matches_uncached_and_is_read_only():
+    T, reward = build_batter_transition(SAMPLE_EVENT_PROBS)
+    # adv に既定値のコピーを渡すとキャッシュを通らずに毎回構築される
+    T_fresh, reward_fresh = build_batter_transition(SAMPLE_EVENT_PROBS, adv=dict(DEFAULT_ADVANCE_PROBS))
+    assert np.array_equal(T, T_fresh)
+    assert np.array_equal(reward, reward_fresh)
+    assert not T.flags.writeable
+    assert not reward.flags.writeable

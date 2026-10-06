@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 
@@ -195,11 +196,19 @@ def apply_steal_step(base_code: int, outs: int, sb_prob: float, cs_prob_given_at
     return [(base_code, outs, 1.0)]
 
 
+# 遷移行列のキャッシュ上限（打者・盗塁確率の組み合わせ数）。1リクエストの打者は9人なので十分に大きい
+_CACHE_SIZE = 1024
+
+
+@lru_cache(maxsize=_CACHE_SIZE)
 def build_steal_transition(sb_prob: float, cs_prob_given_attempt: float) -> np.ndarray:
     """
     打席前の盗塁ステップを表す遷移行列 S (25x25) を構築する。
     各状態に apply_steal_step を適用したもので、盗塁を試みない状態は自己ループになる。
     盗塁死で3アウトになった場合は終端状態 (TERMINAL_STATE) へ遷移する。
+
+    同じ確率の組で繰り返し呼ばれる(最適打順探索)ため結果をキャッシュする。
+    キャッシュした配列を共有するので、呼び出し側が書き換えられないよう読み取り専用にしている。
     """
     size = NUM_TRANSIENT_STATES + 1
     S = np.zeros((size, size))
@@ -209,6 +218,7 @@ def build_steal_transition(sb_prob: float, cs_prob_given_attempt: float) -> np.n
             j = TERMINAL_STATE if new_outs >= 3 else base_out_index(new_code, new_outs)
             S[idx, j] += p
     S[TERMINAL_STATE, TERMINAL_STATE] = 1.0
+    S.setflags(write=False)
     return S
 
 
@@ -221,7 +231,26 @@ def build_batter_transition(event_probs: dict, adv: dict | None = None) -> tuple
     「状態ごとの期待報酬(得点)ベクトル reward (24,)」を構築する。
 
     event_probs には EVENT_KEYS のキーが確率として入っている前提 (合計は概ね1)。
+
+    最適打順探索では同じ打者の行列を何度も使うため、既定の進塁確率 (adv 未指定) のときに限り
+    結果をキャッシュする。キーはイベントの並び順も含めた (イベント, 確率) の組なので、
+    行列を足し合わせる順序も含めて毎回構築した場合と同一の値になる。
+    キャッシュした配列は共有されるため読み取り専用にしている。
     """
+    if adv is None or adv is DEFAULT_ADVANCE_PROBS:
+        return _cached_batter_transition(tuple(event_probs.items()))
+    return _build_batter_transition(event_probs, adv)
+
+
+@lru_cache(maxsize=_CACHE_SIZE)
+def _cached_batter_transition(event_items: tuple[tuple[str, float], ...]) -> tuple[np.ndarray, np.ndarray]:
+    T, reward = _build_batter_transition(dict(event_items), DEFAULT_ADVANCE_PROBS)
+    T.setflags(write=False)
+    reward.setflags(write=False)
+    return T, reward
+
+
+def _build_batter_transition(event_probs: dict, adv: dict) -> tuple[np.ndarray, np.ndarray]:
     adv = adv or DEFAULT_ADVANCE_PROBS
     size = NUM_TRANSIENT_STATES + 1  # 24 + 終端状態
     T = np.zeros((size, size))

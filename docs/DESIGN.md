@@ -369,6 +369,27 @@ function estimate_season_runs(batter_list, N_trials=100000):
 - 実装は `backend/app/core/optimizer.py` の `multi_restart_hill_climb` を参照。APIのデフォルトはこちらを使用する。
 - 厳密な全探索用の関数（`find_optimal_lineup`）も別途実装済みで、バックグラウンドジョブ等での利用を想定している。
 
+### 計算速度の改善（遷移行列のキャッシュ・OpenBLASのスレッド数）
+
+上記「約20.5分」は本節の改善より前の値である。なお、本節の改善前のコードには遷移行列のキャッシュは実装されていなかった。改善後の全探索の所要時間は計測していない。
+
+1. **遷移行列のキャッシュ**：`transitions.build_batter_transition`（既定の進塁確率のときのみ）と `build_steal_transition` の結果を `functools.lru_cache`（上限1024件）で再利用する。キーはイベントの並び順も含めた（イベント, 確率）の組で、毎回構築した場合と同一の値になる。共有する配列は読み取り専用にしている
+2. **OpenBLASのスレッド数の既定値を1にする**：案Aは216×216の小さな行列の逆行列計算を大量に繰り返すため、OpenBLASのマルチスレッド化がかえって遅くなっていた（216×216の逆行列1回：既定のスレッド数で50.75ms、1スレッドで0.61ms）。`backend/app/__init__.py` で numpy の読み込み前に `OPENBLAS_NUM_THREADS` の既定値を1にする
+   - 利用者が環境変数 `OPENBLAS_NUM_THREADS` を設定している場合はそちらが優先される（`os.environ.setdefault`）
+   - numpy が app より先に読み込まれると効かない。テストでは `tests/conftest.py` で app を先に読み込む
+   - OpenBLAS向けの設定であり、Accelerate など別のBLASを使う環境で効くかは未確認
+   - pytest 実行中（全テスト・単独ファイル）と `uvicorn app.main:app` で起動したプロセスで、BLASのスレッド数が1になっていることを threadpoolctl で確認した（`--reload` 付きの起動は未確認）
+
+**実測結果**（Windows 11・論理CPU 20・Python 3.13.14・numpy 2.4.4・OpenBLAS 0.3.31。`POST /lineup/evaluate` は Judge/Arraez を交互に並べた9人で3回計測）
+
+| 構成 | テスト全体（24件） | `POST /lineup/evaluate` |
+|---|---|---|
+| 改善前 | 194.1秒 | 29.0秒 / 18.5秒 / 27.1秒 |
+| キャッシュのみ | 54.8秒 | 14.1秒 / 13.2秒 / 11.0秒 |
+| キャッシュ＋スレッド数1 | 13.4秒 | 1.84秒 / 1.88秒 / 1.90秒 |
+
+計算結果への影響：固定の打順16パターン（盗塁なし・あり）の案Aの期待得点は、改善前との差が最大 1.8e-15（キャッシュのみでは差0）。seed を固定した案Bの結果は完全に一致した。
+
 ---
 
 ## 10. プリセットデータのJSON Schema
