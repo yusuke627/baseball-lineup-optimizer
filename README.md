@@ -52,7 +52,7 @@ MLBの実データ（打撃成績）を用いて、打順9人分の得点期待�
 
 ## セットアップ
 
-対応Pythonバージョン：3.12 / 3.13（GitHub ActionsのCIで動作を確認）
+対応Pythonバージョン：3.12 / 3.13（3.12・3.13 ともCIで確認：GitHub Actions の `backend-ci` で ruff・mypy・pytest（全件）が成功）
 
 ```bash
 cd backend
@@ -75,6 +75,8 @@ mypy app         # 型チェック
 
 - `backend-ci`：`backend/`・`data/`・`schemas/` の変更時に、Python 3.12 と 3.13 で上記のインストール・ruff・mypy・pytest（全テスト）を実行
 - `preset-validation`：`data/presets/`・`schemas/` の変更時に、プリセットJSONをJSON Schemaで検証
+
+2026-10-06 の実行で、`backend-ci` は Python 3.12・3.13 の両方で ruff・mypy・pytest（全件）が成功し、`preset-validation` も成功しました。
 
 ## 開発者向け：プリセットの追加方法
 
