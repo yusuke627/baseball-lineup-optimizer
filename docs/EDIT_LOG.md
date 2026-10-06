@@ -124,6 +124,14 @@
 - 依頼内容: README・DESIGN の記述が実態と一致しているかの最終確認（項目9）
 - 変更ファイル: README.md, docs/EDIT_LOG.md
 - 変更理由: README「検証結果」の「案A/B同士の収束（相対誤差約0.4%）」が VALIDATION.md 3章の測り直し結果（10シード、平均0.33%・最大1.04%）と食い違っていたため更新。README の案Aの説明が「厳密に計算」のみで、盗塁では一塁走者を直前の打者とみなす近似を用いている実装と一致していなかったため追記
+- コミット: 2dea260
+- 戻し方: git revert 2dea260
+- 注意点: コード変更なし。セットアップ手順（新規環境）、Pythonバージョン（3.12/3.13はCIで確認）、盗塁の対象状態（DESIGN.md の S1・S13 と apply_steal_step の「一塁に走者あり・二塁が空き」が一致）、CIの記述は確認済みで変更不要
+
+## 2026-10-06 19:21 打者成績の出典表記を実際のプリセットの出典に合わせる
+- 依頼内容: README・DESIGN 3-1 の「FanGraphs リーダーボード」を、プリセットの source 欄に書かれた実際の出典に書き換える（N2）
+- 変更ファイル: README.md, docs/DESIGN.md, docs/VALIDATION.md, docs/EDIT_LOG.md
+- 変更理由: プリセット2件の source 欄の出典は Baseball Savant / Baseball-Reference（相互照合）であり、FanGraphs リーダーボードは使っていないため。README「データソース」と DESIGN 3-1「取得元」を書き換え、DESIGN 3-1 の取得項目に実際にJSONへ記載している PA を追加。VALIDATION.md 8章の「FanGraphs 2025年シーズンデータ」も実データ一般の表現に修正
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: コード変更なし。セットアップ手順（新規環境）、Pythonバージョン（3.12/3.13はCIで確認）、盗塁の対象状態（DESIGN.md の S1・S13 と apply_steal_step の「一塁に走者あり・二塁が空き」が一致）、CIの記述は確認済みで変更不要
+- 注意点: FanGraphs は wOBA/wRC+ の係数（Guts!）で実際に使用しているため、その記載と参考文献は残した。DESIGN 10章のスキーマ転載内の "example": "FanGraphs" は別途（N3）で転載ごと削除する

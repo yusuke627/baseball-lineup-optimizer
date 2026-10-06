@@ -153,8 +153,8 @@ data/presets/mlb/2025/
 ### 3-1. 打者成績
 
 - **対象シーズン**：2025年MLBレギュラーシーズン（規定打席到達者）
-- **取得元**：FanGraphsシーズンリーダーボード
-- 取得項目：AB, H, 2B, 3B, HR, BB, HBP, SO, SF, SH, GIDP, SB, CS
+- **取得元**：Baseball Savant と Baseball-Reference（両者の数値が一致することを照合。取得元URL・取得日は各プリセットJSONの `source` 欄に記載）
+- 取得項目：PA, AB, H, 2B, 3B, HR, BB, HBP, SO, SF, SH, GIDP, SB, CS
 
 ### 3-2. wOBA・wRC+算出用係数
 

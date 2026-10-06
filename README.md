@@ -28,7 +28,7 @@ MLBの実データ（打撃成績）を用いて、打順9人分の得点期待�
 
 ## データソース
 
-- 打者成績：2025年MLBレギュラーシーズン（FanGraphsリーダーボード想定）
+- 打者成績（プリセット）：2025年MLBレギュラーシーズン。Baseball Savant と Baseball-Reference の数値を照合（取得元URL・取得日は各プリセットJSONの `source` 欄に記載）
 - wOBA/wRC+の係数：FanGraphs "Guts!" テーブル（2025年シーズン）
 - 進塁確率（アウト数別）：Baseball Prospectus（2003年MLBデータに基づく研究）※打者データとは年代が異なる暫定値
 
