@@ -148,6 +148,14 @@
 - 依頼内容: DESIGN 10章のスキーマ転載をやめて実ファイル参照にし（N3）、DESIGN 2-1 の PA の記述を API の実際の挙動に合わせる（N5）。未確認事項を既知の注意点に記載する
 - 変更ファイル: docs/DESIGN.md, docs/VALIDATION.md, docs/EDIT_LOG.md
 - 変更理由: DESIGN 10章の転載スキーマが実ファイルと食い違っていた（verified 欄なし、league が必須でない）ため、転載をやめて schemas/batter_preset.schema.json を参照する形にした（あわせて表示用指標の計算タイミングを「起動時」から実際の「GET /presets のレスポンス時」に訂正）。DESIGN 2-1 は PA を自動計算と記載していたが、API では PA は入力必須で0のときのみ自動計算されるため、表と説明を実際の挙動に合わせ、PA を任意入力にするかをフロントエンド作成時の検討事項として7章に追加。VALIDATION.md 8章に、uvicorn --reload 起動時のスレッド数と、Accelerate 等の BLAS での効果が未確認であることを記載
+- コミット: 34af723
+- 戻し方: git revert 34af723
+- 注意点: コード・APIの挙動は変更していない
+
+## 2026-10-06 19:49 optimizer.pyの冒頭説明を現状に合わせる
+- 依頼内容: optimizer.py モジュール冒頭の説明から古い記述（「約1時間」「DESIGN.md に追記予定」）を現状に合わせて直す（N6）
+- 変更ファイル: backend/app/core/optimizer.py, docs/EDIT_LOG.md
+- 変更理由: 全探索の所要時間は現行コードの実測で約8.5分（DESIGN.md 9章）であり、近似探索（multi_restart_hill_climb）をAPIで使う方針もDESIGN.md・READMEに記載済みのため、説明文を実態に合わせて参照先を明記
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: コード・APIの挙動は変更していない
+- 注意点: docstring のみの変更でロジックは変更なし（計算結果の比較も差なし）
