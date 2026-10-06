@@ -60,6 +60,14 @@
 - 依頼内容: ruff の指摘8件を修正し、ローカルとCIで同じルールになるよう設定を明記する（報告5）
 - 変更ファイル: backend/pyproject.toml, backend/app/core/markov.py, backend/app/core/monte_carlo.py, backend/app/core/transitions.py, backend/app/main.py, docs/EDIT_LOG.md
 - 変更理由: ruff 0.16 は設定なしで既定413ルールが有効になり、バージョンにより結果がぶれるため `[tool.ruff.lint] select = ["E4","E7","E9","F","I","B","UP"]`・`target-version = "py312"` を明記し、dev依存を `ruff>=0.16,<0.17` に固定。未使用import(4件)とimport順(3件)を `ruff check --fix --select F401,I001` で修正し、E741（markov.py の変数名 `I`）を `identity` に改名
+- コミット: b81ef10
+- 戻し方: git revert b81ef10
+- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットのイベント確率・盗塁確率の差が最大0）。metrics.py の max() 化（PLR1730）は採用ルール外のため変更していない。B・UP ルールでの追加指摘は0件
+
+## 2026-10-06 15:39 mypyの設定を明記し型の指摘を修正
+- 依頼内容: mypy の指摘8件を修正し、設定を pyproject.toml に明記する（報告6）
+- 変更ファイル: backend/pyproject.toml, backend/app/core/transitions.py, backend/app/core/optimizer.py, docs/EDIT_LOG.md
+- 変更理由: `[tool.mypy] python_version = "3.12"` を明記し、dev依存を `mypy>=2.3,<2.4` に固定（CIで新しい版が入って結果が変わるのを防ぐ）。指摘はいずれも型の絞り込み不足で、実行時に None が入る経路は無かった。transitions.py `_single_branches` は二塁・一塁走者がいるときだけ進塁確率を取り出して選択肢を作る形に書き換え（値・選択肢の順序は同一）、optimizer.py `find_optimal_lineup` は最良打順が必ず決まることを assert で明示
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットのイベント確率・盗塁確率の差が最大0）。metrics.py の max() 化（PLR1730）は採用ルール外のため変更していない。B・UP ルールでの追加指摘は0件
+- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットの確率の差が最大0）。`mypy app` は指摘0件で、残した指摘は無い。find_optimal_lineup（全探索、約20分）は実行していない

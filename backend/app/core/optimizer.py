@@ -39,6 +39,8 @@ def find_optimal_lineup(batters: dict[str, dict], steals: dict[str, dict] | None
         if runs > best_runs:
             best_runs = runs
             best_order = order
+    # 9人の順列は必ず1つ以上あり、期待得点は0以上なので初回で必ず更新される
+    assert best_order is not None
     return {"best_order": list(best_order), "best_runs": best_runs}
 
 

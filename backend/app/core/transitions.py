@@ -62,15 +62,19 @@ def _single_branches(bases: Bases, outs: int, adv: dict) -> list[tuple[Bases, in
     bucket = outs_bucket(outs)
     branches: list[tuple[Bases, int, float]] = []
 
-    # runner on 2nd: scores or stops at 3rd (依存: 2アウト有無)
-    p2_scores = adv["second_scores_on_single"][bucket] if bases.on2 else None
-    # runner on 1st: advances to 3rd or stops at 2nd
-    p1_to_3 = adv["first_to_third_on_single"][bucket] if bases.on1 else None
+    # 走者がいない塁は分岐しない (確率1.0の選択肢1つ)
+    case2_options: list[tuple[bool | None, float]] = [(None, 1.0)]
+    case1_options: list[tuple[bool | None, float]] = [(None, 1.0)]
+    if bases.on2:
+        # runner on 2nd: scores or stops at 3rd (依存: 2アウト有無)
+        p2_scores: float = adv["second_scores_on_single"][bucket]
+        case2_options = [(True, p2_scores), (False, 1 - p2_scores)]
+    if bases.on1:
+        # runner on 1st: advances to 3rd or stops at 2nd
+        p1_to_3: float = adv["first_to_third_on_single"][bucket]
+        case1_options = [(True, p1_to_3), (False, 1 - p1_to_3)]
 
     on3_scores = bases.on3  # 三塁走者は単打で常に生還する前提
-
-    case2_options = [(True, p2_scores), (False, 1 - p2_scores)] if bases.on2 else [(None, 1.0)]
-    case1_options = [(True, p1_to_3), (False, 1 - p1_to_3)] if bases.on1 else [(None, 1.0)]
 
     for r2_scores, p2 in case2_options:
         for r1_to_3, p1 in case1_options:
