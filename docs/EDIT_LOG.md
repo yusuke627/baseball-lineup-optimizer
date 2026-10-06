@@ -84,6 +84,14 @@
 - 依頼内容: テストが遅い問題を計測に基づいて改善する（報告9）
 - 変更ファイル: backend/app/core/transitions.py, backend/app/__init__.py, backend/tests/conftest.py, backend/tests/test_transition_probabilities.py, docs/DESIGN.md, README.md, docs/EDIT_LOG.md
 - 変更理由: 計測の結果、時間の大半は216x216の逆行列計算で、OpenBLASのマルチスレッド化が小さな行列でかえって遅くしていた。指示どおりまず遷移行列のキャッシュ(lru_cache、既定adv時のみ、配列は読み取り専用)を入れて計測し、次に `OPENBLAS_NUM_THREADS` の既定値1(setdefault、利用者の設定が優先)を追加して明確な追加効果を確認したため両方を採用。numpyを先にimportするテストファイルでも効くよう conftest.py で app を先に読み込む。キャッシュの同一性・読み取り専用を確認するテストを追加。DESIGN.md 9章に実測結果、READMEの「約20.5分」に改善前の値である旨を追記
+- コミット: 137e0ca
+- 戻し方: git revert 137e0ca
+- 注意点: テスト全体 194.1秒→54.8秒(キャッシュのみ)→13.4秒、POST /lineup/evaluate 18.5〜29.0秒→11.0〜14.1秒→1.84〜1.90秒（Windows・Python 3.13.14・OpenBLAS 0.3.31）。案Aの期待得点の改善前との最大差 キャッシュのみ0・最終構成1.8e-15、seed固定の案Bは完全一致。BLASスレッド数1は pytest(全体・単独ファイル) と uvicorn 起動プロセスで threadpoolctl により確認（threadpoolctl は確認後にアンインストール、依存には未追加）。uvicorn --reload 起動、Mac(Accelerate等)環境での効果、改善後の全探索時間は未確認。slow マーカーは全体13秒のため導入していない
+
+## 2026-10-06 17:13 VALIDATION.md 3章を複数シードで測り直し実行環境を更新
+- 依頼内容: 3章の案B「4.0428」が再現しない件について、案A・案Bを測り直して記録し、実行環境を実際のバージョンで書き直す（報告10）
+- 変更ファイル: docs/VALIDATION.md, docs/EDIT_LOG.md
+- 変更理由: 特定シードの値は環境により変わりうるため、案Bを10シード（1〜10）×3万試行で測定し、平均・最小・最大と案Aとの相対誤差で評価する形に変更。案A 4.0607、案B 平均4.0663(+0.14%)・最小4.0438(-0.42%)・最大4.1030(+1.04%)で全シードが基準3%以内。7章の実行環境を測定に使った Windows 11 / Python 3.13.14 / numpy 2.4.4 / pytest 9.1.1 / fastapi 0.141.1 / pydantic 2.13.5 に書き直し、8章の「複数seedでの確認は今後の課題」を更新
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: テスト全体 194.1秒→54.8秒(キャッシュのみ)→13.4秒、POST /lineup/evaluate 18.5〜29.0秒→11.0〜14.1秒→1.84〜1.90秒（Windows・Python 3.13.14・OpenBLAS 0.3.31）。案Aの期待得点の改善前との最大差 キャッシュのみ0・最終構成1.8e-15、seed固定の案Bは完全一致。BLASスレッド数1は pytest(全体・単独ファイル) と uvicorn 起動プロセスで threadpoolctl により確認（threadpoolctl は確認後にアンインストール、依存には未追加）。uvicorn --reload 起動、Mac(Accelerate等)環境での効果、改善後の全探索時間は未確認。slow マーカーは全体13秒のため導入していない
+- 注意点: 4.0428 が再現しない原因は特定していない（この環境の seed=42 は 4.0550）。5章の数値は測り直していない。コード変更なし
