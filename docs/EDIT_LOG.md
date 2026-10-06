@@ -132,6 +132,14 @@
 - 依頼内容: README・DESIGN 3-1 の「FanGraphs リーダーボード」を、プリセットの source 欄に書かれた実際の出典に書き換える（N2）
 - 変更ファイル: README.md, docs/DESIGN.md, docs/VALIDATION.md, docs/EDIT_LOG.md
 - 変更理由: プリセット2件の source 欄の出典は Baseball Savant / Baseball-Reference（相互照合）であり、FanGraphs リーダーボードは使っていないため。README「データソース」と DESIGN 3-1「取得元」を書き換え、DESIGN 3-1 の取得項目に実際にJSONへ記載している PA を追加。VALIDATION.md 8章の「FanGraphs 2025年シーズンデータ」も実データ一般の表現に修正
+- コミット: b0e2720
+- 戻し方: git revert b0e2720
+- 注意点: FanGraphs は wOBA/wRC+ の係数（Guts!）で実際に使用しているため、その記載と参考文献は残した。DESIGN 10章のスキーマ転載内の "example": "FanGraphs" は別途（N3）で転載ごと削除する
+
+## 2026-10-06 19:35 全探索の所要時間を現行コードの実測値に置き換える
+- 依頼内容: README・DESIGN の全探索「約20.5分（実測）」を現行コードで測り直した値に置き換える（N1）
+- 変更ファイル: README.md, docs/DESIGN.md, docs/EDIT_LOG.md
+- 変更理由: 「遷移行列をキャッシュしても約20.5分」という記載に対し、当時のコードにキャッシュは実装されておらず計測条件も不明だったため。現行コードで find_optimal_lineup（362,880通り）を計測し 512.1秒（約8.5分）を得たので、計測環境（Intel Core Ultra 7 265・Windows 11・Python 3.13.14・numpy 2.4.4、OPENBLAS_NUM_THREADS=1、キャッシュあり、盗塁あり）とともに記載。「キャッシュしても」「約1時間から」の表現は削除
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: FanGraphs は wOBA/wRC+ の係数（Guts!）で実際に使用しているため、その記載と参考文献は残した。DESIGN 10章のスキーマ転載内の "example": "FanGraphs" は別途（N3）で転載ごと削除する
+- 注意点: 計測は1回のみ。計測中は軽い作業（ruff・ファイル編集）のみ並行して実施。推定値は記載していない。optimizer.py 冒頭説明の「約1時間」は別途（N6）で修正する
