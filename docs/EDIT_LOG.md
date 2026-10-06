@@ -100,6 +100,14 @@
 - 依頼内容: 0.651 が Baseball Prospectus 記事の2003年定数であることを正確に記載し、検証結果の位置づけを適切な強さに直す（項目7b差し替え版）
 - 変更ファイル: docs/VALIDATION.md, docs/DESIGN.md, README.md, docs/EDIT_LOG.md
 - 変更理由: VALIDATION.md 5-3節に 0.651 が調整値ではなくBP記事の定数であることを明記し、「強い裏付けとなる」という結論を、整合的ではあるが(1)定義がヒットを含む (2)適用方法は本プロジェクトの仮定 (3)同一出典で独立検証ではない (4)残差が残る、という注意点付きの記述に置き換え、本番コードに実装していない理由を添えた。5-4節は検証していない仮説の位置づけを明記し0.651の扱いと整合させた。DESIGN.md 3-3の行名を原文に忠実に直し、本番コード未使用の注記を追加。README「考慮していない要素」に進塁打を明記し、README・DESIGN.md の今後の拡張候補にRetrosheet等からのアウト時進塁の一括モデル化を追記
+- コミット: d7d1a20
+- 戻し方: git revert d7d1a20
+- 注意点: コード変更なし。前回依頼の旧7b（0.651を事後的な当てはめ値とする修正）は未適用のため打ち消しコミットは不要。README の参考文献は変更していない
+
+## 2026-10-06 17:40 GitHub ActionsのCIを追加
+- 依頼内容: バックエンドのCI（Python 3.12/3.13）とプリセット検証のCIを追加する（報告2・8）
+- 変更ファイル: .github/workflows/backend-ci.yml, .github/workflows/preset-validation.yml, docs/EDIT_LOG.md
+- 変更理由: これまでCI設定が存在せず、READMEの「CIで自動チェック」と実態が一致していなかったため。backend-ci は backend/data/schemas とワークフロー自身の変更時に、3.12/3.13 のマトリクスで `pip install -e ".[dev]"` → ruff → mypy → pytest -v（全テスト）を実行。preset-validation はプリセット・スキーマの変更時に jsonschema と pytest のみで test_preset_schema.py を実行。permissions は contents: read、checkout は persist-credentials: false。アクションは2026-10-06時点の最新安定版 actions/checkout v7（v7.0.1）・actions/setup-python v7（v7.0.0）を使用し、setup-python v7 に cache-dependency-path 入力があることを action.yml で確認
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: コード変更なし。前回依頼の旧7b（0.651を事後的な当てはめ値とする修正）は未適用のため打ち消しコミットは不要。README の参考文献は変更していない
+- 注意点: 同じコマンドをプロジェクト外の新規仮想環境(Python 3.13.14)で実行し、ruff・mypy 指摘0件、pytest 25件通過を確認。preset 検証は jsonschema/pytest 以外（numpy・fastapi・pydantic等）を読み込まずに3件通過することを確認。YAMLは構文解析できることを確認。GitHub Actions 上での実行と Python 3.12 は未確認（コミット後にActionsタブで確認）

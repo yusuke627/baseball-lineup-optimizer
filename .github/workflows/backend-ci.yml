@@ -1,0 +1,52 @@
+name: backend-ci
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "schemas/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "schemas/**"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          # requirements.txt は無いため、依存定義の pyproject.toml をキャッシュのキーにする
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: python -m ruff check .
+
+      - name: Type check (mypy)
+        run: python -m mypy app
+
+      - name: Test (pytest)
+        run: python -m pytest -v

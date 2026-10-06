@@ -1,0 +1,38 @@
+name: preset-validation
+
+on:
+  push:
+    paths:
+      - "data/presets/**"
+      - "schemas/**"
+      - ".github/workflows/preset-validation.yml"
+  pull_request:
+    paths:
+      - "data/presets/**"
+      - "schemas/**"
+      - ".github/workflows/preset-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # 依存が2つだけなので pip キャッシュは使わない
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install
+        run: python -m pip install jsonschema pytest
+
+      - name: Validate presets against JSON Schema
+        run: python -m pytest tests/test_preset_schema.py -v
