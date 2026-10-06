@@ -1,8 +1,0 @@
-fastapi==0.141.1
-httpx==0.28.1
-jsonschema==4.26.0
-jsonschema-specifications==2025.9.1
-numpy==2.4.4
-pandas==3.0.2
-pytest==9.1.1
-uvicorn==0.53.0

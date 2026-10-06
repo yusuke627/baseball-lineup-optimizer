@@ -44,6 +44,14 @@
 - 依頼内容: .gitignore / .gitattributes を整備し、キャッシュ類の追跡状況を確認する（報告3・8）
 - 変更ファイル: .gitattributes, docs/EDIT_LOG.md
 - 変更理由: Windowsで編集しMacでコミットする運用のため、改行コードの差分を防ぐ。.gitignore は依頼のエントリをすべて含んでいたため変更なし。Mac側の確認で .gitignore 対象の追跡済みファイルは無かったため追跡解除も不要。あわせて前回のコミットハッシュ(5616a8f)を記入
+- コミット: b467dad
+- 戻し方: git revert b467dad
+- 注意点: 作業フォルダ内のテキストファイルはすべてLF（CRLF 0件）であることをWindows側で確認済み
+
+## 2026-10-06 15:10 pip install -e ".[dev]" の失敗を修正し依存定義をpyproject.tomlに一本化
+- 依頼内容: README記載の `pip install -e ".[dev]"` が失敗する問題を直し、requirements.txt との二重管理を解消する（報告4）
+- 変更ファイル: backend/pyproject.toml, backend/requirements.txt（削除）, docs/EDIT_LOG.md
+- 変更理由: hatchling がパッケージ名(baseball_lineup_optimizer)と同名のディレクトリを探して失敗していたため `[tool.hatch.build.targets.wheel] packages = ["app"]` を追加。コードで使っていない pandas を削除し、直接 import している pydantic を `>=2.11` で明記。requirements.txt は Python 3.13 で凍結した一覧で requires-python>=3.12 と整合しない可能性があるため削除し、pyproject.toml を唯一の依存定義とした
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 作業フォルダ内のテキストファイルはすべてLF（CRLF 0件）であることをWindows側で確認済み
+- 注意点: プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"`・pytest 23件・uvicorn起動(/health, /presets)を確認。Python 3.12 は未確認（CIで確認予定）。READMEのセットアップ手順は元から `pip install -e ".[dev]"` のみで変更不要
