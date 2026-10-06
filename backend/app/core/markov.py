@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .states import NUM_TRANSIENT_STATES, TERMINAL_STATE, base_out_index
+from .states import NUM_TRANSIENT_STATES, TERMINAL_STATE
 from .transitions import build_batter_transition, build_steal_transition
 
 NUM_BATTERS = 9
@@ -71,8 +71,8 @@ def _half_inning_chain(
                 else:
                     Q[i, idx(j_state, next_batter)] += p
 
-    I = np.eye(n_transient)
-    N = np.linalg.inv(I - Q)
+    identity = np.eye(n_transient)
+    N = np.linalg.inv(identity - Q)
     expected_reward_from_state = N @ reward_vec          # (216,)
     next_batter_dist_from_state = N @ R_absorb            # (216, 9)
 

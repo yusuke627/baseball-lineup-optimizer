@@ -6,11 +6,18 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
-from .states import Bases, NUM_TRANSIENT_STATES, TERMINAL_STATE, base_out_index, decode_base_out_index, outs_bucket
+from .states import (
+    NUM_TRANSIENT_STATES,
+    TERMINAL_STATE,
+    Bases,
+    base_out_index,
+    decode_base_out_index,
+    outs_bucket,
+)
 
 # デフォルトの進塁確率（出典: Baseball Prospectus, 2003年MLBデータに基づく研究）。
 # 打者データ年度(2025年)とは異なる年度の値を暫定使用している点に注意。

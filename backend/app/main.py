@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.markov import expected_runs_per_game
 from app.core.metrics import (
     BasicStats,
     batting_average,
@@ -15,9 +14,17 @@ from app.core.metrics import (
     wrc_plus,
 )
 from app.core.monte_carlo import estimate_expected_runs
-from app.core.optimizer import evaluate_lineup, inefficiency_percent, multi_restart_hill_climb
+from app.core.optimizer import (
+    evaluate_lineup,
+    inefficiency_percent,
+    multi_restart_hill_climb,
+)
 from app.data_loader import list_presets
-from app.schemas.batter import BatterCountStats, LineupEvaluationRequest, LineupEvaluationResponse
+from app.schemas.batter import (
+    BatterCountStats,
+    LineupEvaluationRequest,
+    LineupEvaluationResponse,
+)
 
 app = FastAPI(
     title="Baseball Lineup Run-Expectancy API",

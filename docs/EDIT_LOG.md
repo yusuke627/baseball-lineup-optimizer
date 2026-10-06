@@ -52,6 +52,14 @@
 - 依頼内容: README記載の `pip install -e ".[dev]"` が失敗する問題を直し、requirements.txt との二重管理を解消する（報告4）
 - 変更ファイル: backend/pyproject.toml, backend/requirements.txt（削除）, docs/EDIT_LOG.md
 - 変更理由: hatchling がパッケージ名(baseball_lineup_optimizer)と同名のディレクトリを探して失敗していたため `[tool.hatch.build.targets.wheel] packages = ["app"]` を追加。コードで使っていない pandas を削除し、直接 import している pydantic を `>=2.11` で明記。requirements.txt は Python 3.13 で凍結した一覧で requires-python>=3.12 と整合しない可能性があるため削除し、pyproject.toml を唯一の依存定義とした
+- コミット: bf1a880
+- 戻し方: git revert bf1a880
+- 注意点: プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"`・pytest 23件・uvicorn起動(/health, /presets)を確認。Python 3.12 は未確認（CIで確認予定）。READMEのセットアップ手順は元から `pip install -e ".[dev]"` のみで変更不要
+
+## 2026-10-06 15:23 ruffのルールを明記し指摘を修正
+- 依頼内容: ruff の指摘8件を修正し、ローカルとCIで同じルールになるよう設定を明記する（報告5）
+- 変更ファイル: backend/pyproject.toml, backend/app/core/markov.py, backend/app/core/monte_carlo.py, backend/app/core/transitions.py, backend/app/main.py, docs/EDIT_LOG.md
+- 変更理由: ruff 0.16 は設定なしで既定413ルールが有効になり、バージョンにより結果がぶれるため `[tool.ruff.lint] select = ["E4","E7","E9","F","I","B","UP"]`・`target-version = "py312"` を明記し、dev依存を `ruff>=0.16,<0.17` に固定。未使用import(4件)とimport順(3件)を `ruff check --fix --select F401,I001` で修正し、E741（markov.py の変数名 `I`）を `identity` に改名
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: プロジェクト外の新規仮想環境(Python 3.13.14)で `pip install -e ".[dev]"`・pytest 23件・uvicorn起動(/health, /presets)を確認。Python 3.12 は未確認（CIで確認予定）。READMEのセットアップ手順は元から `pip install -e ".[dev]"` のみで変更不要
+- 注意点: 計算結果が変わらないことを確認（固定打順16パターンの案A期待得点の差が最大0、seed固定の案B 3通りが完全一致、プリセットのイベント確率・盗塁確率の差が最大0）。metrics.py の max() 化（PLR1730）は採用ルール外のため変更していない。B・UP ルールでの追加指摘は0件

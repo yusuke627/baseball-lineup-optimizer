@@ -12,7 +12,11 @@ import random
 import numpy as np
 
 from .states import Bases
-from .transitions import DEFAULT_ADVANCE_PROBS, EVENT_KEYS, apply_steal_step, resolve_event
+from .transitions import (
+    DEFAULT_ADVANCE_PROBS,
+    apply_steal_step,
+    resolve_event,
+)
 
 NUM_BATTERS = 9
 NO_STEAL = {"sb_prob": 0.0, "cs_prob_given_attempt": 0.0}
