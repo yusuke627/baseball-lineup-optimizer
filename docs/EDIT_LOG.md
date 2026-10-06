@@ -36,6 +36,14 @@
 - 依頼内容: steal_probabilities() の結果が計算に渡されていない未配線を直し、SB/CSを得点期待値に反映する（案A・案B両方）
 - 変更ファイル: backend/app/core/metrics.py, backend/app/core/transitions.py, backend/app/core/markov.py, backend/app/core/monte_carlo.py, backend/app/core/optimizer.py, backend/app/main.py, backend/tests/test_steals.py, docs/DESIGN.md, docs/VALIDATION.md, docs/EDIT_LOG.md
 - 変更理由: 企図率を (SB+CS)/PA から (SB+CS)/(単打+四球+死球) に変更（盗塁機会あたりの確率として使うため、PA分母では過小評価になる）。案Aは盗塁遷移行列 S を打者の遷移の前に合成し、一塁走者を直前の打者とみなす近似。盗塁死で3アウトなら次イニングは同じ打者から。案Bは一塁走者本人を追跡するよう修正。最適化関数とAPIに盗塁確率を渡す。DESIGN.md の盗塁対象状態をS12→S13（実装どおり）に訂正し、打点を表示項目から外した
+- コミット: 5616a8f
+- 戻し方: git revert 5616a8f
+- 注意点: APIの返す得点期待値が変わる（例: Judge/Arraez交互の9人で 7.428→7.345）。steal_probs/steals 省略時は従来と同一の値。DEFAULT_ADVANCE_PROBS は変更していない。案Bの盗塁なしの乱数列は従来と同一に保った
+
+## 2026-10-06 14:31 .gitattributesを追加し改行コードをLFに統一
+- 依頼内容: .gitignore / .gitattributes を整備し、キャッシュ類の追跡状況を確認する（報告3・8）
+- 変更ファイル: .gitattributes, docs/EDIT_LOG.md
+- 変更理由: Windowsで編集しMacでコミットする運用のため、改行コードの差分を防ぐ。.gitignore は依頼のエントリをすべて含んでいたため変更なし。Mac側の確認で .gitignore 対象の追跡済みファイルは無かったため追跡解除も不要。あわせて前回のコミットハッシュ(5616a8f)を記入
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: APIの返す得点期待値が変わる（例: Judge/Arraez交互の9人で 7.428→7.345）。steal_probs/steals 省略時は従来と同一の値。DEFAULT_ADVANCE_PROBS は変更していない。案Bの盗塁なしの乱数列は従来と同一に保った
+- 注意点: 作業フォルダ内のテキストファイルはすべてLF（CRLF 0件）であることをWindows側で確認済み

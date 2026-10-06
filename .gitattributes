@@ -1,0 +1,2 @@
+# Windowsで編集しMacでコミットする運用のため、改行コードをLFに統一する
+* text=auto eol=lf
