@@ -52,20 +52,29 @@ MLBの実データ（打撃成績）を用いて、打順9人分の得点期待�
 
 ## セットアップ
 
+対応Pythonバージョン：3.12 / 3.13（GitHub ActionsのCIで動作を確認）
+
 ```bash
 cd backend
 pip install -e ".[dev]"
 uvicorn app.main:app --reload
 ```
 
-`http://localhost:8000/docs` でSwagger UIが確認できます。
+`http://localhost:8000/docs` でSwagger UIが確認できます。依存関係は `backend/pyproject.toml` で管理しています。
 
-### テストの実行
+### テスト・静的チェックの実行
 
 ```bash
 cd backend
-pytest -v
+pytest -v        # 全テスト
+ruff check .     # lint（ルールは pyproject.toml の [tool.ruff.lint]）
+mypy app         # 型チェック
 ```
+
+### CI（GitHub Actions）
+
+- `backend-ci`：`backend/`・`data/`・`schemas/` の変更時に、Python 3.12 と 3.13 で上記のインストール・ruff・mypy・pytest（全テスト）を実行
+- `preset-validation`：`data/presets/`・`schemas/` の変更時に、プリセットJSONをJSON Schemaで検証
 
 ## 開発者向け：プリセットの追加方法
 

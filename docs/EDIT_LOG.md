@@ -108,6 +108,14 @@
 - 依頼内容: バックエンドのCI（Python 3.12/3.13）とプリセット検証のCIを追加する（報告2・8）
 - 変更ファイル: .github/workflows/backend-ci.yml, .github/workflows/preset-validation.yml, docs/EDIT_LOG.md
 - 変更理由: これまでCI設定が存在せず、READMEの「CIで自動チェック」と実態が一致していなかったため。backend-ci は backend/data/schemas とワークフロー自身の変更時に、3.12/3.13 のマトリクスで `pip install -e ".[dev]"` → ruff → mypy → pytest -v（全テスト）を実行。preset-validation はプリセット・スキーマの変更時に jsonschema と pytest のみで test_preset_schema.py を実行。permissions は contents: read、checkout は persist-credentials: false。アクションは2026-10-06時点の最新安定版 actions/checkout v7（v7.0.1）・actions/setup-python v7（v7.0.0）を使用し、setup-python v7 に cache-dependency-path 入力があることを action.yml で確認
+- コミット: 14a3de9
+- 戻し方: git revert 14a3de9
+- 注意点: 同じコマンドをプロジェクト外の新規仮想環境(Python 3.13.14)で実行し、ruff・mypy 指摘0件、pytest 25件通過を確認。preset 検証は jsonschema/pytest 以外（numpy・fastapi・pydantic等）を読み込まずに3件通過することを確認。YAMLは構文解析できることを確認。GitHub Actions 上での実行と Python 3.12 は未確認（コミット後にActionsタブで確認）
+
+## 2026-10-06 17:52 READMEにCIと対応Pythonバージョンを記載
+- 依頼内容: CIの初回実行が緑であることを確認したうえで、READMEのCIと対応Pythonバージョンの記載を確定する（報告2・8）
+- 変更ファイル: README.md, docs/EDIT_LOG.md
+- 変更理由: ユーザーがGitHub Actionsで backend-ci の test (3.12)・test (3.13) がともに緑であることを確認したため、セットアップ節に対応Python 3.12/3.13（CIで確認）を明記し、ruff・mypy の実行方法と、CIの2つのワークフローの内容を記載。依存関係が pyproject.toml で管理されていることも明記
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 同じコマンドをプロジェクト外の新規仮想環境(Python 3.13.14)で実行し、ruff・mypy 指摘0件、pytest 25件通過を確認。preset 検証は jsonschema/pytest 以外（numpy・fastapi・pydantic等）を読み込まずに3件通過することを確認。YAMLは構文解析できることを確認。GitHub Actions 上での実行と Python 3.12 は未確認（コミット後にActionsタブで確認）
+- 注意点: 3.12 での動作はローカルでは未確認で、CI（ubuntu-latest）でのみ確認。3.14 以降は未確認のため記載していない
