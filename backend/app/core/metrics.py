@@ -95,8 +95,9 @@ def event_probabilities(s: BasicStats) -> dict:
     生のカウント統計からマルコフ連鎖/モンテカルロの入力となる
     イベント別確率 (EVENT_KEYS に対応) を算出する。
     """
-    pa = s.PA if s.PA else (s.AB + s.BB + s.HBP + s.SF + s.SH)
-    if pa == 0:
+    # PA は入力必須 (API で 1 以上を検証)。以前あった「PA=0 なら内訳から自動計算」は廃止した
+    pa = s.PA
+    if pa <= 0:
         raise ValueError("PA must be greater than 0")
 
     other_out = s.AB - s.H - s.SO - s.GIDP

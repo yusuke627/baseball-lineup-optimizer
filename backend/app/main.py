@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from typing import Annotated
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.metrics import (
@@ -21,9 +23,12 @@ from app.core.optimizer import (
 )
 from app.data_loader import list_presets
 from app.schemas.batter import (
+    TOTALS_GAMES,
     BatterCountStats,
+    GamesTotal,
     LineupEvaluationRequest,
     LineupEvaluationResponse,
+    stats_warnings,
 )
 
 app = FastAPI(
@@ -46,7 +51,11 @@ def health():
 
 
 @app.get("/presets")
-def get_presets(league: str = "mlb", season: int = 2025):
+def get_presets(
+    # league はプリセットのフォルダ名 (data/presets/<league>/) に使うため、英小文字のみ許可する
+    league: Annotated[str, Query(pattern="^[a-z]+$", max_length=20)] = "mlb",
+    season: int = 2025,
+):
     """プリセット一覧。各プリセットに表示用指標 (summary) をアプリ側で計算して付与する"""
     presets = list_presets(league=league, season=season)
     for preset in presets:
@@ -85,13 +94,17 @@ def evaluate(req: LineupEvaluationRequest):
         raise HTTPException(400, "input_order must contain exactly the given batter ids")
     if len(req.input_order) != 9:
         raise HTTPException(400, "exactly 9 batters are required")
+    if len(set(req.input_order)) != len(req.input_order):
+        raise HTTPException(400, "input_order must not contain duplicate batter ids")
 
     event_probs_by_id = {}
     steal_probs_by_id = {}
+    warnings: list[str] = []
     for bid, stats_model in req.batters.items():
         stats = _to_basic_stats(stats_model)
         event_probs_by_id[bid] = event_probabilities(stats)
         steal_probs_by_id[bid] = steal_probabilities(stats)
+        warnings.extend(stats_warnings(bid, stats_model))
 
     input_runs = evaluate_lineup(event_probs_by_id, req.input_order, steal_probs_by_id)
 
@@ -118,4 +131,9 @@ def evaluate(req: LineupEvaluationRequest):
         inefficiency_percent=inefficiency_percent(input_runs, best_runs),
         n_games=req.n_games,
         monte_carlo=mc,
+        totals_by_games=[
+            GamesTotal(n_games=n, input_order_runs=input_runs * n, best_order_runs=best_runs * n)
+            for n in TOTALS_GAMES
+        ],
+        warnings=warnings,
     )

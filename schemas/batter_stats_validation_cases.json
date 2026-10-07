@@ -1,0 +1,25 @@
+{
+  "description": "打者成績の入力検証ルールの例。バックエンド(pytest)とフロントエンド(Vitest)の両方がこの例でテストし、検証ルールの一致を保つ。valid=false は入力エラー、warning=true はエラーにせず警告にとどめるケース。rule は違反したルールの識別子(フロントエンドのテストで照合する)。",
+  "max_stat_value": 20000,
+  "base": {
+    "PA": 600, "AB": 540, "H": 150, "2B": 30, "3B": 5, "HR": 15, "BB": 40, "HBP": 10,
+    "SO": 100, "SF": 5, "SH": 5, "GIDP": 10, "SB": 10, "CS": 3
+  },
+  "cases": [
+    { "name": "整合した成績", "override": {}, "valid": true, "warning": false, "rule": null },
+    { "name": "すべて最小の成績(PA=1)", "override": { "PA": 1, "AB": 1, "H": 0, "2B": 0, "3B": 0, "HR": 0, "BB": 0, "HBP": 0, "SO": 0, "SF": 0, "SH": 0, "GIDP": 0, "SB": 0, "CS": 0 }, "valid": true, "warning": false, "rule": null },
+    { "name": "PAが0", "override": { "PA": 0, "AB": 0, "H": 0, "2B": 0, "3B": 0, "HR": 0, "BB": 0, "HBP": 0, "SO": 0, "SF": 0, "SH": 0, "GIDP": 0 }, "valid": false, "warning": false, "rule": "PA_MIN" },
+    { "name": "負の値", "override": { "BB": -1 }, "valid": false, "warning": false, "rule": "RANGE" },
+    { "name": "上限を超える値", "override": { "SB": 20001 }, "valid": false, "warning": false, "rule": "RANGE" },
+    { "name": "上限ちょうどの値", "override": { "SB": 20000 }, "valid": true, "warning": false, "rule": null },
+    { "name": "打数が打席数より多い", "override": { "PA": 500 }, "valid": false, "warning": false, "rule": "AB_LE_PA" },
+    { "name": "安打が打数より多い", "override": { "H": 541, "SO": 0, "GIDP": 0 }, "valid": false, "warning": false, "rule": "H_LE_AB" },
+    { "name": "長打の合計が安打より多い", "override": { "HR": 116 }, "valid": false, "warning": false, "rule": "XBH_LE_H" },
+    { "name": "長打の合計が安打と等しい", "override": { "HR": 115 }, "valid": true, "warning": false, "rule": null },
+    { "name": "三振と併殺打の合計が凡退数より多い", "override": { "SO": 381 }, "valid": false, "warning": false, "rule": "SO_GIDP_LE_OUTS" },
+    { "name": "三振と併殺打の合計が凡退数と等しい", "override": { "SO": 380 }, "valid": true, "warning": false, "rule": null },
+    { "name": "打席数が内訳の合計より多い(警告のみ)", "override": { "PA": 610 }, "valid": true, "warning": true, "rule": "PA_SUM_MISMATCH" },
+    { "name": "打席数が内訳の合計より少ない(警告のみ)", "override": { "PA": 590 }, "valid": true, "warning": true, "rule": "PA_SUM_MISMATCH" },
+    { "name": "犠打を省略(0として扱う)", "override": { "SH": null, "PA": 595 }, "valid": true, "warning": false, "rule": null }
+  ]
+}
