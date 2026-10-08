@@ -95,6 +95,7 @@ npm run typecheck  # 型チェック
 npm run lint       # lint
 npm run test       # テスト
 npm run build      # ビルド（frontend/dist/ に出力）
+npm run contrast   # 配色のコントラスト比を計算して確認（ライト／ダークの両方）
 ```
 
 - 画面は API を相対パス `/api/...` で呼びます。開発サーバーが `/api` をバックエンド（`http://127.0.0.1:8000`）に転送するので、先に上記の手順でバックエンドを起動しておいてください

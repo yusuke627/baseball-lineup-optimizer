@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "contrast": "node scripts/contrast.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

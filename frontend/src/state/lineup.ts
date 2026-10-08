@@ -19,7 +19,10 @@ export interface BatterSlot {
 }
 
 export interface LineupState {
+  /** 成績を入力する枠 (入力画面のカードの並び。順番は変わらない) */
   slots: BatterSlot[]
+  /** 打順 (1番から9番)。打者の内部IDの並び */
+  order: string[]
 }
 
 export type LineupAction =
@@ -53,7 +56,7 @@ export function createInitialLineup(): LineupState {
       touched: {},
     }
   })
-  return { slots }
+  return { slots, order: slots.map((slot) => slot.id) }
 }
 
 function updateSlot(
@@ -61,7 +64,7 @@ function updateSlot(
   slotId: string,
   update: (slot: BatterSlot) => BatterSlot,
 ): LineupState {
-  return { slots: state.slots.map((slot) => (slot.id === slotId ? update(slot) : slot)) }
+  return { ...state, slots: state.slots.map((slot) => (slot.id === slotId ? update(slot) : slot)) }
 }
 
 export function lineupReducer(state: LineupState, action: LineupAction): LineupState {

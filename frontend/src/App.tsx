@@ -4,8 +4,8 @@ import { ApiError, evaluateLineup } from './api/client'
 import type { BatterStats, LineupEvaluationResponse, StatKey } from './api/types'
 import ErrorBanner, { type DisplayError } from './components/ErrorBanner'
 import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './components/ErrorSummary'
+import BatterCards from './components/BatterCards'
 import ResultSummary from './components/ResultSummary'
-import StatsTable from './components/StatsTable'
 import { findNameIssues } from './names'
 import { createInitialLineup, displayName, lineupReducer } from './state/lineup'
 import { parseAndValidate } from './validation'
@@ -33,6 +33,9 @@ export default function App() {
   const isRunning = run.status === 'running'
   const nameIssues = findNameIssues(
     lineup.slots.map((slot) => ({ id: slot.id, name: displayName(slot) })),
+  )
+  const namesById: Record<string, string> = Object.fromEntries(
+    lineup.slots.map((slot) => [slot.id, displayName(slot)]),
   )
 
   // 入力を変えたら、前の入力に対する結果・エラーは消す (画面の結果と入力が食い違わないように)
@@ -77,14 +80,13 @@ export default function App() {
     }
 
     const batters: Record<string, BatterStats> = {}
-    const names: Record<string, string> = {}
+    const names = namesById
     for (const slot of lineup.slots) {
       const { stats } = parseAndValidate(slot.raw)
       if (stats === null) {
         return // summarizeErrors がエラーなしと判定しているので、ここには来ない
       }
       batters[slot.id] = stats
-      names[slot.id] = displayName(slot)
     }
 
     const controller = new AbortController()
@@ -92,7 +94,7 @@ export default function App() {
     setRun({ status: 'running' })
     try {
       const result = await evaluateLineup(
-        { batters, input_order: lineup.slots.map((slot) => slot.id), display_names: names },
+        { batters, input_order: lineup.order, display_names: names },
         controller.signal,
       )
       setRun({ status: 'done', result, names })
@@ -113,15 +115,21 @@ export default function App() {
 
   return (
     <main>
-      <h1>打順の得点期待値</h1>
-      <p>9人の打順を入力し、入力した打順と最適打順の期待得点を比べます。</p>
-
-      <section aria-labelledby="input-heading">
-        <h2 id="input-heading">成績の入力</h2>
+      <header className="page-header">
+        <h1>打順の得点期待値</h1>
         <p>
-          表の上から順に1番打者〜9番打者として計算します。各打者のシーズン成績（カウント）を入力してください。打者の表示名は変えられます（20文字まで）。
+          9人の打者の成績から、入力した打順と最適打順の期待得点を計算して比べます。
         </p>
-        <StatsTable
+      </header>
+
+      <section aria-labelledby="input-heading" className="step">
+        <h2 id="input-heading">
+          <span className="step-number">1</span>成績の入力
+        </h2>
+        <p>
+          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（20文字まで）。
+        </p>
+        <BatterCards
           slots={lineup.slots}
           nameIssues={nameIssues}
           showAllErrors={showAllErrors}
@@ -133,8 +141,22 @@ export default function App() {
         />
       </section>
 
-      <section aria-labelledby="run-heading" className="run">
-        <h2 id="run-heading">計算</h2>
+      <section aria-labelledby="order-heading" className="step">
+        <h2 id="order-heading">
+          <span className="step-number">2</span>打順
+        </h2>
+        <p>この打順で計算します。現在は、成績を入力した順が打順になります（並べ替えは開発中です）。</p>
+        <ol className="order-list">
+          {lineup.order.map((id) => (
+            <li key={id}>{namesById[id]}</li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-labelledby="run-heading" className="step">
+        <h2 id="run-heading">
+          <span className="step-number">3</span>計算と結果
+        </h2>
         <div className="run-controls">
           <button type="button" onClick={handleRun} disabled={isRunning}>
             期待得点を計算する
@@ -152,9 +174,8 @@ export default function App() {
         )}
         {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={focusField} />}
         {run.status === 'error' && <ErrorBanner error={run.error} />}
+        {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
       </section>
-
-      {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
     </main>
   )
 }

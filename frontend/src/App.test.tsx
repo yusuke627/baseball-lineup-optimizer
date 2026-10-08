@@ -74,6 +74,31 @@ describe('入力フォーム', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(9 * (1 + 14))
   })
 
+  test('画面は「成績の入力 → 打順 → 計算と結果」の3つの段階に分かれている', () => {
+    render(<App />)
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
+    expect(headings).toEqual(['1成績の入力', '2打順', '3計算と結果'])
+  })
+
+  test('打者ごとにカードがあり、項目はまとまりごとに分かれている', () => {
+    render(<App />)
+    const card = screen.getByRole('region', { name: '打者A' })
+    expect(within(card).getAllByRole('textbox')).toHaveLength(1 + 14)
+    const groups = within(card).getAllByRole('group').map((group) => within(group).getAllByRole('textbox').length)
+    expect(groups).toEqual([2, 4, 3, 3, 2]) // 打席・打数／安打／四死球・三振／犠飛・犠打・併殺打／盗塁
+    expect(within(card).getByRole('group', { name: '安打' })).toBeInTheDocument()
+  })
+
+  test('打順の欄には、表示名が入力の順に並ぶ', () => {
+    render(<App />)
+    const order = screen.getByRole('region', { name: '2打順' })
+    const names = () => within(order).getAllByRole('listitem').map((item) => item.textContent)
+    expect(names()).toEqual(NAMES)
+
+    fireEvent.change(nameInput('打者C'), { target: { value: 'Luis Arraez' } })
+    expect(names()).toEqual(['打者A', '打者B', 'Luis Arraez', ...NAMES.slice(3)])
+  })
+
   test('矛盾した成績は、入力した時点でエラーを表示する', () => {
     render(<App />)
     fillSlot('打者A', { ...VALID, H: 541, SO: 0, GIDP: 0 })

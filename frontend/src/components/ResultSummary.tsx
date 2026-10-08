@@ -21,7 +21,30 @@ export default function ResultSummary({ result, names }: ResultSummaryProps) {
 
   return (
     <section aria-labelledby="result-heading" className="result">
-      <h2 id="result-heading">結果</h2>
+      <h3 id="result-heading">結果</h3>
+
+      {/* いちばん見せたい3つの数値を大きく出す */}
+      <dl className="figures">
+        <div className="figure">
+          <dt>入力した打順の期待得点（1試合あたり）</dt>
+          <dd className="number">{formatRuns(result.input_order_runs_per_game)}</dd>
+        </div>
+        <div className="figure">
+          <dt>最適打順の期待得点（1試合あたり）</dt>
+          <dd className="number">{formatRuns(result.best_order_runs_per_game)}</dd>
+        </div>
+        <div className="figure">
+          <dt>入力した打順の非効率</dt>
+          <dd className="number">{formatPercent(result.inefficiency_percent)}</dd>
+        </div>
+      </dl>
+
+      <dl className="orders">
+        <dt>入力した打順（1番から9番）</dt>
+        <dd>{orderText(result.input_order)}</dd>
+        <dt>最適打順（近似探索、1番から9番）</dt>
+        <dd>{orderText(result.best_order)}</dd>
+      </dl>
 
       {result.warnings.length > 0 && (
         <div className="banner banner-warning" role="status">
@@ -34,33 +57,6 @@ export default function ResultSummary({ result, names }: ResultSummaryProps) {
         </div>
       )}
 
-      <table className="result-table">
-        <caption>1試合あたりの期待得点</caption>
-        <thead>
-          <tr>
-            <th scope="col">打順</th>
-            <th scope="col">並び（1番から9番）</th>
-            <th scope="col">1試合あたりの期待得点</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">入力した打順</th>
-            <td>{orderText(result.input_order)}</td>
-            <td className="number">{formatRuns(result.input_order_runs_per_game)}</td>
-          </tr>
-          <tr>
-            <th scope="row">最適打順（近似探索）</th>
-            <td>{orderText(result.best_order)}</td>
-            <td className="number">{formatRuns(result.best_order_runs_per_game)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p>
-        入力した打順の非効率：
-        <strong className="number">{formatPercent(result.inefficiency_percent)}</strong>
-      </p>
       <p className="note">
         最適打順は近似探索の結果です。厳密な最適解とは限らず、実行のたびに変わることがあります。
       </p>
