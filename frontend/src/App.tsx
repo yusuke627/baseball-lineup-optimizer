@@ -3,20 +3,26 @@ import { useCallback, useReducer, useRef, useState } from 'react'
 import { ApiError, evaluateLineup } from './api/client'
 import type { BatterStats, LineupEvaluationResponse, StatKey } from './api/types'
 import ErrorBanner, { type DisplayError } from './components/ErrorBanner'
+import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './components/ErrorSummary'
 import ResultSummary from './components/ResultSummary'
 import StatsTable from './components/StatsTable'
-import { createInitialLineup, lineupReducer } from './state/lineup'
+import { findNameIssues } from './names'
+import { createInitialLineup, displayName, lineupReducer } from './state/lineup'
 import { parseAndValidate } from './validation'
 
 type RunState =
   | { status: 'idle' }
+  | { status: 'invalid'; summaries: BatterErrorSummary[] }
   | { status: 'running' }
-  | { status: 'done'; result: LineupEvaluationResponse }
+  // names は実行した時点の表示名 (打者の内部ID → 表示名)。結果の打順を表示名で出すために使う
+  | { status: 'done'; result: LineupEvaluationResponse; names: Record<string, string> }
   | { status: 'error'; error: DisplayError }
 
-const INPUT_ERROR_MESSAGE =
-  '成績に誤りや未入力のある打者がいます。表の中のメッセージを確認して、修正してください。'
 const UNEXPECTED_ERROR_MESSAGE = '予期しないエラーが発生しました。もう一度お試しください。'
+
+function focusField(fieldId: string) {
+  document.getElementById(fieldId)?.focus()
+}
 
 export default function App() {
   const [lineup, dispatch] = useReducer(lineupReducer, undefined, createInitialLineup)
@@ -25,29 +31,60 @@ export default function App() {
   const controllerRef = useRef<AbortController | null>(null)
 
   const isRunning = run.status === 'running'
+  const nameIssues = findNameIssues(
+    lineup.slots.map((slot) => ({ id: slot.id, name: displayName(slot) })),
+  )
 
-  // 表の各行は memo しているので、行に渡す関数は作り直さない (useCallback)
-  const handleChange = useCallback((slotId: string, key: StatKey, value: string) => {
-    dispatch({ type: 'setStat', slotId, key, value })
-    // 入力を変えたら、前の入力に対する結果・エラーは消す (画面の結果と入力が食い違わないように)
+  // 入力を変えたら、前の入力に対する結果・エラーは消す (画面の結果と入力が食い違わないように)
+  const clearRun = useCallback(() => {
     setRun((current) => (current.status === 'idle' ? current : { status: 'idle' }))
   }, [])
+
+  // 表の各行は memo しているので、行に渡す関数は作り直さない (useCallback)
+  const handleChange = useCallback(
+    (slotId: string, key: StatKey, value: string) => {
+      dispatch({ type: 'setStat', slotId, key, value })
+      clearRun()
+    },
+    [clearRun],
+  )
 
   const handleBlur = useCallback((slotId: string, key: StatKey) => {
     dispatch({ type: 'touchStat', slotId, key })
   }, [])
 
+  // 表示名は API の warnings の文にも入るので、変えたら前の結果は消す
+  const handleNameChange = useCallback(
+    (slotId: string, value: string) => {
+      dispatch({ type: 'setName', slotId, value })
+      clearRun()
+    },
+    [clearRun],
+  )
+
+  const handleNameBlur = useCallback((slotId: string) => {
+    dispatch({ type: 'commitName', slotId })
+  }, [])
+
   async function handleRun() {
     setShowAllErrors(true)
 
+    const summaries = summarizeErrors(lineup.slots, nameIssues)
+    if (summaries.length > 0) {
+      setRun({ status: 'invalid', summaries })
+      focusField(summaries[0].firstFieldId)
+      return
+    }
+
     const batters: Record<string, BatterStats> = {}
+    const names: Record<string, string> = {}
     for (const slot of lineup.slots) {
       const { stats } = parseAndValidate(slot.raw)
       if (stats === null) {
-        setRun({ status: 'error', error: { kind: 'input', message: INPUT_ERROR_MESSAGE } })
-        return
+        return // summarizeErrors がエラーなしと判定しているので、ここには来ない
       }
       batters[slot.id] = stats
+      names[slot.id] = displayName(slot)
     }
 
     const controller = new AbortController()
@@ -55,10 +92,10 @@ export default function App() {
     setRun({ status: 'running' })
     try {
       const result = await evaluateLineup(
-        { batters, input_order: lineup.slots.map((slot) => slot.id) },
+        { batters, input_order: lineup.slots.map((slot) => slot.id), display_names: names },
         controller.signal,
       )
-      setRun({ status: 'done', result })
+      setRun({ status: 'done', result, names })
     } catch (error) {
       const display: DisplayError =
         error instanceof ApiError
@@ -82,14 +119,17 @@ export default function App() {
       <section aria-labelledby="input-heading">
         <h2 id="input-heading">成績の入力</h2>
         <p>
-          表の上から順に1番打者〜9番打者として計算します。各打者のシーズン成績（カウント）を入力してください。
+          表の上から順に1番打者〜9番打者として計算します。各打者のシーズン成績（カウント）を入力してください。打者の表示名は変えられます（20文字まで）。
         </p>
         <StatsTable
           slots={lineup.slots}
+          nameIssues={nameIssues}
           showAllErrors={showAllErrors}
           disabled={isRunning}
           onChange={handleChange}
           onBlur={handleBlur}
+          onNameChange={handleNameChange}
+          onNameBlur={handleNameBlur}
         />
       </section>
 
@@ -110,10 +150,11 @@ export default function App() {
             計算中です。入力した打順の評価と、最適打順の探索を行っています（数秒かかります）。
           </p>
         )}
+        {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={focusField} />}
         {run.status === 'error' && <ErrorBanner error={run.error} />}
       </section>
 
-      {run.status === 'done' && <ResultSummary result={run.result} />}
+      {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
     </main>
   )
 }

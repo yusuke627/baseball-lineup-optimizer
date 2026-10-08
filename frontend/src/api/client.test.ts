@@ -74,6 +74,14 @@ describe('エラーの分類と日本語メッセージ', () => {
       'input_order must not contain duplicate batter ids',
       '打順に同じ打者が重複しています。',
     ],
+    [
+      'display_names must contain exactly the given batter ids',
+      '表示名が指定された打者と、入力された打者が一致していません。',
+    ],
+    [
+      'display_names must not contain duplicate names',
+      '打者の表示名が重複しています。別の名前にしてください。',
+    ],
     ['some new message', '入力内容に誤りがあるため、計算できませんでした。'],
   ])('400 "%s" は入力エラーとして日本語にする', async (detail, expected) => {
     stubFetch(async () => jsonResponse({ detail }, 400))

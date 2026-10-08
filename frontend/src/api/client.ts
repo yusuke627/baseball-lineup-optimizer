@@ -30,6 +30,10 @@ const BAD_REQUEST_MESSAGES: Record<string, string> = {
     '打順に含まれる打者と、入力された打者が一致していません。',
   'exactly 9 batters are required': '打者は9人ちょうど必要です。',
   'input_order must not contain duplicate batter ids': '打順に同じ打者が重複しています。',
+  'display_names must contain exactly the given batter ids':
+    '表示名が指定された打者と、入力された打者が一致していません。',
+  'display_names must not contain duplicate names':
+    '打者の表示名が重複しています。別の名前にしてください。',
 }
 
 const MESSAGES = {

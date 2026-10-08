@@ -81,7 +81,17 @@ td {
   text-align: right;
 }
 
-.stat-input[aria-invalid='true'] {
+.name-input {
+  width: 9em;
+  font: inherit;
+  font-weight: bold;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.stat-input[aria-invalid='true'],
+.name-input[aria-invalid='true'] {
   border: 2px solid var(--color-error);
 }
 
@@ -125,6 +135,16 @@ button:disabled {
   background: #6b6b6b;
   border-color: #6b6b6b;
   cursor: not-allowed;
+}
+
+/* 文中に置く、リンクのように見せるボタン (エラーの要約から入力欄へ移動する) */
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .banner {

@@ -9,7 +9,16 @@ function formatPercent(value: number): string {
   return `${value.toFixed(2)}%`
 }
 
-export default function ResultSummary({ result }: { result: LineupEvaluationResponse }) {
+interface ResultSummaryProps {
+  result: LineupEvaluationResponse
+  /** 打者の内部ID → 実行した時点の表示名 */
+  names: Record<string, string>
+}
+
+export default function ResultSummary({ result, names }: ResultSummaryProps) {
+  // API は打順を打者の内部IDで返すので、表示名に直して出す
+  const orderText = (order: string[]) => order.map((id) => names[id] ?? id).join(' → ')
+
   return (
     <section aria-labelledby="result-heading" className="result">
       <h2 id="result-heading">結果</h2>
@@ -37,12 +46,12 @@ export default function ResultSummary({ result }: { result: LineupEvaluationResp
         <tbody>
           <tr>
             <th scope="row">入力した打順</th>
-            <td>{result.input_order.join(' → ')}</td>
+            <td>{orderText(result.input_order)}</td>
             <td className="number">{formatRuns(result.input_order_runs_per_game)}</td>
           </tr>
           <tr>
             <th scope="row">最適打順（近似探索）</th>
-            <td>{result.best_order.join(' → ')}</td>
+            <td>{orderText(result.best_order)}</td>
             <td className="number">{formatRuns(result.best_order_runs_per_game)}</td>
           </tr>
         </tbody>

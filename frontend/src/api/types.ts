@@ -58,6 +58,8 @@ export interface LineupEvaluationRequest {
   batters: Record<string, BatterStats>
   input_order: string[]
   n_games?: number
+  /** 打者ID → 表示名 (1〜20文字)。指定すると warnings の文に打者IDではなく表示名が使われる */
+  display_names?: Record<string, string>
 }
 
 export interface GamesTotal {

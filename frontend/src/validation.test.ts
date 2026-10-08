@@ -110,16 +110,91 @@ describe('入力欄の文字列の扱い', () => {
     expect(parseAndValidate(raw).stats?.PA).toBe(600)
   })
 
-  test('項目ごとのエラーがあるときは、項目間の矛盾や警告は報告しない', () => {
-    const raw = toRaw({ ...base, H: 541, PA: 610 })
+  test('項目ごとのエラーがある項目を使う規則と警告は、判定しない', () => {
+    // BB が不正なので、BB を使う「打席数と内訳の不一致」の警告は判定しない
+    const raw = toRaw({ ...base, PA: 610 })
     raw.BB = '-1'
     const parsed = parseAndValidate(raw)
     expect(parsed.result.errors.map((issue) => issue.rule)).toEqual(['RANGE'])
     expect(parsed.result.warnings).toEqual([])
+    expect(parsed.stats).toBeNull()
   })
 
   test('エラーが無ければ、APIに送る14項目がそろう', () => {
     const parsed = parseAndValidate(toRaw(base))
     expect(parsed.stats).toEqual(base)
+  })
+})
+
+// 入力の途中 (一部の項目だけ入力済み) の判定。バックエンドには無い、フロント専用の動作。
+// 規則ごとに、その規則に必要な項目がそろっていれば判定する。
+describe('一部の項目だけ入力されているときの判定', () => {
+  /** 未入力 (REQUIRED) 以外のエラーの規則 */
+  function crossRules(stats: Partial<Record<StatKey, number>>): string[] {
+    return validateStats(stats)
+      .errors.filter((issue) => issue.rule !== 'REQUIRED')
+      .map((issue) => issue.rule)
+  }
+
+  test('打数と安打だけで「安打が打数を超えている」を報告する', () => {
+    const result = validateStats({ AB: 100, H: 101 })
+    const issue = result.errors.find((error) => error.rule === 'H_LE_AB')
+    expect(issue?.fields).toEqual(['H', 'AB'])
+    // 残りの必須項目は、未入力として報告する
+    expect(result.errors.filter((error) => error.rule === 'REQUIRED')).toHaveLength(11)
+  })
+
+  test('打席数と打数だけで「打数が打席数を超えている」を報告する', () => {
+    expect(crossRules({ PA: 100, AB: 101 })).toEqual(['AB_LE_PA'])
+    expect(crossRules({ PA: 100, AB: 100 })).toEqual([])
+  })
+
+  test('長打の合計は、二塁打・三塁打・本塁打・安打の4つがそろってから判定する', () => {
+    expect(crossRules({ '2B': 10, '3B': 10, H: 5 })).toEqual([]) // 本塁打が未入力
+    expect(crossRules({ '2B': 10, '3B': 10, HR: 0, H: 5 })).toEqual(['XBH_LE_H'])
+  })
+
+  test('三振と併殺打の合計は、三振・併殺打・打数・安打の4つがそろってから判定する', () => {
+    expect(crossRules({ SO: 100, AB: 100, H: 50 })).toEqual([]) // 併殺打が未入力
+    expect(crossRules({ SO: 100, GIDP: 0, AB: 100, H: 50 })).toEqual(['SO_GIDP_LE_OUTS'])
+  })
+
+  test('安打が打数を超えているときは、凡退の数に関する規則は重ねて報告しない', () => {
+    expect(crossRules({ SO: 0, GIDP: 0, AB: 100, H: 101 })).toEqual(['H_LE_AB'])
+  })
+
+  test('そろった規則は、複数あればすべて報告する', () => {
+    expect(crossRules({ PA: 100, AB: 101, H: 102 })).toEqual(['AB_LE_PA', 'H_LE_AB'])
+  })
+
+  test('規則に必要な項目に項目ごとのエラーがあれば、その規則は判定しない', () => {
+    expect(crossRules({ AB: -1, H: 5 })).toEqual(['RANGE'])
+    const parsed = parseAndValidate({ ...emptyRawStats(), AB: 'abc', H: '5' })
+    expect(parsed.result.errors.filter((issue) => issue.rule !== 'REQUIRED').map((issue) => issue.rule)).toEqual([
+      'INTEGER',
+    ])
+  })
+
+  test('項目ごとのエラーがあっても、関係のない項目の矛盾は報告する', () => {
+    expect(crossRules({ ...base, BB: -1, H: 541, SO: 0, GIDP: 0 })).toEqual(['RANGE', 'H_LE_AB'])
+  })
+
+  test('打席数と内訳の不一致の警告は、打席数・打数・四球・死球・犠飛がそろってから判定する', () => {
+    expect(validateStats({ PA: 610, AB: 540, BB: 40, HBP: 10 }).warnings).toEqual([]) // 犠飛が未入力
+    const result = validateStats({ PA: 610, AB: 540, BB: 40, HBP: 10, SF: 5, SH: 5 })
+    expect(result.warnings.map((issue) => issue.rule)).toEqual(['PA_SUM_MISMATCH'])
+    // 未入力の犠打は0として扱う (540+40+10+5=595)
+    expect(validateStats({ PA: 595, AB: 540, BB: 40, HBP: 10, SF: 5 }).warnings).toEqual([])
+  })
+
+  test('警告に関係する項目に矛盾のエラーがあるときは、警告を出さない', () => {
+    const result = validateStats({ PA: 100, AB: 101, BB: 0, HBP: 0, SF: 0, SH: 0 })
+    expect(result.errors.some((issue) => issue.rule === 'AB_LE_PA')).toBe(true)
+    expect(result.warnings).toEqual([])
+  })
+
+  test('入力の途中では、APIに送る成績は作らない', () => {
+    const parsed = parseAndValidate({ ...emptyRawStats(), AB: '100', H: '50' })
+    expect(parsed.stats).toBeNull()
   })
 })

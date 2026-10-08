@@ -6,14 +6,23 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.main import app
-from app.schemas.batter import MAX_STAT_VALUE, BatterCountStats, stats_warnings
+from app.schemas.batter import (
+    MAX_DISPLAY_NAME_LENGTH,
+    MAX_STAT_VALUE,
+    BatterCountStats,
+    normalize_display_name,
+    stats_warnings,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 CASES_PATH = REPO_ROOT / "schemas" / "batter_stats_validation_cases.json"
+NAME_CASES_PATH = REPO_ROOT / "schemas" / "display_name_validation_cases.json"
 PRESET_DIR = REPO_ROOT / "data" / "presets"
 
 with open(CASES_PATH, encoding="utf-8") as f:
     CASES_FILE = json.load(f)
+with open(NAME_CASES_PATH, encoding="utf-8") as f:
+    NAME_CASES_FILE = json.load(f)
 
 client = TestClient(app)
 
@@ -108,6 +117,76 @@ def test_evaluate_returns_warning_when_pa_does_not_match_components():
     warnings = res.json()["warnings"]
     assert len(warnings) == 1
     assert warnings[0].startswith("b3:")
+
+
+def test_max_display_name_length_matches_cases_file():
+    assert NAME_CASES_FILE["max_length"] == MAX_DISPLAY_NAME_LENGTH
+
+
+@pytest.mark.parametrize("case", NAME_CASES_FILE["cases"], ids=lambda c: c["name"])
+def test_shared_display_name_cases(case):
+    if not case["valid"]:
+        with pytest.raises(ValueError):
+            normalize_display_name(case["value"])
+        return
+    assert normalize_display_name(case["value"]) == case["normalized"]
+
+
+def _names(batters: dict[str, dict]) -> dict[str, str]:
+    return {bid: f"選手{i + 1}" for i, bid in enumerate(batters)}
+
+
+def test_evaluate_uses_display_name_in_warnings():
+    batters = _nine(CASES_FILE["base"])
+    batters["b3"] = dict(CASES_FILE["base"], PA=610)  # 内訳の合計は600
+    names = _names(batters)
+    names["b3"] = "  Aaron Judge "  # 前後の空白は除かれる
+    res = client.post("/lineup/evaluate", json=_lineup_body(batters, display_names=names))
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["warnings"]) == 1
+    assert data["warnings"][0].startswith("Aaron Judge: 打席数(PA)=610 ")
+    # 打順は表示名ではなく打者IDで返す
+    assert data["input_order"] == list(batters)
+    assert set(data["best_order"]) == set(batters)
+
+
+def test_evaluate_result_does_not_depend_on_display_names():
+    batters = _nine(CASES_FILE["base"])
+    batters["b0"] = dict(CASES_FILE["base"], HR=40, H=170)
+    without = client.post("/lineup/evaluate", json=_lineup_body(batters)).json()
+    with_names = client.post(
+        "/lineup/evaluate", json=_lineup_body(batters, display_names=_names(batters))
+    ).json()
+    assert with_names["input_order_runs_per_game"] == without["input_order_runs_per_game"]
+    assert with_names["best_order_runs_per_game"] == without["best_order_runs_per_game"]
+
+
+@pytest.mark.parametrize("bad_name", ["", "   ", "あ" * 21, "打者\nA", "打者\tA"])
+def test_evaluate_rejects_invalid_display_name_with_422(bad_name):
+    batters = _nine(CASES_FILE["base"])
+    names = _names(batters)
+    names["b0"] = bad_name
+    res = client.post("/lineup/evaluate", json=_lineup_body(batters, display_names=names))
+    assert res.status_code == 422
+
+
+def test_evaluate_rejects_display_names_not_matching_batter_ids():
+    batters = _nine(CASES_FILE["base"])
+    names = _names(batters)
+    del names["b0"]
+    res = client.post("/lineup/evaluate", json=_lineup_body(batters, display_names=names))
+    assert res.status_code == 400
+    assert res.json()["detail"] == "display_names must contain exactly the given batter ids"
+
+
+def test_evaluate_rejects_duplicate_display_names():
+    batters = _nine(CASES_FILE["base"])
+    names = _names(batters)
+    names["b1"] = f" {names['b0']} "  # 前後の空白を除くと b0 と同じ名前
+    res = client.post("/lineup/evaluate", json=_lineup_body(batters, display_names=names))
+    assert res.status_code == 400
+    assert res.json()["detail"] == "display_names must not contain duplicate names"
 
 
 @pytest.mark.parametrize("league", ["../..", "MLB", "mlb/2025", ""])

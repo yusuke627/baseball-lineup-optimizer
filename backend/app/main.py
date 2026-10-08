@@ -96,6 +96,12 @@ def evaluate(req: LineupEvaluationRequest):
         raise HTTPException(400, "exactly 9 batters are required")
     if len(set(req.input_order)) != len(req.input_order):
         raise HTTPException(400, "input_order must not contain duplicate batter ids")
+    names = req.display_names or {}
+    if req.display_names is not None:
+        if set(names.keys()) != set(req.batters.keys()):
+            raise HTTPException(400, "display_names must contain exactly the given batter ids")
+        if len(set(names.values())) != len(names):
+            raise HTTPException(400, "display_names must not contain duplicate names")
 
     event_probs_by_id = {}
     steal_probs_by_id = {}
@@ -104,7 +110,7 @@ def evaluate(req: LineupEvaluationRequest):
         stats = _to_basic_stats(stats_model)
         event_probs_by_id[bid] = event_probabilities(stats)
         steal_probs_by_id[bid] = steal_probabilities(stats)
-        warnings.extend(stats_warnings(bid, stats_model))
+        warnings.extend(stats_warnings(names.get(bid, bid), stats_model))
 
     input_runs = evaluate_lineup(event_probs_by_id, req.input_order, steal_probs_by_id)
 

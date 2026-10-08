@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 # 各成績の上限。統計的な根拠のある値ではなく、誤入力や悪用を防ぐための安全上の上限。
 MAX_STAT_VALUE = 20000
@@ -10,9 +17,32 @@ MAX_STAT_VALUE = 20000
 MAX_N_GAMES = 200
 # レスポンスで常に返す試合数換算（totals_by_games）
 TOTALS_GAMES = (143, 162)
+# 打者の表示名の最大文字数（前後の空白を除いたあとの文字数。画面の表示が崩れないための上限）
+MAX_DISPLAY_NAME_LENGTH = 20
 
 Stat = Annotated[int, Field(ge=0, le=MAX_STAT_VALUE)]
 BatterId = Annotated[str, StringConstraints(min_length=1, max_length=64)]
+
+
+def _is_control_character(ch: str) -> bool:
+    """制御文字 (改行・タブなど。U+0000〜U+001F と U+007F〜U+009F) かどうか"""
+    code = ord(ch)
+    return code <= 0x1F or 0x7F <= code <= 0x9F
+
+
+def normalize_display_name(value: str) -> str:
+    """
+    打者の表示名を検証し、前後の空白を除いて返す。フロントエンドの入力検証と同じルール
+    (schemas/display_name_validation_cases.json の例で両者の一致をテストしている)。
+    """
+    if any(_is_control_character(ch) for ch in value):
+        raise ValueError("display name must not contain control characters")
+    name = value.strip()
+    if not name:
+        raise ValueError("display name must not be empty")
+    if len(name) > MAX_DISPLAY_NAME_LENGTH:
+        raise ValueError(f"display name must be at most {MAX_DISPLAY_NAME_LENGTH} characters")
+    return name
 
 
 class BatterCountStats(BaseModel):
@@ -55,7 +85,8 @@ class BatterCountStats(BaseModel):
 
 def stats_warnings(batter_id: str, stats: BatterCountStats) -> list[str]:
     """
-    エラーにはしないが利用者に知らせる点を返す。
+    エラーにはしないが利用者に知らせる点を返す。batter_id は文頭に出す名前
+    (表示名が指定されていれば表示名、なければ打者ID)。
     PA と内訳の合計が合わなくても計算はできる(イベント確率は合計1に正規化される)が、
     入力ミスの可能性やモデルの前提との関係があるため警告にとどめる。
     """
@@ -94,6 +125,15 @@ class LineupEvaluationRequest(BaseModel):
     batters: dict[BatterId, BatterCountStats]  # key: 任意の打者ID
     input_order: list[BatterId]
     n_games: int = Field(143, ge=1, le=MAX_N_GAMES)
+    # 打者ID → 画面に出す表示名。指定すると warnings の文に打者IDではなく表示名を使う。省略可
+    display_names: dict[BatterId, str] | None = None
+
+    @field_validator("display_names")
+    @classmethod
+    def _normalize_display_names(cls, value: dict[str, str] | None) -> dict[str, str] | None:
+        if value is None:
+            return None
+        return {batter_id: normalize_display_name(name) for batter_id, name in value.items()}
 
 
 class GamesTotal(BaseModel):
