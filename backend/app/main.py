@@ -25,6 +25,9 @@ from app.data_loader import list_presets
 from app.schemas.batter import (
     TOTALS_GAMES,
     BatterCountStats,
+    BatterMetrics,
+    BatterMetricsRequest,
+    BatterMetricsResponse,
     GamesTotal,
     LineupEvaluationRequest,
     LineupEvaluationResponse,
@@ -88,6 +91,51 @@ def _stats_to_summary(stats: BasicStats) -> dict:
     }
 
 
+def _display_names(
+    batters: dict[str, BatterCountStats], display_names: dict[str, str] | None
+) -> dict[str, str]:
+    """warnings の文頭に出す名前 (打者ID → 名前)。表示名の指定が無ければ打者IDを使う"""
+    if display_names is None:
+        return {bid: bid for bid in batters}
+    if set(display_names.keys()) != set(batters.keys()):
+        raise HTTPException(400, "display_names must contain exactly the given batter ids")
+    if len(set(display_names.values())) != len(display_names):
+        raise HTTPException(400, "display_names must not contain duplicate names")
+    return display_names
+
+
+@app.post("/batters/metrics", response_model=BatterMetricsResponse)
+def batter_metrics(req: BatterMetricsRequest):
+    """
+    打者ごとの表示用の指標 (打率・出塁率・長打率・OPS など) と、その打者についての注意を返す。
+    画面で打順を並べ替えるときの参考に使う。得点期待値の計算は行わない。
+    """
+    names = _display_names(req.batters, req.display_names)
+    result = {}
+    for bid, stats_model in req.batters.items():
+        stats = _to_basic_stats(stats_model)
+        # 分母が0の指標は「計算できない」として null を返す (0 と区別するため)
+        has_ab = stats.AB > 0
+        has_obp_denominator = stats.AB + stats.BB + stats.HBP + stats.SF > 0
+        avg = batting_average(stats) if has_ab else None
+        obp = on_base_percentage(stats) if has_obp_denominator else None
+        slg = slugging_percentage(stats) if has_ab else None
+        result[bid] = BatterMetrics(
+            PA=stats.PA,
+            HR=stats.HR,
+            SB=stats.SB,
+            CS=stats.CS,
+            AVG=avg,
+            OBP=obp,
+            SLG=slg,
+            OPS=obp + slg if obp is not None and slg is not None else None,
+            BB_pct=stats.BB / stats.PA,  # PA は検証で1以上
+            SO_pct=stats.SO / stats.PA,
+            warnings=stats_warnings(names[bid], stats_model),
+        )
+    return BatterMetricsResponse(batters=result)
+
+
 @app.post("/lineup/evaluate", response_model=LineupEvaluationResponse)
 def evaluate(req: LineupEvaluationRequest):
     if set(req.input_order) != set(req.batters.keys()):
@@ -96,12 +144,7 @@ def evaluate(req: LineupEvaluationRequest):
         raise HTTPException(400, "exactly 9 batters are required")
     if len(set(req.input_order)) != len(req.input_order):
         raise HTTPException(400, "input_order must not contain duplicate batter ids")
-    names = req.display_names or {}
-    if req.display_names is not None:
-        if set(names.keys()) != set(req.batters.keys()):
-            raise HTTPException(400, "display_names must contain exactly the given batter ids")
-        if len(set(names.values())) != len(names):
-            raise HTTPException(400, "display_names must not contain duplicate names")
+    names = _display_names(req.batters, req.display_names)
 
     event_probs_by_id = {}
     steal_probs_by_id = {}
@@ -110,7 +153,7 @@ def evaluate(req: LineupEvaluationRequest):
         stats = _to_basic_stats(stats_model)
         event_probs_by_id[bid] = event_probabilities(stats)
         steal_probs_by_id[bid] = steal_probabilities(stats)
-        warnings.extend(stats_warnings(names.get(bid, bid), stats_model))
+        warnings.extend(stats_warnings(names[bid], stats_model))
 
     input_runs = evaluate_lineup(event_probs_by_id, req.input_order, steal_probs_by_id)
 

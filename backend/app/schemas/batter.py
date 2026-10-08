@@ -17,6 +17,9 @@ MAX_STAT_VALUE = 20000
 MAX_N_GAMES = 200
 # レスポンスで常に返す試合数換算（totals_by_games）
 TOTALS_GAMES = (143, 162)
+# 打席数(PA)がこの値未満の打者には「標本が小さい」という注意を出す。
+# 本プロジェクトの目安であり、出典・統計的根拠のある値ではない。
+LOW_PA_THRESHOLD = 200
 # 打者の表示名の最大文字数（前後の空白を除いたあとの文字数。画面の表示が崩れないための上限）
 MAX_DISPLAY_NAME_LENGTH = 20
 
@@ -83,21 +86,36 @@ class BatterCountStats(BaseModel):
         return self.AB + self.BB + self.HBP + self.SF + self.SH
 
 
-def stats_warnings(batter_id: str, stats: BatterCountStats) -> list[str]:
+def stats_warning_items(batter_id: str, stats: BatterCountStats) -> list[tuple[str, str]]:
     """
-    エラーにはしないが利用者に知らせる点を返す。batter_id は文頭に出す名前
+    エラーにはしないが利用者に知らせる点を、(種類, 文) の組で返す。batter_id は文頭に出す名前
     (表示名が指定されていれば表示名、なければ打者ID)。
-    PA と内訳の合計が合わなくても計算はできる(イベント確率は合計1に正規化される)が、
-    入力ミスの可能性やモデルの前提との関係があるため警告にとどめる。
+
+    - PA_SUM_MISMATCH: PA と内訳の合計が合わない。合わなくても計算はできる(イベント確率は合計1に
+      正規化される)が、入力ミスの可能性やモデルの前提との関係があるため警告にとどめる。
+    - LOW_PA: 打席数が少ない (LOW_PA_THRESHOLD 未満)。成績の標本が小さいことを知らせる。
     """
-    warnings = []
+    items = []
     component_sum = stats.pa_component_sum()
     if component_sum != stats.PA:
-        warnings.append(
+        items.append((
+            "PA_SUM_MISMATCH",
             f"{batter_id}: 打席数(PA)={stats.PA} が、打数+四球+死球+犠飛+犠打の合計={component_sum} と一致しません。"
-            "入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算しています。"
-        )
-    return warnings
+            "入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算しています。",
+        ))
+    if stats.PA < LOW_PA_THRESHOLD:
+        items.append((
+            "LOW_PA",
+            f"{batter_id}: 打席数(PA)={stats.PA} は少なめです（目安：{LOW_PA_THRESHOLD}未満）。"
+            "成績の標本が小さいため、確率の見積もりが実力からずれやすく、打順の結果も変わりやすくなります。"
+            "計算はそのまま行っています。",
+        ))
+    return items
+
+
+def stats_warnings(batter_id: str, stats: BatterCountStats) -> list[str]:
+    """stats_warning_items の文だけを返す (API の warnings に入れる形)"""
+    return [message for _, message in stats_warning_items(batter_id, stats)]
 
 
 class SourceInfo(BaseModel):
@@ -121,10 +139,9 @@ class ManualBatterInput(BaseModel):
     stats: BatterCountStats
 
 
-class LineupEvaluationRequest(BaseModel):
-    batters: dict[BatterId, BatterCountStats]  # key: 任意の打者ID
-    input_order: list[BatterId]
-    n_games: int = Field(143, ge=1, le=MAX_N_GAMES)
+class _WithDisplayNames(BaseModel):
+    """打者の表示名 (任意) を受け取るリクエストの共通部分"""
+
     # 打者ID → 画面に出す表示名。指定すると warnings の文に打者IDではなく表示名を使う。省略可
     display_names: dict[BatterId, str] | None = None
 
@@ -134,6 +151,42 @@ class LineupEvaluationRequest(BaseModel):
         if value is None:
             return None
         return {batter_id: normalize_display_name(name) for batter_id, name in value.items()}
+
+
+class LineupEvaluationRequest(_WithDisplayNames):
+    batters: dict[BatterId, BatterCountStats]  # key: 任意の打者ID
+    input_order: list[BatterId]
+    n_games: int = Field(143, ge=1, le=MAX_N_GAMES)
+
+
+class BatterMetricsRequest(_WithDisplayNames):
+    """打者ごとの表示用の指標を求めるリクエスト (1〜9人)"""
+
+    batters: dict[BatterId, BatterCountStats] = Field(min_length=1, max_length=9)
+
+
+class BatterMetrics(BaseModel):
+    """
+    打者1人分の表示用の指標。分母が0で計算できない指標は null (None) を返す。
+    率は丸めずに返す (桁をそろえるのは表示する側)。
+    """
+
+    PA: int
+    HR: int
+    SB: int
+    CS: int
+    AVG: float | None  # 打率 = H / AB
+    OBP: float | None  # 出塁率 = (H + BB + HBP) / (AB + BB + HBP + SF)
+    SLG: float | None  # 長打率 = 総塁打 / AB
+    OPS: float | None  # OPS = 出塁率 + 長打率
+    BB_pct: float  # 四球率 = BB / PA
+    SO_pct: float  # 三振率 = SO / PA
+    # この打者についての注意 (LineupEvaluationResponse.warnings と同じ文)
+    warnings: list[str] = []
+
+
+class BatterMetricsResponse(BaseModel):
+    batters: dict[str, BatterMetrics]
 
 
 class GamesTotal(BaseModel):

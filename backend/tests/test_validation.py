@@ -11,6 +11,7 @@ from app.schemas.batter import (
     MAX_STAT_VALUE,
     BatterCountStats,
     normalize_display_name,
+    stats_warning_items,
     stats_warnings,
 )
 
@@ -57,7 +58,10 @@ def test_shared_validation_cases(case):
             BatterCountStats.model_validate(stats)
         return
     model = BatterCountStats.model_validate(stats)
-    assert bool(stats_warnings("b0", model)) == case["warning"]
+    # 共通の例の warning は「PA と内訳の不一致」の有無を表す (フロントエンドの入力検証と照合する対象)。
+    # 打席数が少ないことの注意 (LOW_PA) は API だけが出すので、ここでは数えない
+    kinds = [kind for kind, _ in stats_warning_items("b0", model)]
+    assert ("PA_SUM_MISMATCH" in kinds) == case["warning"]
 
 
 @pytest.mark.parametrize("preset_path", sorted(PRESET_DIR.rglob("*.json")), ids=lambda p: p.name)
