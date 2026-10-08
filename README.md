@@ -81,6 +81,29 @@ mypy app         # 型チェック
 
 2026-10-06 の実行で、`backend-ci` は Python 3.12・3.13 の両方で ruff・mypy・pytest（全件）が成功し、`preset-validation` も成功しました。
 
+## フロントエンド（開発中）
+
+React + TypeScript + Vite で、`frontend/` に置いています。現在は骨組みのみで、画面の機能は実装中です。
+
+動作確認したバージョン：Node.js 24.19.0 / npm 11.17.0（Windows 11。`frontend/.nvmrc` に記録）。これ以外のバージョン・OSでの動作は未確認です。
+
+```bash
+cd frontend
+npm ci             # 依存関係のインストール（package-lock.json のとおりに入る）
+npm run dev        # 開発サーバー（http://localhost:5173）
+npm run typecheck  # 型チェック
+npm run lint       # lint
+npm run test       # テスト
+npm run build      # ビルド（frontend/dist/ に出力）
+```
+
+- 画面は API を相対パス `/api/...` で呼びます。開発サーバーが `/api` をバックエンド（`http://127.0.0.1:8000`）に転送するので、先に上記の手順でバックエンドを起動しておいてください
+- ESLint は 9 系を使っています。アクセシビリティ検査用の `eslint-plugin-jsx-a11y` が ESLint 10 に未対応のためで、対応後に ESLint 10 へ上げる予定です
+
+### 開発環境についての注意（作者の環境）
+
+このリポジトリの作業フォルダは Windows と Mac の間で OneDrive により同期しており、Mac は git の操作にのみ使っています。`frontend/node_modules` は git の管理対象外（`.gitignore`）ですが、OneDrive では同期されます。同期された `node_modules` には Windows 用のバイナリが含まれうるため、Mac で npm を実行する場合は、先に `frontend/node_modules` を削除してから `npm ci` をやり直してください。通常どおり git で取得した環境では、この注意は関係ありません。
+
 ## 開発者向け：プリセットの追加方法
 
 1. `schemas/batter_preset.schema.json` の形式に従い、`data/presets/mlb/<season>/<id>.json` を作成する

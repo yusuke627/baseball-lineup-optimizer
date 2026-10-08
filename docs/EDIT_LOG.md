@@ -180,6 +180,14 @@
 - 依頼内容: フロントエンド実装の前提として、バックエンドの入力検証を強化する（PA は1以上必須）。試合数は143・162の両方を1回の実行で返し、PA と内訳の不一致は警告として返す（フロントエンド計画の段階0）
 - 変更ファイル: backend/app/schemas/batter.py, backend/app/main.py, backend/app/core/metrics.py, backend/tests/test_validation.py, schemas/batter_stats_validation_cases.json, docs/DESIGN.md, README.md, docs/EDIT_LOG.md
 - 変更理由: 従来は各成績が0以上であることしか検証しておらず、矛盾した成績（H > AB、2B+3B+HR > H 等）で負の確率になる・PAと全成績が0で500エラーになる・input_order の重複で500エラーになる・n_games に負の値や極端な値が通る、という問題があったため。エラー（422）: 各成績0〜20000、PA≥1、AB≤PA、H≤AB、2B+3B+HR≤H、SO+GIDP≤AB−H、n_games 1〜200、打者IDは1〜64文字。エラー（400）: input_order の重複。警告: AB+BB+HBP+SF+SH≠PA（計算は行い warnings で返す）。GET /presets の league はフォルダ名に使うため英小文字のみ許可（`../..` 等で想定外のフォルダを読みにいけた問題への対処）。レスポンスに totals_by_games（143・162試合）と warnings を追加（既存フィールドは変更なし）。**PA=0 の自動計算（内訳の合計で代用）は廃止**した。入力フォームで PA を必須にする方針と揃えるためと、全項目0で500エラーになっていたため
+- コミット: 068b85c
+- 戻し方: git revert 068b85c
+- 注意点: APIの互換性に影響する変更（PA=0 を受け付けなくなる、矛盾した成績が422になる）。有効な入力に対する計算結果は変わらない（baseline.py: 案A 16パターンの基準値との最大差 1.776e-15＝高速化時と同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。実プリセット2件はすべてのルールをエラー・警告なしで通ることをテストで確認。上限の20000と200は統計的根拠ではなく安全上の上限。入力打順の評価と最適打順の探索は同じエンドポイントの1回の呼び出しのため、warnings はそのレスポンスに1つだけある
+
+## 2026-10-07 18:46 フロントエンドの骨組みを追加（React + TypeScript + Vite）
+- 依頼内容: フロントエンドを frontend/ に作る。開発時は Vite のプロキシ経由で FastAPI を呼び、API は相対パスで呼ぶ（フロントエンド計画の段階1：骨組み）
+- 変更ファイル: frontend/package.json, frontend/package-lock.json, frontend/.nvmrc, frontend/tsconfig.json, frontend/vite.config.ts, frontend/eslint.config.js, frontend/index.html, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/App.test.tsx, frontend/src/index.css, frontend/src/test/setup.ts, README.md, docs/EDIT_LOG.md
+- 変更理由: 画面の土台（見出しのみ）と、型チェック・lint・テスト・ビルドの仕組みを先に用意するため。API は相対パス /api/... で呼び、開発時は Vite のプロキシが /api を FastAPI(127.0.0.1:8000) に転送する（将来、FastAPI がビルド済みフロントも配信する単一サービス構成に移行しやすくするため。バックエンドのパスは今回変更していない）。依存: react・react-dom 19.3、vite 8.3、@vitejs/plugin-react 6.1、vitest 5.0、jsdom 30.1、Testing Library（react 16.3・dom 10.4・user-event 14.6・jest-dom 7.0）、eslint 9.39（@eslint/js・typescript-eslint 8.71・react-hooks 7.1・jsx-a11y 6.10・globals）、typescript 6.0.3、型定義（@types/react・@types/react-dom・@types/node）。バージョンは package-lock.json で固定
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: APIの互換性に影響する変更（PA=0 を受け付けなくなる、矛盾した成績が422になる）。有効な入力に対する計算結果は変わらない（baseline.py: 案A 16パターンの基準値との最大差 1.776e-15＝高速化時と同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。実プリセット2件はすべてのルールをエラー・警告なしで通ることをテストで確認。上限の20000と200は統計的根拠ではなく安全上の上限。入力打順の評価と最適打順の探索は同じエンドポイントの1回の呼び出しのため、warnings はそのレスポンスに1つだけある
+- 注意点: Node.js 24.19.0 / npm 11.17.0（Windows 11）で、frontend/ での npm ci・typecheck・lint・test（1件）・build・開発サーバーの起動、および /api/health・/api/presets がプロキシ経由でバックエンドに届くことを確認。ほかのバージョン・OSは未確認。TypeScript は typescript-eslint の対応範囲（6.1未満）に合わせて 7.0 ではなく 6.0 系、ESLint は jsx-a11y の対応範囲（9まで）に合わせて 10 ではなく 9 系を使用（ESLint 9 はインストール時にサポート終了の警告が出る。jsx-a11y の対応後に 10 へ上げる）。node_modules と dist は .gitignore 済み（既存の設定で対象になっていることを確認）
