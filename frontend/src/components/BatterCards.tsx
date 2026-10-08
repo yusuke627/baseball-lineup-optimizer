@@ -1,9 +1,24 @@
-import { memo } from 'react'
+import { memo, useCallback, useState } from 'react'
 
 import type { StatKey } from '../api/types'
 import type { NameIssue } from '../names'
-import { displayName, nameFieldId, statFieldId, type BatterSlot } from '../state/lineup'
+import {
+  displayName,
+  hasAnyStat,
+  nameFieldId,
+  statFieldId,
+  type BatterSlot,
+} from '../state/lineup'
 import { parseAndValidate, STAT_LABELS, type ValidationIssue } from '../validation'
+import CopyControls, { type PendingCopy } from './CopyControls'
+
+/** コピーの操作の状態。確認と通知は、操作したカード (cardId) の中に出す */
+interface CopyState {
+  pending?: { cardId: string; fromId: string; toIds: string[]; overwrittenNames: string[] }
+  notice?: { cardId: string; text: string }
+}
+
+const NO_COPY: CopyState = {}
 
 interface BatterCardsProps {
   slots: BatterSlot[]
@@ -16,6 +31,8 @@ interface BatterCardsProps {
   onBlur: (slotId: string, key: StatKey) => void
   onNameChange: (slotId: string, value: string) => void
   onNameBlur: (slotId: string) => void
+  /** fromId の打者の成績を、toIds の打者に写す */
+  onCopy: (fromId: string, toIds: string[]) => void
 }
 
 /** カードの中での項目のまとまり。上から順に並べると、API の項目の順 (STAT_KEYS) と同じになる */
@@ -62,27 +79,117 @@ export default function BatterCards({
   onBlur,
   onNameChange,
   onNameBlur,
+  onCopy,
 }: BatterCardsProps) {
+  const [copy, setCopy] = useState<CopyState>({})
+
+  // 入力を変えたら、前のコピーの通知と確認は消す。
+  // カードの中身は memo しているので、渡す関数は作り直さない (useCallback)
+  const handleChange = useCallback(
+    (slotId: string, key: StatKey, value: string) => {
+      setCopy(NO_COPY)
+      onChange(slotId, key, value)
+    },
+    [onChange],
+  )
+  const handleNameChange = useCallback(
+    (slotId: string, value: string) => {
+      setCopy(NO_COPY)
+      onNameChange(slotId, value)
+    },
+    [onNameChange],
+  )
+
+  const nameOf = (slotId: string) => {
+    const slot = slots.find((candidate) => candidate.id === slotId)
+    return slot ? displayName(slot) : slotId
+  }
+
+  function runCopy(fromId: string, toIds: string[], cardId: string) {
+    onCopy(fromId, toIds)
+    const text =
+      toIds.length === 1
+        ? `${nameOf(fromId)} の成績を ${nameOf(toIds[0])} にコピーしました。`
+        : `${nameOf(fromId)} の成績を、ほかの${toIds.length}人にコピーしました。`
+    setCopy({ notice: { cardId, text } })
+  }
+
+  /** コピーを始める。コピー先に入力済みの成績があれば、先にカードの中で確認する */
+  function requestCopy(fromId: string, toIds: string[], cardId: string) {
+    const overwritten = slots.filter((slot) => toIds.includes(slot.id) && hasAnyStat(slot))
+    if (overwritten.length === 0) {
+      runCopy(fromId, toIds, cardId)
+      return
+    }
+    setCopy({ pending: { cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) } })
+  }
+
+  function confirmCopy() {
+    if (copy.pending) {
+      runCopy(copy.pending.fromId, copy.pending.toIds, copy.pending.cardId)
+    }
+  }
+
+  function cancelCopy() {
+    if (copy.pending) {
+      setCopy({
+        notice: { cardId: copy.pending.cardId, text: 'コピーをやめました。成績は変えていません。' },
+      })
+    }
+  }
+
+  function pendingFor(slotId: string): PendingCopy | undefined {
+    const pending = copy.pending
+    if (pending === undefined || pending.cardId !== slotId) {
+      return undefined
+    }
+    // このカードがコピー先なら「他の打者からコピー」、コピー元なら「ほかの全員にコピー」の確認
+    return pending.fromId === slotId
+      ? { kind: 'toAll', overwrittenNames: pending.overwrittenNames }
+      : { kind: 'from', fromName: nameOf(pending.fromId) }
+  }
+
   return (
     <div className="batter-cards">
       {slots.map((slot) => (
-        <BatterCard
-          key={slot.id}
-          slot={slot}
-          nameError={nameIssues[slot.id]?.message}
-          showAllErrors={showAllErrors}
-          disabled={disabled}
-          onChange={onChange}
-          onBlur={onBlur}
-          onNameChange={onNameChange}
-          onNameBlur={onNameBlur}
-        />
+        <section className="batter-card" aria-label={displayName(slot)} key={slot.id}>
+          <BatterFields
+            slot={slot}
+            nameError={nameIssues[slot.id]?.message}
+            showAllErrors={showAllErrors}
+            disabled={disabled}
+            onChange={handleChange}
+            onBlur={onBlur}
+            onNameChange={handleNameChange}
+            onNameBlur={onNameBlur}
+          />
+          <CopyControls
+            slotId={slot.id}
+            name={displayName(slot)}
+            others={slots
+              .filter((other) => other.id !== slot.id)
+              .map((other) => ({ id: other.id, name: displayName(other) }))}
+            pending={pendingFor(slot.id)}
+            notice={copy.notice?.cardId === slot.id ? copy.notice.text : ''}
+            disabled={disabled}
+            onCopyFrom={(fromId) => requestCopy(fromId, [slot.id], slot.id)}
+            onCopyToAll={() =>
+              requestCopy(
+                slot.id,
+                slots.filter((other) => other.id !== slot.id).map((other) => other.id),
+                slot.id,
+              )
+            }
+            onConfirm={confirmCopy}
+            onCancel={cancelCopy}
+          />
+        </section>
       ))}
     </div>
   )
 }
 
-interface BatterCardProps {
+interface BatterFieldsProps {
   slot: BatterSlot
   nameError: string | undefined
   showAllErrors: boolean
@@ -93,9 +200,9 @@ interface BatterCardProps {
   onNameBlur: (slotId: string) => void
 }
 
-// 入力欄が 9人×14項目あるため、変更のあった打者のカードだけを描き直す (memo)。
-// そのために、検証もこのカードの中で行う。
-const BatterCard = memo(function BatterCard({
+// 入力欄が 9人×14項目あるため、変更のあった打者の入力欄だけを描き直す (memo)。
+// そのために、検証もこの中で行う。
+const BatterFields = memo(function BatterFields({
   slot,
   nameError,
   showAllErrors,
@@ -104,7 +211,7 @@ const BatterCard = memo(function BatterCard({
   onBlur,
   onNameChange,
   onNameBlur,
-}: BatterCardProps) {
+}: BatterFieldsProps) {
   const name = displayName(slot)
   const { result } = parseAndValidate(slot.raw)
   const errors = visibleErrors(slot, result.errors, showAllErrors)
@@ -113,13 +220,12 @@ const BatterCard = memo(function BatterCard({
   const missingKeys = errors.filter((issue) => issue.rule === 'REQUIRED').map((issue) => issue.fields[0])
   const otherErrors = errors.filter((issue) => issue.rule !== 'REQUIRED')
   const invalidKeys = new Set(errors.flatMap((issue) => issue.fields))
-  const hasErrors = nameError !== undefined || errors.length > 0
-  const hasMessages = hasErrors || warnings.length > 0
+  const hasMessages = nameError !== undefined || errors.length > 0 || warnings.length > 0
   const messagesId = hasMessages ? `messages-${slot.id}` : undefined
   const shHintId = `hint-${slot.id}-SH`
 
   return (
-    <section className={hasErrors ? 'batter-card batter-card-error' : 'batter-card'} aria-label={name}>
+    <>
       <div className="field name-field">
         <label htmlFor={nameFieldId(slot.id)}>表示名</label>
         <input
@@ -202,6 +308,6 @@ const BatterCard = memo(function BatterCard({
           ))}
         </ul>
       )}
-    </section>
+    </>
   )
 })

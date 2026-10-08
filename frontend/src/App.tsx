@@ -69,6 +69,11 @@ export default function App() {
     dispatch({ type: 'commitName', slotId })
   }, [])
 
+  function handleCopy(fromId: string, toIds: string[]) {
+    dispatch({ type: 'copyStats', fromId, toIds })
+    clearRun()
+  }
+
   async function handleRun() {
     setShowAllErrors(true)
 
@@ -127,7 +132,7 @@ export default function App() {
           <span className="step-number">1</span>成績の入力
         </h2>
         <p>
-          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（20文字まで）。
+          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（20文字まで）。入力した成績は、ほかの打者にコピーできます。
         </p>
         <BatterCards
           slots={lineup.slots}
@@ -138,6 +143,7 @@ export default function App() {
           onBlur={handleBlur}
           onNameChange={handleNameChange}
           onNameBlur={handleNameBlur}
+          onCopy={handleCopy}
         />
       </section>
 

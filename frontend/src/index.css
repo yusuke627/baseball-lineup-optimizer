@@ -133,8 +133,71 @@ p {
   background: var(--color-surface);
 }
 
-.batter-card-error {
+/* エラーのある入力欄を含むカードは、枠の色を変える */
+.batter-card:has([aria-invalid='true']) {
   border-color: var(--color-error);
+}
+
+/* 成績のコピーの操作。入力欄と区別するため、カードの下端に線で区切って置く */
+.copy-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+  font-size: 0.9rem;
+}
+
+.copy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.copy-source select {
+  font: inherit;
+  max-width: 12em;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.copy-confirm {
+  padding: var(--space-2) var(--space-3);
+  border-radius: 4px;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.copy-confirm p {
+  margin-bottom: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.copy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.copy-controls button {
+  padding: var(--space-1) var(--space-3);
+}
+
+.copy-notice {
+  margin: 0;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+/* 通知が無いときは、空の行の分の高さを取らない (読み上げのために要素は残す) */
+.copy-notice:empty {
+  display: none;
 }
 
 .field {
@@ -277,6 +340,19 @@ button:disabled {
   border-color: var(--color-disabled);
   color: var(--color-on-disabled);
   cursor: not-allowed;
+}
+
+/* 主でない操作のボタン (コピーなど)。地を塗らず、枠と文字をアクセント色にする */
+.button-secondary {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font-weight: normal;
+}
+
+.button-secondary:disabled {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+  color: var(--color-muted);
 }
 
 /* 文中に置く、リンクのように見せるボタン (エラーの要約から入力欄へ移動する) */

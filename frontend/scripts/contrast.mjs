@@ -19,7 +19,7 @@ const PAIRS = [
   ['muted', 'surface', TEXT, '補足の文字・項目名（カード）'],
   ['on-accent', 'accent', TEXT, 'ボタン・ステップ番号の文字'],
   ['on-disabled', 'disabled', TEXT, '押せないボタンの文字'],
-  ['error', 'surface', TEXT, 'エラーの文字（カード）'],
+  ['accent', 'surface', TEXT, '主でないボタン（コピーなど）の文字'],  ['error', 'surface', TEXT, 'エラーの文字（カード）'],
   ['error', 'error-bg', TEXT, 'エラーの文字（エラーの地）'],
   ['warning', 'warning-bg', TEXT, '注意の文字（注意の地）'],
   ['border', 'surface', COMPONENT, '入力欄の枠線'],

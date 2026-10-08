@@ -30,10 +30,16 @@ export type LineupAction =
   | { type: 'touchStat'; slotId: string; key: StatKey }
   | { type: 'setName'; slotId: string; value: string }
   | { type: 'commitName'; slotId: string }
+  | { type: 'copyStats'; fromId: string; toIds: string[] }
 
 /** 画面と API で使う表示名。前後の空白を除き、空欄なら既定名にする */
 export function displayName(slot: Pick<BatterSlot, 'name' | 'defaultName'>): string {
   return slot.name.trim() || slot.defaultName
+}
+
+/** 成績の欄に、1つでも入力があるか (空白だけの欄は入力なしとして扱う) */
+export function hasAnyStat(slot: Pick<BatterSlot, 'raw'>): boolean {
+  return Object.values(slot.raw).some((text) => text.trim() !== '')
 }
 
 /** 入力欄の要素ID。エラーのある欄へフォーカスを移すときに使う */
@@ -87,5 +93,20 @@ export function lineupReducer(state: LineupState, action: LineupAction): LineupS
         const name = displayName(slot)
         return name === slot.name ? slot : { ...slot, name }
       })
+    case 'copyStats': {
+      // 写すのは成績の入力内容だけ (空欄は空欄のまま写す)。表示名と内部IDは変えない
+      const source = state.slots.find((slot) => slot.id === action.fromId)
+      if (source === undefined) {
+        return state
+      }
+      return {
+        ...state,
+        slots: state.slots.map((slot) =>
+          action.toIds.includes(slot.id) && slot.id !== source.id
+            ? { ...slot, raw: { ...source.raw }, touched: {} }
+            : slot,
+        ),
+      }
+    }
   }
 }
