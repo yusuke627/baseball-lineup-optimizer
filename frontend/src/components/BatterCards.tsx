@@ -116,6 +116,7 @@ const BatterCard = memo(function BatterCard({
   const hasErrors = nameError !== undefined || errors.length > 0
   const hasMessages = hasErrors || warnings.length > 0
   const messagesId = hasMessages ? `messages-${slot.id}` : undefined
+  const shHintId = `hint-${slot.id}-SH`
 
   return (
     <section className={hasErrors ? 'batter-card batter-card-error' : 'batter-card'} aria-label={name}>
@@ -144,7 +145,6 @@ const BatterCard = memo(function BatterCard({
               <label htmlFor={statFieldId(slot.id, key)}>
                 {STAT_LABELS[key]}
                 <span className="stat-key">{key}</span>
-                {key === 'SH' && <span className="stat-hint">空欄可</span>}
               </label>
               <input
                 type="text"
@@ -155,12 +155,20 @@ const BatterCard = memo(function BatterCard({
                 // 9人分の同じ項目を区別できるよう、読み上げ用の名前には打者の表示名を入れる
                 aria-label={`${name} ${statLabel(key)}`}
                 aria-invalid={invalidKeys.has(key) || undefined}
-                aria-describedby={messagesId}
+                aria-describedby={
+                  key === 'SH' ? [shHintId, messagesId].filter(Boolean).join(' ') : messagesId
+                }
                 value={slot.raw[key]}
                 disabled={disabled}
                 onChange={(event) => onChange(slot.id, key, event.target.value)}
                 onBlur={() => onBlur(slot.id, key)}
               />
+              {/* 補足は項目名の横ではなく入力欄の下に置く (項目名と入力欄の高さを、ほかの項目とそろえるため) */}
+              {key === 'SH' && (
+                <span id={shHintId} className="field-hint">
+                  空欄可
+                </span>
+              )}
             </div>
           ))}
         </fieldset>

@@ -89,6 +89,22 @@ describe('入力フォーム', () => {
     expect(within(card).getByRole('group', { name: '安打' })).toBeInTheDocument()
   })
 
+  test('犠打の「空欄可」は項目名に入れず、入力欄の補足として関連づける', () => {
+    render(<App />)
+    const card = screen.getByRole('region', { name: '打者A' })
+    // 項目名はどの項目も「日本語名 + 記号」だけにする (補足を入れると折り返して、その欄だけ下にずれる)
+    const labels = [...card.querySelectorAll('.stat-group label')].map((label) => label.textContent)
+    expect(labels).toContain('犠打SH')
+    expect(labels.every((text) => !text?.includes('空欄可'))).toBe(true)
+
+    expect(input('打者A', 'SH')).toHaveAccessibleDescription('空欄可')
+    expect(input('打者A', 'SF')).not.toHaveAccessibleDescription()
+
+    // エラーが出ているときは、補足とエラーの文の両方を関連づける
+    fillSlot('打者A', { AB: 100, H: 101 })
+    expect(input('打者A', 'SH')).toHaveAccessibleDescription(/^空欄可 .*安打\(H\)が打数\(AB\)を超えています。/)
+  })
+
   test('打順の欄には、表示名が入力の順に並ぶ', () => {
     render(<App />)
     const order = screen.getByRole('region', { name: '2打順' })
