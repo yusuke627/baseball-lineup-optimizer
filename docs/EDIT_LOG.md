@@ -191,3 +191,11 @@
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
 - 注意点: Node.js 24.19.0 / npm 11.17.0（Windows 11）で、frontend/ での npm ci・typecheck・lint・test（1件）・build・開発サーバーの起動、および /api/health・/api/presets がプロキシ経由でバックエンドに届くことを確認。ほかのバージョン・OSは未確認。TypeScript は typescript-eslint の対応範囲（6.1未満）に合わせて 7.0 ではなく 6.0 系、ESLint は jsx-a11y の対応範囲（9まで）に合わせて 10 ではなく 9 系を使用（ESLint 9 はインストール時にサポート終了の警告が出る。jsx-a11y の対応後に 10 へ上げる）。node_modules と dist は .gitignore 済み（既存の設定で対象になっていることを確認）
+
+## 2026-10-08 15:57 フロントエンドにAPI連携と手入力フォームを追加
+- 依頼内容: API の呼び出しを型付きのクライアントに集約し、9人分の成績の手入力フォームと入力検証を実装する。API の検証エラーは日本語に置き換え、warnings はそのまま表示する（フロントエンド計画の段階2）
+- 変更ファイル: frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/api/client.test.ts, frontend/src/validation.ts, frontend/src/validation.test.ts, frontend/src/state/lineup.ts, frontend/src/components/StatsTable.tsx, frontend/src/components/ErrorBanner.tsx, frontend/src/components/ResultSummary.tsx, frontend/src/App.tsx, frontend/src/App.test.tsx, frontend/src/index.css, README.md, docs/EDIT_LOG.md
+- 変更理由: API の型とクライアント（エラーを 入力・サーバー・通信・キャンセル の4種類に分類し日本語メッセージに置き換える）を1か所に集約。入力検証はバックエンドと同じルールで実装し、共通の入力例 schemas/batter_stats_validation_cases.json の15例でバックエンドと同じ結果になることをテストで確認。成績の入力は9人×14項目の表とし、項目間の矛盾は入力した時点で、未入力はその欄を離れた後（または実行後）に表示。PA と内訳の不一致は注意として表示し、実行は妨げない。計算の実行・キャンセル（AbortController）と、API が返した値（1試合あたりの期待得点・打順・非効率%）および warnings（返ってきた文字列のまま）の表示を追加。入力を変えたら前の結果は消す。打者IDは枠ごとに固定の「打者A」〜「打者I」（打順の番号と混同しないため）
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 画面に表示する数値はすべて API が返した値で、フロントでは桁をそろえるだけ（確率・期待得点の計算はしていない）。キャンセルは画面側の通信を止めるだけで、サーバー側で始まった計算は最後まで実行されることがある（メッセージにも明記）。入力欄が126個あるため、変更した打者の行だけを描き直すようにした。開発サーバーのプロキシ経由で実際のバックエンドに対し、正常な入力で200（値・totals_by_games・warnings を取得）、矛盾した成績で422になることを確認。ブラウザでの見た目と操作は未確認（自動テストと通信の確認のみ）。プリセット選択・並べ替え・143/162試合の切り替え・選手名の表示は未実装（後の段階）。作者の環境では OneDrive の同期のため、段階の区切りごとに frontend/node_modules を削除してからコミットする運用にした（README に記載）

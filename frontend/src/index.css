@@ -26,3 +26,133 @@ main {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+h2 {
+  margin-top: 32px;
+}
+
+/* 成績の入力表。列が多いので、狭い画面では表の中だけ横にスクロールする */
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+caption {
+  text-align: left;
+  color: var(--color-muted);
+  padding-bottom: 8px;
+}
+
+th,
+td {
+  border: 1px solid var(--color-border);
+  padding: 4px 6px;
+}
+
+.stats-table th[scope='col'] {
+  font-weight: normal;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stats-table th[scope='row'] {
+  white-space: nowrap;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.stat-key {
+  display: block;
+  font-weight: bold;
+}
+
+.stat-input {
+  width: 4.5em;
+  font: inherit;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  text-align: right;
+}
+
+.stat-input[aria-invalid='true'] {
+  border: 2px solid var(--color-error);
+}
+
+.messages-row td {
+  border-top: none;
+}
+
+.messages {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.message-error {
+  color: var(--color-error);
+}
+
+.message-warning {
+  background: var(--color-warning-bg);
+}
+
+.message-kind {
+  font-weight: bold;
+}
+
+.run-controls {
+  display: flex;
+  gap: 12px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  background: var(--color-accent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #6b6b6b;
+  border-color: #6b6b6b;
+  cursor: not-allowed;
+}
+
+.banner {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.banner-error {
+  border: 2px solid var(--color-error);
+  color: var(--color-error);
+}
+
+.banner-warning {
+  background: var(--color-warning-bg);
+}
+
+.banner ul {
+  margin: 8px 0 0;
+  padding-left: 1.2em;
+}
+
+.note {
+  color: var(--color-muted);
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

@@ -83,7 +83,7 @@ mypy app         # 型チェック
 
 ## フロントエンド（開発中）
 
-React + TypeScript + Vite で、`frontend/` に置いています。現在は骨組みのみで、画面の機能は実装中です。
+React + TypeScript + Vite で、`frontend/` に置いています。現在は、9人分の成績の手入力（入力検証つき）と、計算の実行・キャンセル、1試合あたりの期待得点と非効率%の表示までを実装しています。プリセット選択、打順の並べ替え、143試合・162試合の表示は実装中です。
 
 動作確認したバージョン：Node.js 24.19.0 / npm 11.17.0（Windows 11。`frontend/.nvmrc` に記録）。これ以外のバージョン・OSでの動作は未確認です。
 
@@ -102,7 +102,7 @@ npm run build      # ビルド（frontend/dist/ に出力）
 
 ### 開発環境についての注意（作者の環境）
 
-このリポジトリの作業フォルダは Windows と Mac の間で OneDrive により同期しており、Mac は git の操作にのみ使っています。`frontend/node_modules` は git の管理対象外（`.gitignore`）ですが、OneDrive では同期されます。同期された `node_modules` には Windows 用のバイナリが含まれうるため、Mac で npm を実行する場合は、先に `frontend/node_modules` を削除してから `npm ci` をやり直してください。通常どおり git で取得した環境では、この注意は関係ありません。
+このリポジトリの作業フォルダは Windows と Mac の間で OneDrive により同期しており、Mac は git の操作にのみ使っています。`frontend/node_modules` は git の管理対象外（`.gitignore`）ですが、OneDrive では同期されます。同期された `node_modules` には Windows 用のバイナリが含まれうるため、Mac で npm を実行する場合は、先に `frontend/node_modules` を削除してから `npm ci` をやり直してください。また、`node_modules` はファイル数が多く同期に時間がかかるため、作者は作業の区切りごとに `frontend/node_modules` を削除し、同期が終わってからコミットしています（作業を再開するときは `npm ci` から始めます）。通常どおり git で取得した環境では、これらの注意は関係ありません。
 
 ## 開発者向け：プリセットの追加方法
 
