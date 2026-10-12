@@ -12,8 +12,6 @@ from app.core.metrics import (
     on_base_percentage,
     slugging_percentage,
     steal_probabilities,
-    woba,
-    wrc_plus,
 )
 from app.core.monte_carlo import estimate_expected_runs
 from app.core.optimizer import (
@@ -59,11 +57,16 @@ def get_presets(
     league: Annotated[str, Query(pattern="^[a-z]+$", max_length=20)] = "mlb",
     season: int = 2025,
 ):
-    """プリセット一覧。各プリセットに表示用指標 (summary) をアプリ側で計算して付与する"""
+    """
+    プリセット一覧。各プリセットに表示用指標 (summary) をアプリ側で計算して付与する。
+    wOBA・wRC+ はアプリでは計算しない。プリセットのJSONに公表値 (reference_metrics) があれば
+    そのまま返し、無ければ null を返す。この値はモデルの計算には使わない。
+    """
     presets = list_presets(league=league, season=season)
     for preset in presets:
         stats = _to_basic_stats(BatterCountStats.model_validate(preset["stats"]))
         preset["summary"] = _stats_to_summary(stats)
+        preset.setdefault("reference_metrics", None)
     return presets
 
 
@@ -83,8 +86,6 @@ def _stats_to_summary(stats: BasicStats) -> dict:
         "AVG": round(batting_average(stats), 3),
         "OBP": round(on_base_percentage(stats), 3),
         "SLG": round(slugging_percentage(stats), 3),
-        "wOBA": round(woba(stats), 3),
-        "wRC_plus": round(wrc_plus(stats), 1),
         "SB": stats.SB,
         "CS": stats.CS,
         "SB_pct": round(stats.SB / (stats.SB + stats.CS), 3) if (stats.SB + stats.CS) else None,

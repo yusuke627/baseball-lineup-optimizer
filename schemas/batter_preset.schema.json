@@ -3,6 +3,7 @@
   "title": "BatterPreset",
   "type": "object",
   "required": ["id", "name", "season", "league", "source", "stats"],
+  "additionalProperties": false,
   "properties": {
     "id": { "type": "string", "description": "一意なID(例: shohei_ohtani_2025)" },
     "name": { "type": "string" },
@@ -11,14 +12,19 @@
     "league": { "type": "string", "enum": ["MLB"] },
     "verified": {
       "type": "boolean",
-      "description": "statsが公式ソースで裏取り済みの実データかどうか。falseの場合はプレースホルダー扱い。"
+      "description": "statsが公式ソースで裏取り済みの実データかどうか。falseの場合はプレースホルダー扱い。reference_metrics の確認状況はこの欄では表さない(reference_metrics の説明を参照)。"
     },
     "source": {
       "type": "object",
       "required": ["provider", "url", "retrieved_at"],
       "properties": {
         "provider": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "画面でリンクにするため、https:// で始まるURLだけを許可する。"
+        },
         "retrieved_at": { "type": "string", "format": "date" }
       }
     },
@@ -26,7 +32,7 @@
       "type": "object",
       "required": ["PA", "AB", "H", "2B", "3B", "HR", "BB", "HBP", "SO", "SF", "GIDP", "SB", "CS"],
       "properties": {
-        "PA": { "type": "integer", "minimum": 0 },
+        "PA": { "type": "integer", "minimum": 1 },
         "AB": { "type": "integer", "minimum": 0 },
         "H": { "type": "integer", "minimum": 0 },
         "2B": { "type": "integer", "minimum": 0 },
@@ -40,6 +46,39 @@
         "GIDP": { "type": "integer", "minimum": 0 },
         "SB": { "type": "integer", "minimum": 0 },
         "CS": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "reference_metrics": {
+      "type": "object",
+      "description": "公表されている指標(wOBA・wRC+)の参考値。省略可。モデルの計算には使わず、画面に参考として表示するだけ。アプリはこれらの指標を計算しないので、出典で確認した公表値だけを書く(未確認の値や仮の値は書かない。書いてあること自体が、出典で確認済みという意味になる)。season はプリセットの season と同じ年にする。",
+      "required": ["season", "source", "retrieved_at"],
+      "anyOf": [{ "required": ["wOBA"] }, { "required": ["wRC_plus"] }],
+      "additionalProperties": false,
+      "properties": {
+        "wOBA": { "type": "number", "minimum": 0 },
+        "wRC_plus": { "type": "number", "description": "wRC+" },
+        "season": { "type": "integer", "description": "値の対象シーズン" },
+        "source": {
+          "type": "object",
+          "required": ["provider", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "provider": { "type": "string", "minLength": 1, "description": "出典名" },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://",
+              "description": "値を確認したページ。https:// で始まるURLだけを許可する。"
+            }
+          }
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "値を取得した日(YYYY-MM-DD)"
+        },
+        "note": { "type": "string", "description": "備考" }
       }
     }
   }

@@ -58,7 +58,7 @@ describe('表示名の重複', () => {
   })
 
   test('名前そのものに問題がある打者は、その問題を報告する', () => {
-    const issues = findNameIssues(names('あ'.repeat(21), '打者B'))
+    const issues = findNameIssues(names('あ'.repeat(MAX_DISPLAY_NAME_LENGTH + 1), '打者B'))
     expect(issues.b1.rule).toBe('LENGTH')
     expect(issues.b2).toBeUndefined()
   })

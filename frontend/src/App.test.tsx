@@ -217,13 +217,13 @@ describe('打者の表示名', () => {
     expect(nameInput('打者A')).toHaveFocus()
   })
 
-  test('21文字以上の表示名は入力エラーにする', () => {
+  test('41文字以上の表示名は入力エラーにする', () => {
     render(<App />)
-    fireEvent.change(nameInput('打者A'), { target: { value: 'あ'.repeat(21) } })
-    expect(screen.getByText(/表示名は20文字以内で入力してください。/)).toBeInTheDocument()
+    fireEvent.change(nameInput('打者A'), { target: { value: 'あ'.repeat(41) } })
+    expect(screen.getByText(/表示名は40文字以内で入力してください。/)).toBeInTheDocument()
 
-    fireEvent.change(nameInput('打者A'), { target: { value: 'あ'.repeat(20) } })
-    expect(screen.queryByText(/表示名は20文字以内/)).not.toBeInTheDocument()
+    fireEvent.change(nameInput('打者A'), { target: { value: 'あ'.repeat(40) } })
+    expect(screen.queryByText(/表示名は40文字以内/)).not.toBeInTheDocument()
   })
 
   test('表示名を変えると、前の結果は消える', async () => {

@@ -34,11 +34,23 @@ export interface PresetSummary {
   AVG: number
   OBP: number
   SLG: number
-  wOBA: number
-  wRC_plus: number
   SB: number
   CS: number
   SB_pct: number | null
+}
+
+/**
+ * 公表されている指標の参考値 (プリセットの JSON に書かれた値を API がそのまま返す)。
+ * モデルの計算には使わない。wOBA と wRC+ は、少なくとも一方がある。
+ */
+export interface ReferenceMetrics {
+  wOBA?: number
+  wRC_plus?: number
+  /** 値の対象シーズン */
+  season: number
+  source: { provider: string; url: string }
+  retrieved_at: string
+  note?: string
 }
 
 export interface Preset {
@@ -51,6 +63,8 @@ export interface Preset {
   source: PresetSource
   stats: BatterStats
   summary: PresetSummary
+  /** 参考値。プリセットに無ければ null */
+  reference_metrics: ReferenceMetrics | null
 }
 
 export interface LineupEvaluationRequest {
@@ -58,7 +72,7 @@ export interface LineupEvaluationRequest {
   batters: Record<string, BatterStats>
   input_order: string[]
   n_games?: number
-  /** 打者ID → 表示名 (1〜20文字)。指定すると warnings の文に打者IDではなく表示名が使われる */
+  /** 打者ID → 表示名 (1〜40文字)。指定すると warnings の文に打者IDではなく表示名が使われる */
   display_names?: Record<string, string>
 }
 

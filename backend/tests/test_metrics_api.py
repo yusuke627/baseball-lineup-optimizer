@@ -6,7 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.schemas.batter import LOW_PA_THRESHOLD, BatterCountStats, stats_warning_items
+from app.schemas.batter import (
+    LOW_PA_THRESHOLD,
+    MAX_DISPLAY_NAME_LENGTH,
+    BatterCountStats,
+    stats_warning_items,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 PRESET_DIR = REPO_ROOT / "data" / "presets"
@@ -45,7 +50,7 @@ def test_metrics_follow_standard_definitions():
 
 
 def test_metrics_do_not_include_woba_or_wrc_plus():
-    # wOBA・wRC+ の係数は2025年MLBのもので、手入力の成績には当てはまらないことがあるため返さない
+    # wOBA・wRC+ は、このアプリでは計算しない (DESIGN 3-2)
     m = _metrics({"b1": BASE})["b1"]
     assert set(m) == {"PA", "HR", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "BB_pct", "SO_pct", "warnings"}
 
@@ -115,7 +120,7 @@ def test_metrics_validates_display_names_like_evaluate():
     def post(names: dict[str, str]):
         return client.post("/batters/metrics", json={"batters": batters, "display_names": names})
 
-    assert post({"b1": "あ" * 21, "b2": "B"}).status_code == 422
+    assert post({"b1": "あ" * (MAX_DISPLAY_NAME_LENGTH + 1), "b2": "B"}).status_code == 422
     assert post({"b1": "A"}).status_code == 400
     assert post({"b1": "A", "b2": " A "}).status_code == 400
     assert post({"b1": "A", "b2": "B"}).status_code == 200

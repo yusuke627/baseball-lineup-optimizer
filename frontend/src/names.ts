@@ -2,7 +2,7 @@
 // 両者の一致は、共通の入力例 schemas/display_name_validation_cases.json を使ったテストで確認している。
 
 /** 表示名の最大文字数 (前後の空白を除いたあとの文字数。バックエンドと同じ値) */
-export const MAX_DISPLAY_NAME_LENGTH = 20
+export const MAX_DISPLAY_NAME_LENGTH = 40
 
 export type NameRuleId = 'EMPTY' | 'LENGTH' | 'CONTROL' | 'DUPLICATE'
 

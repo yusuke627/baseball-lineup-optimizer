@@ -166,7 +166,7 @@ def test_evaluate_result_does_not_depend_on_display_names():
     assert with_names["best_order_runs_per_game"] == without["best_order_runs_per_game"]
 
 
-@pytest.mark.parametrize("bad_name", ["", "   ", "あ" * 21, "打者\nA", "打者\tA"])
+@pytest.mark.parametrize("bad_name", ["", "   ", "あ" * (MAX_DISPLAY_NAME_LENGTH + 1), "打者\nA", "打者\tA"])
 def test_evaluate_rejects_invalid_display_name_with_422(bad_name):
     batters = _nine(CASES_FILE["base"])
     names = _names(batters)

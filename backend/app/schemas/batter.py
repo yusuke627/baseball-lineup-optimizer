@@ -21,7 +21,7 @@ TOTALS_GAMES = (143, 162)
 # 本プロジェクトの目安であり、出典・統計的根拠のある値ではない。
 LOW_PA_THRESHOLD = 200
 # 打者の表示名の最大文字数（前後の空白を除いたあとの文字数。画面の表示が崩れないための上限）
-MAX_DISPLAY_NAME_LENGTH = 20
+MAX_DISPLAY_NAME_LENGTH = 40
 
 Stat = Annotated[int, Field(ge=0, le=MAX_STAT_VALUE)]
 BatterId = Annotated[str, StringConstraints(min_length=1, max_length=64)]
