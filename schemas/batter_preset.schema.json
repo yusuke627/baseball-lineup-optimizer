@@ -25,7 +25,12 @@
           "pattern": "^https://",
           "description": "画面でリンクにするため、https:// で始まるURLだけを許可する。"
         },
-        "retrieved_at": { "type": "string", "format": "date" }
+        "retrieved_at": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "成績を取得した日(YYYY-MM-DD)"
+        }
       }
     },
     "stats": {

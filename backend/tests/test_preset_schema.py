@@ -161,6 +161,21 @@ def test_preset_requires_pa_of_at_least_one():
         check_preset(data)
 
 
+@pytest.mark.parametrize("value", ["2026/01/01", "2026-1-1", "20260101", "2026-01-01T00:00:00", " 2026-01-01", ""])
+def test_preset_source_retrieved_at_must_be_yyyy_mm_dd(value):
+    # "format": "date" は jsonschema.validate では検査されないため、pattern で形式を確かめる
+    data = _dummy()
+    data["source"]["retrieved_at"] = value
+    with pytest.raises(jsonschema.ValidationError):
+        check_preset(data)
+
+
+@pytest.mark.parametrize("value", ["2026/01/02", "2026-1-2", "20260102", "2026-01-02 ", ""])
+def test_reference_metrics_retrieved_at_must_be_yyyy_mm_dd(value):
+    with pytest.raises(jsonschema.ValidationError):
+        check_preset(_with_reference(retrieved_at=value))
+
+
 @pytest.mark.parametrize("url", ["http://example.com/", "ftp://example.com/", "javascript:alert(1)"])
 def test_preset_source_url_must_be_https(url):
     data = _dummy()
