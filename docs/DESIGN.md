@@ -180,16 +180,25 @@ data/presets/mlb/2025/
 
 プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV から候補を集計するスクリプト `scripts/build_lahman_presets.py` を用意している。現在は集計して報告する `--dry-run` だけで、プリセットのファイルは作らない。
 
-- 元データ（`Batting.csv`・`People.csv`・`Teams.csv`）は利用者がダウンロードして `data/raw/` に置く。スクリプトはネットワークから取得しない。`data/raw/` は `.gitignore` でリポジトリから除外している
-- ライセンス：利用者の確認では、Lahman 2025 版は CC BY-SA 3.0 Unported（著作権表示は SABR。Sean Lahman 氏の寄贈）である。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（具体的な表示の方法は、ファイルを生成する段階で決める）
+- 元データ（`Batting.csv`・`People.csv`・`Teams.csv`）は利用者がダウンロードして `data/raw/lahman/` に置く。スクリプトはネットワークから取得しない。`data/raw/` は `.gitignore` でリポジトリから除外している。使ったのは「The SABR Lahman Baseball Database 1871-2025」（readme の記載で Release Date: Dec 10, 2025）
+- ライセンス：readme には「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」「This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.」と書かれている（原文のまま）。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（具体的な表示の方法は、ファイルを生成する段階で決める）
+- CSV の形式（2025年版で確認）：`People.csv` と `Teams.csv` は先頭に BOM があり、`Batting.csv` にはない。スクリプトは `utf-8-sig` で読むので、どちらでも列名を正しく読める。列名は `Batting.csv` が playerID, yearID, stint, teamID, lgID, G, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, SO, IBB, HBP, SH, SF, GIDP、`People.csv` に nameFirst・nameLast、`Teams.csv` に yearID・teamID・name がある
 - 集計：`Batting.csv` の対象シーズンの行を、選手（`playerID`）ごとに合算する（同じシーズンに複数の球団に在籍した場合は、在籍ごとの行＝stint を足す）。合算する列は G, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, SO, IBB, HBP, SH, SF, GIDP
-- 空欄の扱い：どれか1つの stint で空欄の列は、合計を「欠損」とする（0 とはみなさない）。プリセットに使う項目が欠損している選手は、候補にしない
-- PA：Lahman には PA の列がないため、`AB + BB + HBP + SF + SH` で計算する。公式の打席数には捕手の打撃妨害による出塁なども含まれるため、計算した値と一致しないことがある。その影響の大きさは**未確認**
-- 対象：計算した PA が 200 以上の選手（投手の打席も記録に含まれるため、打席の少ない選手を除く）
-- 所属球団：stint の番号が最も大きい行の `teamID` を最終所属とし、移籍した選手もシーズン合計を最終所属の球団に置く。在籍した球団の一覧（stint の順。続けて同じ球団が並ぶ場合は1つにまとめ、元の球団に戻った場合はもう一度並べる）も集計する。stint の番号が在籍の順を表すことは、Lahman の readme で**未確認**
+- 空欄の扱い：どれか1つの stint で空欄の列は、合計を「欠損」とする（0 とはみなさない）。プリセットに使う項目が欠損している選手は、候補にしない。2025年の行（1692行）では、合算する17列のどれにも空欄はなかった
+- PA：Lahman には PA の列がないため、`AB + BB + HBP + SF + SH` で計算する。公式の打席数には捕手の打撃妨害による出塁なども含まれるため、計算した値と一致しないことがある。その影響の大きさは**未確認**（既存の検証済みプリセット2件では一致した。下記）
+- 対象：計算した PA が 200 以上の選手（投手の打席も記録に含まれるため、打席の少ない選手を除く）。PA 200 以上の選手に投手が含まれるかは**未確認**（今回使った3つの CSV には守備位置の情報がなく、判別できない。判別には `Appearances.csv`・`Pitching.csv` などが必要）
+- 所属球団：stint の番号が最も大きい行の `teamID` を最終所属とし、移籍した選手もシーズン合計を最終所属の球団に置く。在籍した球団の一覧（stint の順。続けて同じ球団が並ぶ場合は1つにまとめ、元の球団に戻った場合はもう一度並べる）も集計する。readme の BATTING TABLE には「stint          player's stint (order of appearances within a season)」と書かれている（原文のまま）
+- 球団コード：`teamID` は Lahman 独自のコードで、一般的な略号と異なるものがある（2025年の例：New York Yankees は `NYA`、San Diego Padres は `SDN`、Los Angeles Dodgers は `LAN`、Chicago White Sox は `CHA`。`Teams.csv` の `teamIDBR` 列では、それぞれ `NYY`・`SDP`・`LAD`・`CHW`）。2025年の `Teams.csv` には30球団がある
 - 名前は `People.csv` の `nameFirst`・`nameLast`、球団名は `Teams.csv` の `name` を使う
 - API と同じ入力検証（2-1）を各選手に適用し、違反した選手を一覧にする
-- 実データでの試験集計（対象人数、球団別の人数、検証に違反した選手、既存の検証済みプリセット2件との比較）は**未実施**（2026-10-14 時点で、作業環境に元データがなかったため）
+
+**2025年の試験集計の結果**（2026-10-14 に `--dry-run` で測定）
+
+- 2025年の `Batting.csv` の行数は 1692、記録のある選手は 1470人。計算した PA が 200 以上の選手は **348人**（PA の最小 204、最大 732）で、そのうち複数の球団に在籍した選手は **35人**（全員が2球団。同じシーズンに元の球団へ戻った選手はいなかった）
+- 最終所属の球団ごとの人数は、最少 9人（Baltimore Orioles、Cleveland Guardians）、最多 14人（Atlanta Braves、Texas Rangers、Toronto Blue Jays）。30球団すべてに1人以上いる
+- 入力検証（2-1）に違反した選手は 0人
+- 348人のうち、同じ名前（名＋姓）の選手が1組いる（Max Muncy が2人）。名前の最大の長さは19文字（Pete Crow-Armstrong）で、表示名の上限（40文字）に収まる。ASCII 以外の文字を含む名前は9人
+- 既存の検証済みプリセット2件（Aaron Judge 2025、Luis Arraez 2025）と比べると、成績の14項目（計算した PA を含む）はすべて一致した。球団の表記は、プリセットが「New York Yankees (NYY)」「San Diego Padres (SD)」、Lahman から作った表記が「New York Yankees (NYA)」「San Diego Padres (SDN)」で、括弧の中のコードが一致しない
 
 ---
 
