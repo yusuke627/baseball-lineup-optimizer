@@ -1,0 +1,35 @@
+{
+  "id": "woodja03_2025",
+  "name": "James Wood",
+  "team": "Washington Nationals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "WAS",
+    "name": "Washington Nationals",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 689,
+    "AB": 598,
+    "H": 153,
+    "2B": 38,
+    "3B": 0,
+    "HR": 31,
+    "BB": 85,
+    "HBP": 3,
+    "SO": 221,
+    "SF": 3,
+    "SH": 0,
+    "GIDP": 12,
+    "SB": 15,
+    "CS": 7
+  }
+}

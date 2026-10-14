@@ -1,0 +1,35 @@
+{
+  "id": "rookebr01_2025",
+  "name": "Brent Rooker",
+  "team": "Athletics",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ATH",
+    "name": "Athletics",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 698,
+    "AB": 626,
+    "H": 164,
+    "2B": 40,
+    "3B": 3,
+    "HR": 30,
+    "BB": 65,
+    "HBP": 5,
+    "SO": 155,
+    "SF": 2,
+    "SH": 0,
+    "GIDP": 13,
+    "SB": 6,
+    "CS": 1
+  }
+}

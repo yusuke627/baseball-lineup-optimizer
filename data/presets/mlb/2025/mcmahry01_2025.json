@@ -1,0 +1,45 @@
+{
+  "id": "mcmahry01_2025",
+  "name": "Ryan McMahon",
+  "team": "New York Yankees",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "NYA",
+    "name": "New York Yankees",
+    "league": "AL"
+  },
+  "teams_played": [
+    {
+      "code": "COL",
+      "name": "Colorado Rockies"
+    },
+    {
+      "code": "NYA",
+      "name": "New York Yankees"
+    }
+  ],
+  "stats": {
+    "PA": 586,
+    "AB": 509,
+    "H": 109,
+    "2B": 23,
+    "3B": 1,
+    "HR": 20,
+    "BB": 70,
+    "HBP": 4,
+    "SO": 189,
+    "SF": 3,
+    "SH": 0,
+    "GIDP": 7,
+    "SB": 3,
+    "CS": 1
+  }
+}

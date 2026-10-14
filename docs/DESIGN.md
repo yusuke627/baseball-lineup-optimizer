@@ -176,9 +176,9 @@ data/presets/mlb/2025/
 
 **NPBのプリセットについて**：NPBのプリセットは、今は提供しない。また、架空の名前のプリセットは作らない（実在の選手の成績に別の名前を付けたものも、架空の選手の成績も作らない）。いずれも、リスクを避けるため。
 
-### 2-4. Lahman からの生成方針（試験段階）
+### 2-4. Lahman からの生成方針
 
-プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV から候補を集計するスクリプト `scripts/build_lahman_presets.py` を用意している。現在は集計して報告する `--dry-run` だけで、プリセットのファイルは作らない。
+プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV からプリセットを作るスクリプト `scripts/build_lahman_presets.py` を用意している。`--dry-run`（集計して報告するだけ）、`--sample`（固定のシードで選んだ選手の成績を表にするだけ）、`--generate`（プリセットの JSON を作る）の3つの使い方がある。
 
 - 元データ（`Batting.csv`・`People.csv`・`Teams.csv`）は利用者がダウンロードして `data/raw/lahman/` に置く。スクリプトはネットワークから取得しない。`data/raw/` は `.gitignore` でリポジトリから除外している。使ったのは「The SABR Lahman Baseball Database 1871-2025」（readme の記載で Release Date: Dec 10, 2025）
 - ライセンス：readme には「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」「This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.」と書かれている（原文のまま）。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（具体的な表示の方法は、ファイルを生成する段階で決める）
@@ -199,6 +199,22 @@ data/presets/mlb/2025/
 - 入力検証（2-1）に違反した選手は 0人
 - 348人のうち、同じ名前（名＋姓）の選手が1組いる（Max Muncy が2人）。名前の最大の長さは19文字（Pete Crow-Armstrong）で、表示名の上限（40文字）に収まる。ASCII 以外の文字を含む名前は9人
 - 既存の検証済みプリセット2件（Aaron Judge 2025、Luis Arraez 2025）と比べると、成績の14項目（計算した PA を含む）はすべて一致した。球団の表記は、プリセットが「New York Yankees (NYY)」「San Diego Padres (SD)」、Lahman から作った表記が「New York Yankees (NYA)」「San Diego Padres (SDN)」で、括弧の中のコードが一致しない
+
+**生成したプリセット**（2026-10-14 に `--generate` で作成）
+
+- 上の 348人のうち、照合済みのプリセットがある2人（playerID が `judgeaa01`・`arraelu01`）を除く **346件** を `data/presets/mlb/2025/` に作った。既存の2件のファイルは変更していない
+- ファイル名と `id` は `<playerID>_<シーズン>`（例：`meadcu01_2025`）。既存の2件は `<名前>_<シーズン>`（`aaron_judge_2025`）だが、同じ名前の選手（Max Muncy が2人。`muncyma01_2025` と `muncyma02_2025`）がいても衝突しないよう、生成するものは playerID を使う。`name` は名前のままなので、同じ名前のプリセットが2件ある（球団で区別する）
+- `verified` は `false`。`source` は provider が「Lahman Baseball Database (SABR)」、url が Lahman の readme に書かれた Web サイト（https://sabr.org/lahman-database/）、`retrieved_at` は利用者が元データを取得した日（2026-10-14）、`note` に「機械的に生成し、独立した第二出典との照合は未実施」であることと、使用した版（readme の Release Date）を書く
+- `team` と `team_info.name` は `Teams.csv` の `name` のまま、`team_info.code` は `teamID`、`team_info.league` は `lgID`。複数の球団に在籍した35人には `teams_played` を付けた
+- 同じ入力からは同じファイルになる（キーの順番、インデント2、改行は LF、末尾に改行1つ）。生成し直して346件すべてがバイト単位で同じになることを確認した
+- 生成したすべてのファイルが、API と同じ入力検証（2-1）と JSON Schema（`check_preset`）を通る（pytest で確認）
+- 固定のシード（2025）で選んだ10人の成績を、公式の成績と見比べる確認は、利用者が行う。結果はここにはまだ書かない
+
+**件数が増えたときの検証と API の時間**（Windows 11・Python 3.13.14・jsonschema 4.26.0。この PC での測定）
+
+- 合成ファイルでの測定（2026-10-14）：`jsonschema.validate()` を1件ずつ呼ぶと、600件で 3.312秒、1200件で 4.710秒。検証器を1回だけ作って使い回すと、600件で 0.070秒、1200件で 0.135秒。このため、`backend/tests/test_preset_schema.py` は検証器を1回だけ作る形にした
+- 実際の 348件での測定（2026-10-14）：`pytest tests/test_preset_schema.py`（CI の `preset-validation` と同じテスト。404件）は 0.32秒（プロセスの起動を含めて 0.68秒）。全テスト（1218件）は 30.07秒（プリセットが2件のとき、全テスト160件で 27〜30秒程度だった）
+- `GET /presets?league=mlb&season=2025`（348件）の応答は 291,701バイト（約285 KiB）。TestClient（同じプロセス内）で10回呼んだ所要時間は、中央値 31.7ミリ秒（最小 30.6、最大 49.3）。ネットワークを通した時間は未測定
 
 ---
 
@@ -480,4 +496,6 @@ function estimate_season_runs(batter_list, N_trials=100000):
 
 - 一番上の階層と `reference_metrics` は、スキーマにないキーを受け付けない（キーの書き間違いが、無視されずにエラーになるようにするため）
 - `stats.PA` は 1 以上（API の検証と同じ）
+- 任意の `team_info`（球団コード・球団名・リーグ）と `teams_played`（複数の球団に在籍した選手だけ。2件以上、出場した順）がある。`teams_played` があるときは `team_info` も必要で、`teams_played` の最後の球団は `team_info.code` と同じでなければならない（スキーマでは書けないため `check_preset` で検査）
+- `source` には任意の `note`（生成の方法や照合の状況などの補足）を書ける
 - `source.url` と `reference_metrics.source.url` は、`https://` で始まるURLだけを受け付ける（画面でリンクにするため）

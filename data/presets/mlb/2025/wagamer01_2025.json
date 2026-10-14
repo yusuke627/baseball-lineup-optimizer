@@ -1,0 +1,35 @@
+{
+  "id": "wagamer01_2025",
+  "name": "Eric Wagaman",
+  "team": "Miami Marlins",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIA",
+    "name": "Miami Marlins",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 514,
+    "AB": 476,
+    "H": 119,
+    "2B": 28,
+    "3B": 3,
+    "HR": 9,
+    "BB": 32,
+    "HBP": 1,
+    "SO": 100,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 11,
+    "SB": 4,
+    "CS": 1
+  }
+}

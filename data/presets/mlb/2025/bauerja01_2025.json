@@ -1,0 +1,35 @@
+{
+  "id": "bauerja01_2025",
+  "name": "Jake Bauers",
+  "team": "Milwaukee Brewers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIL",
+    "name": "Milwaukee Brewers",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 218,
+    "AB": 183,
+    "H": 43,
+    "2B": 9,
+    "3B": 0,
+    "HR": 7,
+    "BB": 32,
+    "HBP": 2,
+    "SO": 59,
+    "SF": 1,
+    "SH": 0,
+    "GIDP": 1,
+    "SB": 8,
+    "CS": 1
+  }
+}

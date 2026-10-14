@@ -1,0 +1,35 @@
+{
+  "id": "ortizjo06_2025",
+  "name": "Joey Ortiz",
+  "team": "Milwaukee Brewers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIL",
+    "name": "Milwaukee Brewers",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 506,
+    "AB": 470,
+    "H": 108,
+    "2B": 18,
+    "3B": 1,
+    "HR": 7,
+    "BB": 27,
+    "HBP": 3,
+    "SO": 74,
+    "SF": 0,
+    "SH": 6,
+    "GIDP": 10,
+    "SB": 14,
+    "CS": 3
+  }
+}

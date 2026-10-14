@@ -1,0 +1,35 @@
+{
+  "id": "thomaal01_2025",
+  "name": "Alek Thomas",
+  "team": "Arizona Diamondbacks",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ARI",
+    "name": "Arizona Diamondbacks",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 469,
+    "AB": 433,
+    "H": 108,
+    "2B": 19,
+    "3B": 3,
+    "HR": 9,
+    "BB": 21,
+    "HBP": 5,
+    "SO": 122,
+    "SF": 4,
+    "SH": 6,
+    "GIDP": 2,
+    "SB": 7,
+    "CS": 4
+  }
+}

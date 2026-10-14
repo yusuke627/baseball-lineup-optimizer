@@ -1,0 +1,35 @@
+{
+  "id": "jungjo01_2025",
+  "name": "Josh Jung",
+  "team": "Texas Rangers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "TEX",
+    "name": "Texas Rangers",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 511,
+    "AB": 482,
+    "H": 121,
+    "2B": 23,
+    "3B": 1,
+    "HR": 14,
+    "BB": 27,
+    "HBP": 2,
+    "SO": 129,
+    "SF": 0,
+    "SH": 0,
+    "GIDP": 10,
+    "SB": 4,
+    "CS": 1
+  }
+}

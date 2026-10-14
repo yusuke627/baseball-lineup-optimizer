@@ -1,0 +1,35 @@
+{
+  "id": "alonspe01_2025",
+  "name": "Pete Alonso",
+  "team": "New York Mets",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "NYN",
+    "name": "New York Mets",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 709,
+    "AB": 624,
+    "H": 170,
+    "2B": 41,
+    "3B": 1,
+    "HR": 38,
+    "BB": 61,
+    "HBP": 15,
+    "SO": 162,
+    "SF": 9,
+    "SH": 0,
+    "GIDP": 23,
+    "SB": 1,
+    "CS": 2
+  }
+}

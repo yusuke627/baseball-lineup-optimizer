@@ -1,0 +1,45 @@
+{
+  "id": "callal01_2025",
+  "name": "Alex Call",
+  "team": "Los Angeles Dodgers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "LAN",
+    "name": "Los Angeles Dodgers",
+    "league": "NL"
+  },
+  "teams_played": [
+    {
+      "code": "WAS",
+      "name": "Washington Nationals"
+    },
+    {
+      "code": "LAN",
+      "name": "Los Angeles Dodgers"
+    }
+  ],
+  "stats": {
+    "PA": 322,
+    "AB": 270,
+    "H": 72,
+    "2B": 13,
+    "3B": 2,
+    "HR": 5,
+    "BB": 36,
+    "HBP": 6,
+    "SO": 55,
+    "SF": 4,
+    "SH": 6,
+    "GIDP": 6,
+    "SB": 2,
+    "CS": 1
+  }
+}

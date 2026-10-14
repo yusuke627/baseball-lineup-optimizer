@@ -1,0 +1,35 @@
+{
+  "id": "garcima01_2025",
+  "name": "Maikel Garcia",
+  "team": "Kansas City Royals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "KCA",
+    "name": "Kansas City Royals",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 666,
+    "AB": 595,
+    "H": 170,
+    "2B": 39,
+    "3B": 5,
+    "HR": 16,
+    "BB": 62,
+    "HBP": 1,
+    "SO": 84,
+    "SF": 5,
+    "SH": 3,
+    "GIDP": 14,
+    "SB": 23,
+    "CS": 9
+  }
+}

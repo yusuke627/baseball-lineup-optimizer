@@ -1,0 +1,35 @@
+{
+  "id": "winnma01_2025",
+  "name": "Masyn Winn",
+  "team": "St. Louis Cardinals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SLN",
+    "name": "St. Louis Cardinals",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 537,
+    "AB": 491,
+    "H": 124,
+    "2B": 27,
+    "3B": 0,
+    "HR": 9,
+    "BB": 34,
+    "HBP": 8,
+    "SO": 102,
+    "SF": 2,
+    "SH": 2,
+    "GIDP": 11,
+    "SB": 9,
+    "CS": 5
+  }
+}

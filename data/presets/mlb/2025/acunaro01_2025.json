@@ -1,0 +1,35 @@
+{
+  "id": "acunaro01_2025",
+  "name": "Ronald Acuña",
+  "team": "Atlanta Braves",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ATL",
+    "name": "Atlanta Braves",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 412,
+    "AB": 338,
+    "H": 98,
+    "2B": 12,
+    "3B": 1,
+    "HR": 21,
+    "BB": 71,
+    "HBP": 3,
+    "SO": 102,
+    "SF": 0,
+    "SH": 0,
+    "GIDP": 5,
+    "SB": 9,
+    "CS": 1
+  }
+}

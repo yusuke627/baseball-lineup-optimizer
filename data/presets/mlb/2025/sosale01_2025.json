@@ -1,0 +1,35 @@
+{
+  "id": "sosale01_2025",
+  "name": "Lenyn Sosa",
+  "team": "Chicago White Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CHA",
+    "name": "Chicago White Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 544,
+    "AB": 518,
+    "H": 137,
+    "2B": 20,
+    "3B": 1,
+    "HR": 22,
+    "BB": 18,
+    "HBP": 4,
+    "SO": 127,
+    "SF": 3,
+    "SH": 1,
+    "GIDP": 11,
+    "SB": 2,
+    "CS": 1
+  }
+}

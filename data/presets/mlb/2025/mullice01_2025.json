@@ -1,0 +1,45 @@
+{
+  "id": "mullice01_2025",
+  "name": "Cedric Mullins",
+  "team": "New York Mets",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "NYN",
+    "name": "New York Mets",
+    "league": "NL"
+  },
+  "teams_played": [
+    {
+      "code": "BAL",
+      "name": "Baltimore Orioles"
+    },
+    {
+      "code": "NYN",
+      "name": "New York Mets"
+    }
+  ],
+  "stats": {
+    "PA": 498,
+    "AB": 435,
+    "H": 94,
+    "2B": 23,
+    "3B": 1,
+    "HR": 17,
+    "BB": 50,
+    "HBP": 4,
+    "SO": 120,
+    "SF": 6,
+    "SH": 3,
+    "GIDP": 2,
+    "SB": 22,
+    "CS": 4
+  }
+}

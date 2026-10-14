@@ -1,0 +1,35 @@
+{
+  "id": "schuema01_2025",
+  "name": "Max Schuemann",
+  "team": "Athletics",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ATH",
+    "name": "Athletics",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 213,
+    "AB": 183,
+    "H": 36,
+    "2B": 4,
+    "3B": 2,
+    "HR": 2,
+    "BB": 22,
+    "HBP": 4,
+    "SO": 35,
+    "SF": 1,
+    "SH": 3,
+    "GIDP": 6,
+    "SB": 7,
+    "CS": 1
+  }
+}

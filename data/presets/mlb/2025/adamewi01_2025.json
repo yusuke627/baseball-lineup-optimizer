@@ -1,0 +1,35 @@
+{
+  "id": "adamewi01_2025",
+  "name": "Willy Adames",
+  "team": "San Francisco Giants",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SFN",
+    "name": "San Francisco Giants",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 685,
+    "AB": 591,
+    "H": 133,
+    "2B": 22,
+    "3B": 2,
+    "HR": 30,
+    "BB": 80,
+    "HBP": 5,
+    "SO": 179,
+    "SF": 9,
+    "SH": 0,
+    "GIDP": 9,
+    "SB": 12,
+    "CS": 4
+  }
+}

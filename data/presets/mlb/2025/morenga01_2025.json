@@ -1,0 +1,35 @@
+{
+  "id": "morenga01_2025",
+  "name": "Gabriel Moreno",
+  "team": "Arizona Diamondbacks",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ARI",
+    "name": "Arizona Diamondbacks",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 309,
+    "AB": 277,
+    "H": 79,
+    "2B": 12,
+    "3B": 1,
+    "HR": 9,
+    "BB": 29,
+    "HBP": 1,
+    "SO": 53,
+    "SF": 2,
+    "SH": 0,
+    "GIDP": 6,
+    "SB": 2,
+    "CS": 2
+  }
+}

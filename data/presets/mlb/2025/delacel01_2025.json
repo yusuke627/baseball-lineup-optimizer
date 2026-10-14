@@ -1,0 +1,35 @@
+{
+  "id": "delacel01_2025",
+  "name": "Elly De La Cruz",
+  "team": "Cincinnati Reds",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CIN",
+    "name": "Cincinnati Reds",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 699,
+    "AB": 629,
+    "H": 166,
+    "2B": 31,
+    "3B": 7,
+    "HR": 22,
+    "BB": 67,
+    "HBP": 2,
+    "SO": 181,
+    "SF": 1,
+    "SH": 0,
+    "GIDP": 14,
+    "SB": 37,
+    "CS": 8
+  }
+}

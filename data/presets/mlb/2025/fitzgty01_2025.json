@@ -1,0 +1,35 @@
+{
+  "id": "fitzgty01_2025",
+  "name": "Tyler Fitzgerald",
+  "team": "San Francisco Giants",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SFN",
+    "name": "San Francisco Giants",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 243,
+    "AB": 217,
+    "H": 47,
+    "2B": 10,
+    "3B": 1,
+    "HR": 4,
+    "BB": 17,
+    "HBP": 2,
+    "SO": 70,
+    "SF": 1,
+    "SH": 6,
+    "GIDP": 3,
+    "SB": 9,
+    "CS": 4
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "herreiv01_2025",
+  "name": "Ivan Herrera",
+  "team": "St. Louis Cardinals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SLN",
+    "name": "St. Louis Cardinals",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 450,
+    "AB": 388,
+    "H": 110,
+    "2B": 13,
+    "3B": 0,
+    "HR": 19,
+    "BB": 43,
+    "HBP": 15,
+    "SO": 84,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 20,
+    "SB": 8,
+    "CS": 2
+  }
+}

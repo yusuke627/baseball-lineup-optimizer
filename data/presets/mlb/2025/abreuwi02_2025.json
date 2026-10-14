@@ -1,0 +1,35 @@
+{
+  "id": "abreuwi02_2025",
+  "name": "Wilyer Abreu",
+  "team": "Boston Red Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "BOS",
+    "name": "Boston Red Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 417,
+    "AB": 373,
+    "H": 92,
+    "2B": 17,
+    "3B": 0,
+    "HR": 22,
+    "BB": 40,
+    "HBP": 0,
+    "SO": 101,
+    "SF": 3,
+    "SH": 1,
+    "GIDP": 8,
+    "SB": 6,
+    "CS": 3
+  }
+}

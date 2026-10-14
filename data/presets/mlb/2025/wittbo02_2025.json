@@ -1,0 +1,35 @@
+{
+  "id": "wittbo02_2025",
+  "name": "Bobby Witt",
+  "team": "Kansas City Royals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "KCA",
+    "name": "Kansas City Royals",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 687,
+    "AB": 623,
+    "H": 184,
+    "2B": 47,
+    "3B": 6,
+    "HR": 23,
+    "BB": 49,
+    "HBP": 8,
+    "SO": 125,
+    "SF": 7,
+    "SH": 0,
+    "GIDP": 7,
+    "SB": 38,
+    "CS": 9
+  }
+}

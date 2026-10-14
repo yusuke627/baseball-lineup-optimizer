@@ -1,0 +1,45 @@
+{
+  "id": "wadela01_2025",
+  "name": "LaMonte Wade",
+  "team": "Los Angeles Angels of Anaheim",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "LAA",
+    "name": "Los Angeles Angels of Anaheim",
+    "league": "AL"
+  },
+  "teams_played": [
+    {
+      "code": "SFN",
+      "name": "San Francisco Giants"
+    },
+    {
+      "code": "LAA",
+      "name": "Los Angeles Angels of Anaheim"
+    }
+  ],
+  "stats": {
+    "PA": 242,
+    "AB": 209,
+    "H": 35,
+    "2B": 8,
+    "3B": 2,
+    "HR": 2,
+    "BB": 27,
+    "HBP": 3,
+    "SO": 58,
+    "SF": 1,
+    "SH": 2,
+    "GIDP": 2,
+    "SB": 1,
+    "CS": 0
+  }
+}

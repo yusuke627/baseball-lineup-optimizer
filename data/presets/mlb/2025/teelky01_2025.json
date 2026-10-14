@@ -1,0 +1,35 @@
+{
+  "id": "teelky01_2025",
+  "name": "Kyle Teel",
+  "team": "Chicago White Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CHA",
+    "name": "Chicago White Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 297,
+    "AB": 253,
+    "H": 69,
+    "2B": 11,
+    "3B": 0,
+    "HR": 8,
+    "BB": 37,
+    "HBP": 5,
+    "SO": 77,
+    "SF": 1,
+    "SH": 1,
+    "GIDP": 1,
+    "SB": 3,
+    "CS": 1
+  }
+}

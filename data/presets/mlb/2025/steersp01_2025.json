@@ -1,0 +1,35 @@
+{
+  "id": "steersp01_2025",
+  "name": "Spencer Steer",
+  "team": "Cincinnati Reds",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CIN",
+    "name": "Cincinnati Reds",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 568,
+    "AB": 509,
+    "H": 121,
+    "2B": 21,
+    "3B": 2,
+    "HR": 21,
+    "BB": 51,
+    "HBP": 5,
+    "SO": 129,
+    "SF": 2,
+    "SH": 1,
+    "GIDP": 12,
+    "SB": 7,
+    "CS": 1
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "luxga01_2025",
+  "name": "Gavin Lux",
+  "team": "Cincinnati Reds",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CIN",
+    "name": "Cincinnati Reds",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 503,
+    "AB": 446,
+    "H": 120,
+    "2B": 28,
+    "3B": 2,
+    "HR": 5,
+    "BB": 56,
+    "HBP": 0,
+    "SO": 114,
+    "SF": 1,
+    "SH": 0,
+    "GIDP": 3,
+    "SB": 1,
+    "CS": 0
+  }
+}

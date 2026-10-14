@@ -1,0 +1,35 @@
+{
+  "id": "chapmma01_2025",
+  "name": "Matt Chapman",
+  "team": "San Francisco Giants",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SFN",
+    "name": "San Francisco Giants",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 535,
+    "AB": 454,
+    "H": 105,
+    "2B": 23,
+    "3B": 2,
+    "HR": 21,
+    "BB": 71,
+    "HBP": 6,
+    "SO": 126,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 8,
+    "SB": 9,
+    "CS": 4
+  }
+}

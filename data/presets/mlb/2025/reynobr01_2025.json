@@ -1,0 +1,35 @@
+{
+  "id": "reynobr01_2025",
+  "name": "Bryan Reynolds",
+  "team": "Pittsburgh Pirates",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "PIT",
+    "name": "Pittsburgh Pirates",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 654,
+    "AB": 587,
+    "H": 144,
+    "2B": 38,
+    "3B": 3,
+    "HR": 16,
+    "BB": 57,
+    "HBP": 7,
+    "SO": 173,
+    "SF": 3,
+    "SH": 0,
+    "GIDP": 15,
+    "SB": 3,
+    "CS": 2
+  }
+}

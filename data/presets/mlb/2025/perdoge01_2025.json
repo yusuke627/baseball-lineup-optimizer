@@ -1,0 +1,35 @@
+{
+  "id": "perdoge01_2025",
+  "name": "Geraldo Perdomo",
+  "team": "Arizona Diamondbacks",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ARI",
+    "name": "Arizona Diamondbacks",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 720,
+    "AB": 597,
+    "H": 173,
+    "2B": 33,
+    "3B": 5,
+    "HR": 20,
+    "BB": 94,
+    "HBP": 10,
+    "SO": 83,
+    "SF": 11,
+    "SH": 8,
+    "GIDP": 11,
+    "SB": 27,
+    "CS": 6
+  }
+}

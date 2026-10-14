@@ -1,0 +1,35 @@
+{
+  "id": "lewisro02_2025",
+  "name": "Royce Lewis",
+  "team": "Minnesota Twins",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIN",
+    "name": "Minnesota Twins",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 403,
+    "AB": 376,
+    "H": 89,
+    "2B": 18,
+    "3B": 0,
+    "HR": 13,
+    "BB": 25,
+    "HBP": 0,
+    "SO": 80,
+    "SF": 2,
+    "SH": 0,
+    "GIDP": 7,
+    "SB": 12,
+    "CS": 2
+  }
+}

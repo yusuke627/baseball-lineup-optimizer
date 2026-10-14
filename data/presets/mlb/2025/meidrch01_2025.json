@@ -1,0 +1,35 @@
+{
+  "id": "meidrch01_2025",
+  "name": "Chase Meidroth",
+  "team": "Chicago White Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CHA",
+    "name": "Chicago White Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 505,
+    "AB": 450,
+    "H": 114,
+    "2B": 15,
+    "3B": 0,
+    "HR": 5,
+    "BB": 45,
+    "HBP": 6,
+    "SO": 72,
+    "SF": 1,
+    "SH": 3,
+    "GIDP": 14,
+    "SB": 14,
+    "CS": 4
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "housebr01_2025",
+  "name": "Brady House",
+  "team": "Washington Nationals",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "WAS",
+    "name": "Washington Nationals",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 274,
+    "AB": 261,
+    "H": 61,
+    "2B": 11,
+    "3B": 0,
+    "HR": 4,
+    "BB": 8,
+    "HBP": 0,
+    "SO": 78,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 11,
+    "SB": 5,
+    "CS": 3
+  }
+}

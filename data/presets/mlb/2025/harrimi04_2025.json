@@ -1,0 +1,35 @@
+{
+  "id": "harrimi04_2025",
+  "name": "Michael Harris",
+  "team": "Atlanta Braves",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ATL",
+    "name": "Atlanta Braves",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 641,
+    "AB": 611,
+    "H": 152,
+    "2B": 26,
+    "3B": 6,
+    "HR": 20,
+    "BB": 16,
+    "HBP": 3,
+    "SO": 128,
+    "SF": 7,
+    "SH": 4,
+    "GIDP": 7,
+    "SB": 20,
+    "CS": 6
+  }
+}

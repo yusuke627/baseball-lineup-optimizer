@@ -1,0 +1,35 @@
+{
+  "id": "martest01_2025",
+  "name": "Starling Marte",
+  "team": "New York Mets",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "NYN",
+    "name": "New York Mets",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 329,
+    "AB": 293,
+    "H": 79,
+    "2B": 14,
+    "3B": 0,
+    "HR": 9,
+    "BB": 22,
+    "HBP": 9,
+    "SO": 68,
+    "SF": 4,
+    "SH": 1,
+    "GIDP": 7,
+    "SB": 7,
+    "CS": 2
+  }
+}

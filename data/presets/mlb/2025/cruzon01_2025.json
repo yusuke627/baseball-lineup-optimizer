@@ -1,0 +1,35 @@
+{
+  "id": "cruzon01_2025",
+  "name": "Oneil Cruz",
+  "team": "Pittsburgh Pirates",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "PIT",
+    "name": "Pittsburgh Pirates",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 544,
+    "AB": 471,
+    "H": 94,
+    "2B": 18,
+    "3B": 3,
+    "HR": 20,
+    "BB": 64,
+    "HBP": 4,
+    "SO": 174,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 6,
+    "SB": 38,
+    "CS": 5
+  }
+}

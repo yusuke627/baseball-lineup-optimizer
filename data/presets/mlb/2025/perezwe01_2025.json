@@ -1,0 +1,35 @@
+{
+  "id": "perezwe01_2025",
+  "name": "Wenceel Pérez",
+  "team": "Detroit Tigers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "DET",
+    "name": "Detroit Tigers",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 383,
+    "AB": 344,
+    "H": 84,
+    "2B": 17,
+    "3B": 4,
+    "HR": 13,
+    "BB": 31,
+    "HBP": 3,
+    "SO": 87,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 5,
+    "SB": 8,
+    "CS": 3
+  }
+}

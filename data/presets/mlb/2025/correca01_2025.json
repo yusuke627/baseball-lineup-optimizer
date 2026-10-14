@@ -1,0 +1,45 @@
+{
+  "id": "correca01_2025",
+  "name": "Carlos Correa",
+  "team": "Houston Astros",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "HOU",
+    "name": "Houston Astros",
+    "league": "AL"
+  },
+  "teams_played": [
+    {
+      "code": "MIN",
+      "name": "Minnesota Twins"
+    },
+    {
+      "code": "HOU",
+      "name": "Houston Astros"
+    }
+  ],
+  "stats": {
+    "PA": 584,
+    "AB": 537,
+    "H": 148,
+    "2B": 29,
+    "3B": 0,
+    "HR": 13,
+    "BB": 45,
+    "HBP": 1,
+    "SO": 113,
+    "SF": 1,
+    "SH": 0,
+    "GIDP": 19,
+    "SB": 0,
+    "CS": 0
+  }
+}

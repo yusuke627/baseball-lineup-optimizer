@@ -1,0 +1,35 @@
+{
+  "id": "hicksli01_2025",
+  "name": "Liam Hicks",
+  "team": "Miami Marlins",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIA",
+    "name": "Miami Marlins",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 390,
+    "AB": 332,
+    "H": 82,
+    "2B": 13,
+    "3B": 1,
+    "HR": 6,
+    "BB": 43,
+    "HBP": 9,
+    "SO": 56,
+    "SF": 3,
+    "SH": 3,
+    "GIDP": 5,
+    "SB": 2,
+    "CS": 0
+  }
+}

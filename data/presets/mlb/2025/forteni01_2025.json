@@ -1,0 +1,45 @@
+{
+  "id": "forteni01_2025",
+  "name": "Nick Fortes",
+  "team": "Tampa Bay Rays",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "TBA",
+    "name": "Tampa Bay Rays",
+    "league": "AL"
+  },
+  "teams_played": [
+    {
+      "code": "MIA",
+      "name": "Miami Marlins"
+    },
+    {
+      "code": "TBA",
+      "name": "Tampa Bay Rays"
+    }
+  ],
+  "stats": {
+    "PA": 242,
+    "AB": 218,
+    "H": 50,
+    "2B": 9,
+    "3B": 1,
+    "HR": 5,
+    "BB": 14,
+    "HBP": 7,
+    "SO": 47,
+    "SF": 1,
+    "SH": 2,
+    "GIDP": 7,
+    "SB": 1,
+    "CS": 0
+  }
+}

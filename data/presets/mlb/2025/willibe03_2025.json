@@ -1,0 +1,35 @@
+{
+  "id": "willibe03_2025",
+  "name": "Ben Williamson",
+  "team": "Seattle Mariners",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "SEA",
+    "name": "Seattle Mariners",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 295,
+    "AB": 277,
+    "H": 70,
+    "2B": 13,
+    "3B": 0,
+    "HR": 1,
+    "BB": 15,
+    "HBP": 1,
+    "SO": 64,
+    "SF": 0,
+    "SH": 2,
+    "GIDP": 5,
+    "SB": 5,
+    "CS": 1
+  }
+}

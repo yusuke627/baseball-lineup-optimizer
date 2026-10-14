@@ -1,0 +1,35 @@
+{
+  "id": "netoza01_2025",
+  "name": "Zach Neto",
+  "team": "Los Angeles Angels of Anaheim",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "LAA",
+    "name": "Los Angeles Angels of Anaheim",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 554,
+    "AB": 502,
+    "H": 129,
+    "2B": 29,
+    "3B": 1,
+    "HR": 26,
+    "BB": 33,
+    "HBP": 14,
+    "SO": 149,
+    "SF": 3,
+    "SH": 2,
+    "GIDP": 5,
+    "SB": 26,
+    "CS": 9
+  }
+}

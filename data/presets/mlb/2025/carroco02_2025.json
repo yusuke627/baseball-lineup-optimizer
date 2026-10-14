@@ -1,0 +1,35 @@
+{
+  "id": "carroco02_2025",
+  "name": "Corbin Carroll",
+  "team": "Arizona Diamondbacks",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ARI",
+    "name": "Arizona Diamondbacks",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 642,
+    "AB": 564,
+    "H": 146,
+    "2B": 32,
+    "3B": 17,
+    "HR": 31,
+    "BB": 67,
+    "HBP": 7,
+    "SO": 153,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 6,
+    "SB": 32,
+    "CS": 6
+  }
+}

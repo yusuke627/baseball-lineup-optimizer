@@ -1,0 +1,45 @@
+{
+  "id": "janseda01_2025",
+  "name": "Danny Jansen",
+  "team": "Milwaukee Brewers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "MIL",
+    "name": "Milwaukee Brewers",
+    "league": "NL"
+  },
+  "teams_played": [
+    {
+      "code": "TBA",
+      "name": "Tampa Bay Rays"
+    },
+    {
+      "code": "MIL",
+      "name": "Milwaukee Brewers"
+    }
+  ],
+  "stats": {
+    "PA": 337,
+    "AB": 288,
+    "H": 62,
+    "2B": 11,
+    "3B": 0,
+    "HR": 14,
+    "BB": 42,
+    "HBP": 4,
+    "SO": 86,
+    "SF": 2,
+    "SH": 1,
+    "GIDP": 5,
+    "SB": 0,
+    "CS": 0
+  }
+}

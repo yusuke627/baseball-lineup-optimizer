@@ -1,0 +1,35 @@
+{
+  "id": "freemfr01_2025",
+  "name": "Freddie Freeman",
+  "team": "Los Angeles Dodgers",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "LAN",
+    "name": "Los Angeles Dodgers",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 627,
+    "AB": 556,
+    "H": 164,
+    "2B": 39,
+    "3B": 2,
+    "HR": 24,
+    "BB": 60,
+    "HBP": 6,
+    "SO": 128,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 13,
+    "SB": 6,
+    "CS": 2
+  }
+}

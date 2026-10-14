@@ -1,0 +1,35 @@
+{
+  "id": "olsonma02_2025",
+  "name": "Matt Olson",
+  "team": "Atlanta Braves",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "ATL",
+    "name": "Atlanta Braves",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 724,
+    "AB": 624,
+    "H": 170,
+    "2B": 41,
+    "3B": 2,
+    "HR": 29,
+    "BB": 91,
+    "HBP": 4,
+    "SO": 176,
+    "SF": 5,
+    "SH": 0,
+    "GIDP": 14,
+    "SB": 1,
+    "CS": 0
+  }
+}

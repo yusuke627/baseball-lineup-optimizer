@@ -1,0 +1,35 @@
+{
+  "id": "stephty01_2025",
+  "name": "Tyler Stephenson",
+  "team": "Cincinnati Reds",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "CIN",
+    "name": "Cincinnati Reds",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 342,
+    "AB": 299,
+    "H": 69,
+    "2B": 18,
+    "3B": 0,
+    "HR": 13,
+    "BB": 37,
+    "HBP": 2,
+    "SO": 116,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 4,
+    "SB": 0,
+    "CS": 1
+  }
+}

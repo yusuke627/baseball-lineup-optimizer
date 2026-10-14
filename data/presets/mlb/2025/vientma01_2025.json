@@ -1,0 +1,35 @@
+{
+  "id": "vientma01_2025",
+  "name": "Mark Vientos",
+  "team": "New York Mets",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "NYN",
+    "name": "New York Mets",
+    "league": "NL"
+  },
+  "stats": {
+    "PA": 463,
+    "AB": 424,
+    "H": 99,
+    "2B": 21,
+    "3B": 2,
+    "HR": 17,
+    "BB": 30,
+    "HBP": 5,
+    "SO": 115,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 11,
+    "SB": 1,
+    "CS": 0
+  }
+}

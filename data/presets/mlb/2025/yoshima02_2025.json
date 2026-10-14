@@ -1,0 +1,35 @@
+{
+  "id": "yoshima02_2025",
+  "name": "Masataka Yoshida",
+  "team": "Boston Red Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "BOS",
+    "name": "Boston Red Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 205,
+    "AB": 188,
+    "H": 50,
+    "2B": 11,
+    "3B": 0,
+    "HR": 4,
+    "BB": 10,
+    "HBP": 3,
+    "SO": 24,
+    "SF": 4,
+    "SH": 0,
+    "GIDP": 3,
+    "SB": 3,
+    "CS": 0
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "refsnro01_2025",
+  "name": "Rob Refsnyder",
+  "team": "Boston Red Sox",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "BOS",
+    "name": "Boston Red Sox",
+    "league": "AL"
+  },
+  "stats": {
+    "PA": 209,
+    "AB": 182,
+    "H": 49,
+    "2B": 12,
+    "3B": 0,
+    "HR": 9,
+    "BB": 24,
+    "HBP": 1,
+    "SO": 54,
+    "SF": 2,
+    "SH": 0,
+    "GIDP": 6,
+    "SB": 3,
+    "CS": 0
+  }
+}

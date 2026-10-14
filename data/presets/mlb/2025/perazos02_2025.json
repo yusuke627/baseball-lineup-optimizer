@@ -1,0 +1,45 @@
+{
+  "id": "perazos02_2025",
+  "name": "Oswald Peraza",
+  "team": "Los Angeles Angels of Anaheim",
+  "season": 2025,
+  "league": "MLB",
+  "verified": false,
+  "source": {
+    "provider": "Lahman Baseball Database (SABR)",
+    "url": "https://sabr.org/lahman-database/",
+    "retrieved_at": "2026-10-14",
+    "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
+  },
+  "team_info": {
+    "code": "LAA",
+    "name": "Los Angeles Angels of Anaheim",
+    "league": "AL"
+  },
+  "teams_played": [
+    {
+      "code": "NYA",
+      "name": "New York Yankees"
+    },
+    {
+      "code": "LAA",
+      "name": "Los Angeles Angels of Anaheim"
+    }
+  ],
+  "stats": {
+    "PA": 264,
+    "AB": 244,
+    "H": 40,
+    "2B": 6,
+    "3B": 0,
+    "HR": 5,
+    "BB": 17,
+    "HBP": 2,
+    "SO": 80,
+    "SF": 1,
+    "SH": 0,
+    "GIDP": 6,
+    "SB": 9,
+    "CS": 0
+  }
+}
