@@ -33,13 +33,19 @@ MLBの実データ（打撃成績）を用いて、打順9人分の得点期待�
 
 ## データソース
 
-- 打者成績（プリセット）：2025年MLBレギュラーシーズン。Baseball Savant と Baseball-Reference の数値を照合（取得元URL・取得日は各プリセットJSONの `source` 欄に記載）
-- wOBA・wRC+：このアプリでは計算しません。プリセットのJSONに公表値（`reference_metrics`）が書かれている選手だけ、出典を添えて参考値として表示します（モデルの計算には使いません。現在の2件のプリセットには、まだ書かれていません）
+- 打者成績（プリセット）：2025年MLBレギュラーシーズン。2件は Baseball Savant と Baseball-Reference の数値を照合したもの、346件は The SABR Lahman Baseball Database 1871-2025 から生成したもの（取得元URL・取得日は各プリセットJSONの `source` 欄に記載）
+- wOBA・wRC+：このアプリでは計算しません。プリセットのJSONに公表値（`reference_metrics`）が書かれている選手だけ、出典を添えて参考値として表示します（モデルの計算には使いません。現在のプリセットには、まだ書かれていません）
 - 進塁確率（アウト数別）：Baseball Prospectus（2003年MLBデータに基づく研究）※打者データとは年代が異なる暫定値
 
 詳細は [`docs/DESIGN.md`](docs/DESIGN.md) の3章を参照してください。
 
-> **プリセットデータについて**：`data/presets/mlb/2025/` には、2025年MLBレギュラーシーズンの実際の成績を持つ選手2名（Aaron Judge、Luis Arraez）を収録しています。いずれも Baseball Savant と Baseball-Reference の数値を相互に照合した上で採用しており、各JSONで `verified: true` としています（`source` フィールドに取得元・取得日を明記）。長打力型（Judge：本塁打53本）とコンタクト型（Arraez：三振21個・犠打12）で対照的な打撃タイプを選び、打順最適化による違いが分かりやすいようにしています。プリセットの追加方法は本READMEの「プリセットの追加方法」セクションを参照してください。
+> **プリセットデータについて**：`data/presets/mlb/2025/` には、2025年MLBレギュラーシーズンの選手348名を収録しています。
+>
+> - **照合済みの2名**（Aaron Judge、Luis Arraez）：Baseball Savant と Baseball-Reference の数値を相互に照合した上で採用しており、各JSONで `verified: true` としています。長打力型（Judge：本塁打53本）とコンタクト型（Arraez：三振21個・犠打12）で対照的な打撃タイプを選び、打順最適化による違いが分かりやすいようにしています
+> - **Lahman Baseball Database から生成した346名**：打席数（AB+BB+HBP+SF+SH で計算）が200以上の選手を、スクリプト（`scripts/build_lahman_presets.py`）で機械的に生成しました。独立した第二の出典との照合はしていないため、`verified: false` です。打席数は元のデータに無いため計算しており、公式の打席数と一致しない場合があります
+> - **シーズン中に移籍した選手**：そのシーズンの成績を合計して1件にまとめ、最後に出場した球団の選手として置いています。そのため、移籍前の球団の選手としては表示されません。在籍した球団は、各JSONの `teams_played` に出場した順で記録しています
+>
+> プリセットの追加方法は本READMEの「プリセットの追加方法」セクションを参照してください。
 
 ## 考慮していない要素・モデルの限界
 
@@ -135,6 +141,8 @@ wOBA・wRC+ はアプリでは計算しません。表示したい場合は、�
 ## ライセンス
 
 コードはMITライセンスです（[`LICENSE`](LICENSE)参照）。統計データ自体の著作権は出典元に帰属します。
+
+Lahman Baseball Database から生成したプリセットは、元のデータベースのライセンスである Creative Commons Attribution-ShareAlike 3.0 Unported（CC BY-SA 3.0、http://creativecommons.org/licenses/by-sa/3.0/ ）で提供します。元のデータベースの著作権表示（原文）は「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」です。元のデータからの改変の内容（同じシーズンの複数球団の成績の合算、打席数の計算など）は [`data/NOTICE`](data/NOTICE) に書いています。
 
 ## 参考文献
 

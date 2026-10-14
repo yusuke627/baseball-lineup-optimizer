@@ -292,14 +292,38 @@
 - 依頼内容: Lahman 2025 の実データで scripts/build_lahman_presets.py --dry-run を実行し、DESIGN 2-4 の「未実施」「未確認」の記述を、測定した内容に更新する（段階11a）
 - 変更ファイル: docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
 - 変更理由: 実データ（The SABR Lahman Baseball Database 1871-2025、readme の Release Date: Dec 10, 2025）で確認した事実を書いた。列名は想定どおり。People.csv と Teams.csv は先頭に BOM があり Batting.csv にはないが、スクリプトは utf-8-sig で読むため修正は不要だった。readme の BATTING TABLE の stint の説明（"player's stint (order of appearances within a season)"）とライセンスの記述を原文のまま引用した。2025年の集計：PA 200 以上 348人、複数球団 35人（全員2球団、元の球団へ戻った選手なし）、検証違反 0人、合算する17列に空欄なし、同名の選手1組（Max Muncy）。既存の検証済み2件は成績の14項目がすべて一致し、球団の表記の括弧の中のコード（NYY と NYA、SD と SDN）だけが一致しなかった
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: d1d3ef6
+- 戻し方: git revert d1d3ef6
 - 注意点: スクリプトのコードは変更していない。PA 200 以上の選手に投手が含まれるかは未確認（使った3つの CSV には守備位置の情報がない）。計算した PA と公式の PA の差の一般的な大きさは未確認（既存2件では一致）。data/presets/ には何も作っていない。data/raw/ の元データはリポジトリに含めない（.gitignore 済み）
 
 ## 2026-10-14 15:56 CIでscripts/の変更時にも検査し、ruffの対象に加える
 - 依頼内容: scripts/ を backend-ci の起動条件（paths）と ruff の対象に加える（段階11a）
 - 変更ファイル: .github/workflows/backend-ci.yml, README.md（テスト・静的チェックの手順と CI の説明の2か所）, docs/EDIT_LOG.md
 - 変更理由: scripts/build_lahman_presets.py だけを変えたときに CI が動かず、ruff の検査も受けていなかったため。push と pull_request の paths に "scripts/**" を足し、ruff の手順を `python -m ruff check . ../scripts` にした（作業フォルダは backend のまま）。scripts/ には設定ファイルが無く、backend で実行すると backend/pyproject.toml の設定（ルール・対象の Python 3.12）で検査されることを、ruff の --show-settings で確認した
+- コミット: e4a4b84
+- 戻し方: git revert e4a4b84
+- 注意点: ワークフローの変更は paths の2行と ruff の1行（とコメント1行）だけ。mypy の対象は app のまま（scripts/ は含めていない）。GitHub Actions での実行結果は未確認（push 後に確認が必要）。ローカルでは同じコマンドで ruff・mypy・pytest（160件）が通った
+
+## 2026-10-14 16:37 プリセットのスキーマに所属球団の欄を追加し、生成スクリプトに生成モードを追加
+- 依頼内容: スキーマに任意の team_info・teams_played（と source.note）を追加し、scripts/build_lahman_presets.py に --generate と --sample を追加する。検証器を使い回す形にテストを直す（段階11b の 1・2・3・6）
+- 変更ファイル: schemas/batter_preset.schema.json, backend/tests/test_preset_schema.py, scripts/build_lahman_presets.py, backend/tests/test_build_lahman_presets.py, docs/EDIT_LOG.md
+- 変更理由: Lahman から作るプリセットに、所属球団（Lahman の teamID・Teams.csv の name・lgID）と、移籍した選手の在籍した球団（出場した順）を持たせるため。teams_played の最後の球団と team_info.code の一致、teams_played があるときの team_info の存在は、check_preset で検査する。「機械的に生成し、第二出典との照合は未実施」を書く場所として、source に任意の note を足した（provider・url・retrieved_at だけでは書く場所がなかったため。追加はこの1つだけ）。生成は、照合済みのプリセットがある2人（judgeaa01・arraelu01）を除き、ファイル名と id を <playerID>_<シーズン> にし、キーの順番・インデント・LF・末尾の改行を固定した。取得日は推測で埋めないよう --retrieved-at を必須にした。--sample は固定のシード（既定 2025）で選んだ選手の成績の表を出す。jsonschema.validate() を1件ずつ呼ぶと数百件で数秒かかることを測ったため、テストは検証器を1回だけ作る形にした
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: ワークフローの変更は paths の2行と ruff の1行（とコメント1行）だけ。mypy の対象は app のまま（scripts/ は含めていない）。GitHub Actions での実行結果は未確認（push 後に確認が必要）。ローカルでは同じコマンドで ruff・mypy・pytest（160件）が通った
+- 注意点: 既存の2件は、新しい欄なしで変更せずに検証を通る（348件のスキーマのテストで確認）。テストのダミーの球団・選手は合成データで、実在のものではない。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）
+
+## 2026-10-14 16:37 Lahman 2025から打者のプリセット346件を生成
+- 依頼内容: Lahman 2025 から、PA 200 以上の選手のプリセットを生成する（照合済みの2人を除く）（段階11b の 2・7）
+- 変更ファイル: data/presets/mlb/2025/ の346ファイル（新規。<playerID>_2025.json）, docs/DESIGN.md（2-3 のスキーマの決まり、2-4 の生成したプリセットと測定値）, docs/EDIT_LOG.md
+- 変更理由: プリセットを数百件に増やすため。`python scripts/build_lahman_presets.py --season 2025 --generate --output data/presets/mlb/2025 --retrieved-at 2026-10-14` で生成した。取得日の 2026-10-14 は、利用者が回答した元データの取得日
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: verified はすべて false（独立した第二出典との照合は未実施）。346件すべてが API と同じ入力検証・JSON Schema・PA 200 以上の確認を通った（pytest で各348件。既存2件を含む）。別のフォルダに生成し直し、346件すべてがバイト単位で同じになることを確認した。既存の2件のファイルはハッシュで変わっていないことを確認した。同じ名前の選手が2人いる（Max Muncy。muncyma01_2025 は Los Angeles Dodgers、muncyma02_2025 は Athletics）。球団名は Teams.csv の name のままで、「Los Angeles Angels of Anaheim」は一般に使われる「Los Angeles Angels」と異なる（書き換えていない）。固定のシードで選んだ10人と公式の成績との見比べは、利用者が行う（結果は未記録）。PA 200 以上に投手が含まれるかは未確認
+
+## 2026-10-14 16:37 Lahman由来のプリセットの出典とライセンスの表示を追加
+- 依頼内容: data/NOTICE を作り、README に出典・ライセンスと、移籍した選手の扱いを書く（段階11b の 4・5）
+- 変更ファイル: data/NOTICE（新規）, README.md（データソース、プリセットデータについて、ライセンス）, docs/EDIT_LOG.md
+- 変更理由: Lahman Baseball Database の readme の著作権表示とライセンス（原文のまま）、ライセンスのリンク、元のデータからの改変の内容（stint の合算、PA の計算、PA 200 以上の選択、形式の変換）、ライセンスの範囲（Lahman から生成したプリセットは CC BY-SA 3.0、コードはルートの LICENSE）を書いた。README には、移籍した選手は最後に出場した球団にだけ置かれ、移籍前の球団の選手としては表示されないことを書いた
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 法的な断定は書いていない。コードのライセンスは、ルートの LICENSE が MIT（README の記載とも一致）。LICENSE の著作権者の欄は「Copyright (c) 2026」で名前がない。照合済みの2件（Savant・Baseball-Reference 由来）のライセンスの扱いは、NOTICE では「Lahman から生成したものではない」と書くにとどめ、決めていない。README の参考文献欄は触っていない

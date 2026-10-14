@@ -1,0 +1,41 @@
+data/ 配下のデータについて
+==========================
+
+1. Lahman Baseball Database から生成したプリセット
+--------------------------------------------------
+
+data/presets/ のうち、出典（source.provider）が "Lahman Baseball Database (SABR)" のプリセットは、
+次のデータベースから生成したものです。
+
+  The SABR Lahman Baseball Database 1871-2025（Release Date: Dec 10, 2025）
+  https://sabr.org/lahman-database/
+
+元のデータベースの readme には、次の著作権表示とライセンスが書かれています（原文のまま）。
+
+  This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.
+
+  This work is licensed under a Creative Commons Attribution-ShareAlike 3.0
+  Unported License. For details see: http://creativecommons.org/licenses/by-sa/3.0/
+
+ライセンス：Creative Commons Attribution-ShareAlike 3.0 Unported（CC BY-SA 3.0）
+  http://creativecommons.org/licenses/by-sa/3.0/
+
+元のデータからの改変：
+  - Batting.csv の行のうち、同じシーズンに同じ選手が複数の球団に在籍した場合の行（stint）を合算しました。
+    合算した成績は、そのシーズンの最後に出場した球団の選手として置いています（在籍した球団は teams_played に記録）。
+  - 打席数（PA）は元のデータに無いため、AB + BB + HBP + SF + SH で計算しました。
+  - 計算した打席数が 200 以上の選手だけを選びました。
+  - プリセットの JSON の形式（schemas/batter_preset.schema.json）に並べ替えました。
+  - 選手名は People.csv の nameFirst と nameLast、球団名は Teams.csv の name を使いました。
+  - 生成に使ったスクリプトは scripts/build_lahman_presets.py です。
+
+これらのプリセットは、独立した第二の出典との照合を行っていません（verified: false）。
+
+2. ライセンスの範囲
+--------------------
+
+  - 上記の Lahman Baseball Database から生成したプリセットは、元のデータと同じ CC BY-SA 3.0 で提供します。
+  - リポジトリのコード（backend/、frontend/、scripts/ など）は、このファイルの対象ではありません。
+    コードのライセンスは、リポジトリのルートの LICENSE を参照してください。
+  - Baseball Savant と Baseball-Reference の数値を照合して作ったプリセット（verified: true の2件）は、
+    Lahman Baseball Database から生成したものではありません。出典は各ファイルの source に書いています。
