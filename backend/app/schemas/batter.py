@@ -118,27 +118,6 @@ def stats_warnings(batter_id: str, stats: BatterCountStats) -> list[str]:
     return [message for _, message in stats_warning_items(batter_id, stats)]
 
 
-class SourceInfo(BaseModel):
-    provider: str
-    url: str
-    retrieved_at: str
-
-
-class BatterPreset(BaseModel):
-    id: str
-    name: str
-    team: str | None = None
-    season: int
-    league: str = "MLB"
-    source: SourceInfo
-    stats: BatterCountStats
-
-
-class ManualBatterInput(BaseModel):
-    """手入力モード用のリクエストボディ(基本はBatterCountStatsと同一項目)"""
-    stats: BatterCountStats
-
-
 class _WithDisplayNames(BaseModel):
     """打者の表示名 (任意) を受け取るリクエストの共通部分"""
 
