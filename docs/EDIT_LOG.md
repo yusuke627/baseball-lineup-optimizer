@@ -260,30 +260,46 @@
 - 依頼内容: source.retrieved_at と reference_metrics.retrieved_at に、日付形式（YYYY-MM-DD）を要求する pattern を付ける（段階10 A1）
 - 変更ファイル: schemas/batter_preset.schema.json, backend/tests/test_preset_schema.py, docs/EDIT_LOG.md
 - 変更理由: スキーマの "format": "date" は、テストで使っている jsonschema.validate では検査されないため、source.retrieved_at にも pattern を付けた（reference_metrics.retrieved_at には 6a で付け済み）。不正な形式（2026/01/01、2026-1-1、20260101、時刻つき、前後の空白、空文字など）を拒否するテストを、両方の欄に追加した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: a519a0a
+- 戻し方: git revert a519a0a
 - 注意点: 既存の2件（Aaron Judge 2025、Luis Arraez 2025）は、そのまま検証を通ることを確認。6a（5119f0c）の push 後、GitHub Actions の backend-ci（3.12・3.13）と preset-validation がすべて緑だったことをユーザーが確認
 
 ## 2026-10-14 12:35 DESIGNのNPBプリセットの注意書きを今の方針に合わせて修正
 - 依頼内容: DESIGN 2-3 の NPB の注意書きを、「NPB のプリセットは今は提供しない。架空名のプリセットは作らない」という内容に直す（段階10 A2）
 - 変更ファイル: docs/DESIGN.md（2-3 の末尾の段落）, docs/EDIT_LOG.md
 - 変更理由: 「架空選手として用意する」という以前の記述が、架空名のプリセットを作らない今の方針と合っていなかったため。法的な断定は書かず、「リスクを避けるため」とした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: bb7e216
+- 戻し方: git revert bb7e216
 - 注意点: 同じ DESIGN.md に B の追記（2-4）もあるため、A2 と B を別のコミットにする場合は、Mac 側で部分的にステージする必要がある（報告のコミット手順を参照）
 
 ## 2026-10-14 12:35 使われていないpydanticのモデルを削除
 - 依頼内容: backend/app/schemas/batter.py の SourceInfo・BatterPreset・ManualBatterInput の参照を、プロジェクト全体で検索し、参照が無ければ削除する（段階10 A3）
 - 変更ファイル: backend/app/schemas/batter.py, docs/EDIT_LOG.md
 - 変更理由: frontend/node_modules と data/raw を除くプロジェクト全体（backend、tests、docs、scripts、schemas、frontend/src を含む）を検索し、3つのクラスへの参照は定義そのものだけだった（schemas/batter_preset.schema.json の "title": "BatterPreset" は JSON Schema の名前の文字列で、クラスへの参照ではない）。API・テストのどこからも使われていないため削除した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: a697cb6
+- 戻し方: git revert a697cb6
 - 注意点: 計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）
 
 ## 2026-10-14 12:35 Lahmanの元データから候補を集計するスクリプトを追加（dry-runのみ）
 - 依頼内容: Lahman 2025 の CSV からプリセットの候補を集計する scripts/build_lahman_presets.py を作る。今回は --dry-run のみで、プリセットは生成しない（段階10 B）
 - 変更ファイル: .gitignore, scripts/build_lahman_presets.py（新規）, backend/tests/test_build_lahman_presets.py（新規）, docs/DESIGN.md（2-4 を新設）, docs/EDIT_LOG.md
 - 変更理由: プリセットを数百件に増やす準備として、stint の合算、PA の計算（AB+BB+HBP+SF+SH）、PA 200 以上での絞り込み、最終所属球団（stint の番号が最大の行）と在籍した球団の一覧、API と同じ入力検証、既存プリセットとの全項目の比較を行い、報告する。空欄は 0 とみなさず「欠損」とし、プリセットに使う項目が欠損した選手は候補にしない。元データは data/raw/ に置き、.gitignore でリポジトリから除外する
+- コミット: bb7e216
+- 戻し方: git revert bb7e216
+- 注意点: **実データでの試験集計は未実施**。2026-10-14 時点で、Windows 側の作業フォルダに data/raw/lahman/ が存在しなかった（data/ の中は presets だけ）。そのため、対象人数・球団別の人数・複数球団の在籍者数・検証違反・欠損値の実際の状況・既存2件との比較表は得られていない。スクリプトの動作は、テストの中の合成データ（実在の選手・球団の記録ではない）だけで確認した（テスト15件）。Lahman 2025 版の列名（yearID、stint、teamID、nameFirst、nameLast、name など）が想定どおりかは未確認。stint の番号が在籍の順を表すかは、Lahman の readme で未確認。scripts/ は CI（backend-ci）の paths と ruff の対象に入っていない（テストは backend/tests にあるので CI で実行される）。data/presets/ には何も作っていない
+
+## 2026-10-14 15:56 Lahman 2025の試験集計の結果をDESIGNに記録
+- 依頼内容: Lahman 2025 の実データで scripts/build_lahman_presets.py --dry-run を実行し、DESIGN 2-4 の「未実施」「未確認」の記述を、測定した内容に更新する（段階11a）
+- 変更ファイル: docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
+- 変更理由: 実データ（The SABR Lahman Baseball Database 1871-2025、readme の Release Date: Dec 10, 2025）で確認した事実を書いた。列名は想定どおり。People.csv と Teams.csv は先頭に BOM があり Batting.csv にはないが、スクリプトは utf-8-sig で読むため修正は不要だった。readme の BATTING TABLE の stint の説明（"player's stint (order of appearances within a season)"）とライセンスの記述を原文のまま引用した。2025年の集計：PA 200 以上 348人、複数球団 35人（全員2球団、元の球団へ戻った選手なし）、検証違反 0人、合算する17列に空欄なし、同名の選手1組（Max Muncy）。既存の検証済み2件は成績の14項目がすべて一致し、球団の表記の括弧の中のコード（NYY と NYA、SD と SDN）だけが一致しなかった
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: **実データでの試験集計は未実施**。2026-10-14 時点で、Windows 側の作業フォルダに data/raw/lahman/ が存在しなかった（data/ の中は presets だけ）。そのため、対象人数・球団別の人数・複数球団の在籍者数・検証違反・欠損値の実際の状況・既存2件との比較表は得られていない。スクリプトの動作は、テストの中の合成データ（実在の選手・球団の記録ではない）だけで確認した（テスト15件）。Lahman 2025 版の列名（yearID、stint、teamID、nameFirst、nameLast、name など）が想定どおりかは未確認。stint の番号が在籍の順を表すかは、Lahman の readme で未確認。scripts/ は CI（backend-ci）の paths と ruff の対象に入っていない（テストは backend/tests にあるので CI で実行される）。data/presets/ には何も作っていない
+- 注意点: スクリプトのコードは変更していない。PA 200 以上の選手に投手が含まれるかは未確認（使った3つの CSV には守備位置の情報がない）。計算した PA と公式の PA の差の一般的な大きさは未確認（既存2件では一致）。data/presets/ には何も作っていない。data/raw/ の元データはリポジトリに含めない（.gitignore 済み）
+
+## 2026-10-14 15:56 CIでscripts/の変更時にも検査し、ruffの対象に加える
+- 依頼内容: scripts/ を backend-ci の起動条件（paths）と ruff の対象に加える（段階11a）
+- 変更ファイル: .github/workflows/backend-ci.yml, README.md（テスト・静的チェックの手順と CI の説明の2か所）, docs/EDIT_LOG.md
+- 変更理由: scripts/build_lahman_presets.py だけを変えたときに CI が動かず、ruff の検査も受けていなかったため。push と pull_request の paths に "scripts/**" を足し、ruff の手順を `python -m ruff check . ../scripts` にした（作業フォルダは backend のまま）。scripts/ には設定ファイルが無く、backend で実行すると backend/pyproject.toml の設定（ルール・対象の Python 3.12）で検査されることを、ruff の --show-settings で確認した
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: ワークフローの変更は paths の2行と ruff の1行（とコメント1行）だけ。mypy の対象は app のまま（scripts/ は含めていない）。GitHub Actions での実行結果は未確認（push 後に確認が必要）。ローカルでは同じコマンドで ruff・mypy・pytest（160件）が通った

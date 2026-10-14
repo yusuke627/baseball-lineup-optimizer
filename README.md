@@ -73,13 +73,13 @@ uvicorn app.main:app --reload
 ```bash
 cd backend
 pytest -v        # 全テスト
-ruff check .     # lint（ルールは pyproject.toml の [tool.ruff.lint]）
+ruff check . ../scripts   # lint（ルールは pyproject.toml の [tool.ruff.lint]。scripts/ も同じルールで検査）
 mypy app         # 型チェック
 ```
 
 ### CI（GitHub Actions）
 
-- `backend-ci`：`backend/`・`data/`・`schemas/` の変更時に、Python 3.12 と 3.13 で上記のインストール・ruff・mypy・pytest（全テスト）を実行
+- `backend-ci`：`backend/`・`data/`・`schemas/`・`scripts/` の変更時に、Python 3.12 と 3.13 で上記のインストール・ruff・mypy・pytest（全テスト）を実行
 - `preset-validation`：`data/presets/`・`schemas/` の変更時に、プリセットJSONをJSON Schemaで検証
 
 2026-10-06 の実行で、`backend-ci` は Python 3.12・3.13 の両方で ruff・mypy・pytest（全件）が成功し、`preset-validation` も成功しました。
