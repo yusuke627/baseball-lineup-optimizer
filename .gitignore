@@ -32,6 +32,9 @@ desktop.ini
 CLAUDE.md
 .claude/
 
+# 外部から取得した元データ（Lahman Baseball Database など）。リポジトリには含めない
+data/raw/
+
 # フロントエンド（今後の実装に備えて）
 node_modules/
 frontend/dist/

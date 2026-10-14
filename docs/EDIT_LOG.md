@@ -252,6 +252,38 @@
 - 依頼内容: wOBA と wRC+ を API でもフロントでも計算せず、プリセットのJSONに任意の「参考値」の欄を設けて公表値を表示できるようにする。あわせて、表示名の上限を40文字にし、プリセットのスキーマの2点（PA の最小値、知らないキーの検出）を直す（フロントエンド計画の段階6a。値はユーザーが確認してから別のコミットで入れるため、仕組みだけを作る）
 - 変更ファイル: schemas/batter_preset.schema.json, schemas/display_name_validation_cases.json, backend/app/main.py, backend/app/core/metrics.py, backend/app/schemas/batter.py, backend/tests/test_preset_schema.py, backend/tests/test_api.py, backend/tests/test_validation.py, backend/tests/test_metrics_api.py, frontend/src/api/types.ts, frontend/src/names.ts, frontend/src/names.test.ts, frontend/src/App.tsx, frontend/src/App.test.tsx, docs/DESIGN.md, README.md, docs/EDIT_LOG.md
 - 変更理由: 公式の wOBA は故意四球を除くが、このアプリの成績には故意四球がなく、wRC+ は球場補正を要するため、アプリでは計算せず、公表値を保存して表示する方針にした。GET /presets の summary から wOBA・wRC_plus を外し、metrics.py の計算（woba・wrc_plus）と係数（GUTS_2025）を削除した。プリセットのスキーマに任意の reference_metrics（wOBA・wRC_plus の少なくとも一方、対象シーズン、出典名、https:// で始まる出典のURL、取得日、任意の備考）を追加し、GET /presets は書かれた値をそのまま返す（無ければ null）。参考値には別の確認状況の欄を持たせず、「書いてあること自体が出典で確認済み」という決まりにした（verified は成績の確認状況のまま）。対象シーズンがプリセットの season と同じであることをテストで確認する。スキーマは、一番上の階層と reference_metrics で知らないキーをエラーにし、stats.PA を1以上にし、source.url も https:// で始まるものだけにした。表示名の上限は、長い選手名に重複時の番号を付けても収まるよう、20文字から40文字にした（バックエンド、フロント、共通の入力例14件）
+- コミット: 5119f0c
+- 戻し方: git revert 5119f0c
+- 注意点: API の互換性に影響する変更（GET /presets の summary から wOBA・wRC_plus が無くなり、reference_metrics が加わる）。計算結果は変わらない（baseline.py: 案A 16パターンの基準値との最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。data/presets/ の2件は変更しておらず、新しいスキーマをそのまま通る（参考値は入れていない）。テスト用の参考値はテストのコードの中だけにあり、実在の選手の値ではない。プリセットのキーを読む箇所（data_loader.py の id、main.py の stats）は、スキーマの変更の影響を受けないことを確認した。README の参考文献の FanGraphs "Guts!" の行は、ユーザーが出典に合わせて直すため触っていない（本文からは参照されなくなった）。スキーマの "format"（uri・date）は、テストで使っている jsonschema.validate では検査されないため、新しい欄の URL と日付は "pattern" で検査している（既存の source.retrieved_at の日付の形式は検査されていない）。確認したのは ruff・mypy・pytest（134件）・baseline.py と、フロントの typecheck・lint・test（125件）・build・contrast。画面での参考値の表示は未実装（段階6b以降）。段階5（3d93dfc）の push 後、GitHub Actions の Backend CI（Python 3.12・3.13）が緑だったことをユーザーが確認
+
+## 2026-10-14 12:35 プリセットのスキーマで取得日の形式を検査
+- 依頼内容: source.retrieved_at と reference_metrics.retrieved_at に、日付形式（YYYY-MM-DD）を要求する pattern を付ける（段階10 A1）
+- 変更ファイル: schemas/batter_preset.schema.json, backend/tests/test_preset_schema.py, docs/EDIT_LOG.md
+- 変更理由: スキーマの "format": "date" は、テストで使っている jsonschema.validate では検査されないため、source.retrieved_at にも pattern を付けた（reference_metrics.retrieved_at には 6a で付け済み）。不正な形式（2026/01/01、2026-1-1、20260101、時刻つき、前後の空白、空文字など）を拒否するテストを、両方の欄に追加した
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: API の互換性に影響する変更（GET /presets の summary から wOBA・wRC_plus が無くなり、reference_metrics が加わる）。計算結果は変わらない（baseline.py: 案A 16パターンの基準値との最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。data/presets/ の2件は変更しておらず、新しいスキーマをそのまま通る（参考値は入れていない）。テスト用の参考値はテストのコードの中だけにあり、実在の選手の値ではない。プリセットのキーを読む箇所（data_loader.py の id、main.py の stats）は、スキーマの変更の影響を受けないことを確認した。README の参考文献の FanGraphs "Guts!" の行は、ユーザーが出典に合わせて直すため触っていない（本文からは参照されなくなった）。スキーマの "format"（uri・date）は、テストで使っている jsonschema.validate では検査されないため、新しい欄の URL と日付は "pattern" で検査している（既存の source.retrieved_at の日付の形式は検査されていない）。確認したのは ruff・mypy・pytest（134件）・baseline.py と、フロントの typecheck・lint・test（125件）・build・contrast。画面での参考値の表示は未実装（段階6b以降）。段階5（3d93dfc）の push 後、GitHub Actions の Backend CI（Python 3.12・3.13）が緑だったことをユーザーが確認
+- 注意点: 既存の2件（Aaron Judge 2025、Luis Arraez 2025）は、そのまま検証を通ることを確認。6a（5119f0c）の push 後、GitHub Actions の backend-ci（3.12・3.13）と preset-validation がすべて緑だったことをユーザーが確認
+
+## 2026-10-14 12:35 DESIGNのNPBプリセットの注意書きを今の方針に合わせて修正
+- 依頼内容: DESIGN 2-3 の NPB の注意書きを、「NPB のプリセットは今は提供しない。架空名のプリセットは作らない」という内容に直す（段階10 A2）
+- 変更ファイル: docs/DESIGN.md（2-3 の末尾の段落）, docs/EDIT_LOG.md
+- 変更理由: 「架空選手として用意する」という以前の記述が、架空名のプリセットを作らない今の方針と合っていなかったため。法的な断定は書かず、「リスクを避けるため」とした
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 同じ DESIGN.md に B の追記（2-4）もあるため、A2 と B を別のコミットにする場合は、Mac 側で部分的にステージする必要がある（報告のコミット手順を参照）
+
+## 2026-10-14 12:35 使われていないpydanticのモデルを削除
+- 依頼内容: backend/app/schemas/batter.py の SourceInfo・BatterPreset・ManualBatterInput の参照を、プロジェクト全体で検索し、参照が無ければ削除する（段階10 A3）
+- 変更ファイル: backend/app/schemas/batter.py, docs/EDIT_LOG.md
+- 変更理由: frontend/node_modules と data/raw を除くプロジェクト全体（backend、tests、docs、scripts、schemas、frontend/src を含む）を検索し、3つのクラスへの参照は定義そのものだけだった（schemas/batter_preset.schema.json の "title": "BatterPreset" は JSON Schema の名前の文字列で、クラスへの参照ではない）。API・テストのどこからも使われていないため削除した
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）
+
+## 2026-10-14 12:35 Lahmanの元データから候補を集計するスクリプトを追加（dry-runのみ）
+- 依頼内容: Lahman 2025 の CSV からプリセットの候補を集計する scripts/build_lahman_presets.py を作る。今回は --dry-run のみで、プリセットは生成しない（段階10 B）
+- 変更ファイル: .gitignore, scripts/build_lahman_presets.py（新規）, backend/tests/test_build_lahman_presets.py（新規）, docs/DESIGN.md（2-4 を新設）, docs/EDIT_LOG.md
+- 変更理由: プリセットを数百件に増やす準備として、stint の合算、PA の計算（AB+BB+HBP+SF+SH）、PA 200 以上での絞り込み、最終所属球団（stint の番号が最大の行）と在籍した球団の一覧、API と同じ入力検証、既存プリセットとの全項目の比較を行い、報告する。空欄は 0 とみなさず「欠損」とし、プリセットに使う項目が欠損した選手は候補にしない。元データは data/raw/ に置き、.gitignore でリポジトリから除外する
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: **実データでの試験集計は未実施**。2026-10-14 時点で、Windows 側の作業フォルダに data/raw/lahman/ が存在しなかった（data/ の中は presets だけ）。そのため、対象人数・球団別の人数・複数球団の在籍者数・検証違反・欠損値の実際の状況・既存2件との比較表は得られていない。スクリプトの動作は、テストの中の合成データ（実在の選手・球団の記録ではない）だけで確認した（テスト15件）。Lahman 2025 版の列名（yearID、stint、teamID、nameFirst、nameLast、name など）が想定どおりかは未確認。stint の番号が在籍の順を表すかは、Lahman の readme で未確認。scripts/ は CI（backend-ci）の paths と ruff の対象に入っていない（テストは backend/tests にあるので CI で実行される）。data/presets/ には何も作っていない
