@@ -4,6 +4,7 @@ scripts/build_lahman_presets.py のテスト。
 """
 import csv
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -175,6 +176,130 @@ def test_dry_run_reports_without_writing_files(tmp_path):
     assert "T1 Test Team One: 1" in report
     assert "T2 Test Team Two: 1" in report  # 移籍した選手は最終所属の球団に数える
     assert sorted(p.name for p in tmp_path.rglob("*")) == before  # ファイルは作らない
+
+
+def _write_raw(raw: Path, batting: list[dict[str, str]]) -> None:
+    raw.mkdir()
+    _write_csv(raw / "Batting.csv", COLUMNS, batting)
+    _write_csv(raw / "People.csv", ["playerID", "nameFirst", "nameLast"], [
+        {"playerID": "aaa01", "nameFirst": "Test", "nameLast": "One"},
+        {"playerID": "bbb01", "nameFirst": "Test", "nameLast": "Two"},
+        {"playerID": "ccc01", "nameFirst": "Test", "nameLast": "Two"},  # 同じ名前の別の選手
+        {"playerID": "judgeaa01", "nameFirst": "Excluded", "nameLast": "Player"},
+    ])
+    _write_csv(raw / "Teams.csv", ["yearID", "lgID", "teamID", "name"], [
+        {"yearID": "2025", "lgID": "AL", "teamID": "T1", "name": "Test Team One"},
+        {"yearID": "2025", "lgID": "NL", "teamID": "T2", "name": "Test Team Two"},
+    ])
+    (raw / "readme2025.txt").write_text("Test Database\nRelease Date: Jan 1, 2026\n", encoding="utf-8")
+
+
+SYNTHETIC_BATTING = [
+    _row("aaa01", 1, "T1", AB=180, H=50, BB=20, SO=30),       # PA 200、1球団
+    _row("bbb01", 1, "T1", AB=100, H=30, BB=10),
+    _row("bbb01", 2, "T2", AB=100, H=30, BB=10),              # PA 220、T1 → T2
+    _row("ccc01", 1, "T2", AB=190, H=40, BB=15),              # PA 205
+    _row("judgeaa01", 1, "T1", AB=500, H=150, BB=50),         # 照合済みのプリセットがあるので作らない
+    _row("ddd01", 1, "T2", AB=50, H=10),                      # PA 50、対象外
+]
+
+
+def test_generate_writes_one_file_per_player_named_by_player_id(tmp_path):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    out = tmp_path / "out"
+
+    paths = lahman.generate(raw, 2025, 200, out, "2026-01-02")
+
+    assert sorted(p.name for p in paths) == ["aaa01_2025.json", "bbb01_2025.json", "ccc01_2025.json"]
+    assert sorted(p.name for p in out.iterdir()) == sorted(p.name for p in paths)
+
+
+def test_generated_preset_contents(tmp_path):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    out = tmp_path / "out"
+    lahman.generate(raw, 2025, 200, out, "2026-01-02")
+
+    single = json.loads((out / "aaa01_2025.json").read_text(encoding="utf-8"))
+    assert list(single) == ["id", "name", "team", "season", "league", "verified", "source", "team_info", "stats"]
+    assert single["id"] == "aaa01_2025"
+    assert single["name"] == "Test One"
+    assert single["team"] == "Test Team One"
+    assert single["verified"] is False
+    assert single["source"]["url"] == "https://sabr.org/lahman-database/"
+    assert single["source"]["retrieved_at"] == "2026-01-02"
+    assert "独立した第二出典との照合は未実施" in single["source"]["note"]
+    assert "Release Date: Jan 1, 2026" in single["source"]["note"]
+    assert single["team_info"] == {"code": "T1", "name": "Test Team One", "league": "AL"}
+    assert "teams_played" not in single  # 1球団だけの選手には書かない
+    assert single["stats"]["PA"] == 200
+    assert list(single["stats"]) == list(lahman.PRESET_STAT_KEYS)
+
+    moved = json.loads((out / "bbb01_2025.json").read_text(encoding="utf-8"))
+    assert moved["team_info"]["code"] == "T2"  # 最終所属
+    assert moved["teams_played"] == [
+        {"code": "T1", "name": "Test Team One"},
+        {"code": "T2", "name": "Test Team Two"},
+    ]
+    assert moved["stats"]["AB"] == 200  # 2球団の合計
+
+    # 同じ名前の別の選手も、ID (playerID) が違うので別のファイルになる
+    same_name = json.loads((out / "ccc01_2025.json").read_text(encoding="utf-8"))
+    assert same_name["name"] == moved["name"] == "Test Two"
+    assert same_name["id"] != moved["id"]
+
+
+def test_generated_presets_pass_the_preset_schema(tmp_path):
+    from tests.test_preset_schema import check_preset
+
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    for path in lahman.generate(raw, 2025, 200, tmp_path / "out", "2026-01-02"):
+        check_preset(json.loads(path.read_text(encoding="utf-8")))
+
+
+def test_generate_is_reproducible_with_lf_and_trailing_newline(tmp_path):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    first = {p.name: p.read_bytes() for p in lahman.generate(raw, 2025, 200, tmp_path / "a", "2026-01-02")}
+    second = {p.name: p.read_bytes() for p in lahman.generate(raw, 2025, 200, tmp_path / "b", "2026-01-02")}
+    assert first == second
+    for content in first.values():
+        assert b"\r\n" not in content
+        assert content.endswith(b"}\n")
+        assert not content.endswith(b"\n\n")
+
+
+def test_generate_writes_nothing_when_a_player_fails_validation(tmp_path):
+    raw = tmp_path / "raw"
+    bad = [*SYNTHETIC_BATTING, _row("eee01", 1, "T1", AB=200, H=201)]  # 安打が打数より多い
+    _write_raw(raw, bad)
+    out = tmp_path / "out"
+    with pytest.raises(ValueError, match="eee01"):
+        lahman.generate(raw, 2025, 200, out, "2026-01-02")
+    assert not out.exists()
+
+
+def test_sample_is_fixed_by_the_seed():
+    players = [lahman.PlayerSeason(player_id=f"p{i:03d}") for i in range(50)]
+    first = [p.player_id for p in lahman.sample_players(players, 10, seed=2025)]
+    again = [p.player_id for p in lahman.sample_players(players, 10, seed=2025)]
+    other = [p.player_id for p in lahman.sample_players(players, 10, seed=1)]
+    assert first == again
+    assert len(first) == 10
+    assert first == sorted(first)
+    assert first != other
+
+
+def test_main_generate_requires_retrieved_at(tmp_path, capsys):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    out = tmp_path / "out"
+    assert lahman.main(["--raw", str(raw), "--generate", "--output", str(out)]) == 2
+    assert "--retrieved-at" in capsys.readouterr().err
+    assert lahman.main(["--raw", str(raw), "--generate", "--output", str(out), "--retrieved-at", "2026/01/02"]) == 2
+    assert not out.exists()
 
 
 def test_main_refuses_to_run_without_dry_run(capsys):

@@ -7,7 +7,32 @@
   "properties": {
     "id": { "type": "string", "description": "一意なID(例: shohei_ohtani_2025)" },
     "name": { "type": "string" },
-    "team": { "type": "string" },
+    "team": { "type": "string", "description": "画面に出す球団の表記" },
+    "team_info": {
+      "type": "object",
+      "description": "所属球団の情報。省略可。移籍した選手は、そのシーズンの最後に出場した球団。球団での絞り込みに使う。",
+      "required": ["code", "name", "league"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "description": "球団コード (Lahman Baseball Database の teamID。例: NYA)" },
+        "name": { "type": "string", "minLength": 1, "description": "球団名 (Lahman の Teams.csv の name のまま)" },
+        "league": { "type": "string", "enum": ["AL", "NL"], "description": "所属リーグ (Lahman の lgID)" }
+      }
+    },
+    "teams_played": {
+      "type": "array",
+      "description": "そのシーズンに在籍した球団 (出場した順)。複数の球団に在籍した選手だけに書く。成績はこれらの球団での合計。最後の要素は team_info.code と同じ球団 (backend/tests/test_preset_schema.py で検査)。",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["code", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "season": { "type": "integer" },
     "league": { "type": "string", "enum": ["MLB"] },
     "verified": {
@@ -30,7 +55,8 @@
           "format": "date",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "成績を取得した日(YYYY-MM-DD)"
-        }
+        },
+        "note": { "type": "string", "description": "出典についての補足 (生成の方法、照合の状況など)。省略可" }
       }
     },
     "stats": {

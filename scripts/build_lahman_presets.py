@@ -1,10 +1,14 @@
 """
-Lahman Baseball Database の CSV から、打者のプリセットの候補を集計する。
-
-現在は --dry-run (集計と報告だけ) のみ実装している。プリセットのファイルは作らない。
+Lahman Baseball Database の CSV から、打者のプリセットを作る。
 
 使い方 (リポジトリのルートで):
+    # 集計して報告するだけ (ファイルは作らない)
     python scripts/build_lahman_presets.py --raw data/raw/lahman --season 2025 --dry-run
+    # 固定のシードで選んだ10人の成績を表にする (公式サイトとの見比べ用。ファイルは作らない)
+    python scripts/build_lahman_presets.py --season 2025 --sample
+    # プリセットの JSON を作る (取得日は、元データをダウンロードした日)
+    python scripts/build_lahman_presets.py --season 2025 --generate \\
+        --output data/presets/mlb/2025 --retrieved-at YYYY-MM-DD
 
 - 元データ (Batting.csv, People.csv, Teams.csv) は、利用者がダウンロードして data/raw/ に置く。
   このスクリプトはネットワークから取得しない。data/raw/ は .gitignore でリポジトリから除外している
@@ -15,6 +19,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import random
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,6 +39,19 @@ PRESET_STAT_KEYS = (
 # PA = AB + BB + HBP + SF + SH。公式の PA には捕手の打撃妨害なども含まれるため、一致しないことがある
 PA_COMPONENTS = ("AB", "BB", "HBP", "SF", "SH")
 DEFAULT_MIN_PA = 200
+
+# 別の出典 (Baseball Savant と Baseball-Reference) で照合済みのプリセットが既にある選手。生成しない
+EXCLUDED_PLAYER_IDS = frozenset({"judgeaa01", "arraelu01"})
+
+# 生成するプリセットの出典の欄。URL は Lahman の readme に書かれた Web サイト
+SOURCE_PROVIDER = "Lahman Baseball Database (SABR)"
+SOURCE_URL = "https://sabr.org/lahman-database/"
+SOURCE_NOTE = (
+    "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、"
+    "PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。"
+)
+DEFAULT_SAMPLE_SIZE = 10
+DEFAULT_SAMPLE_SEED = 2025
 
 
 @dataclass
@@ -161,6 +180,83 @@ def team_names(rows: list[dict[str, str]], season: int) -> dict[str, str]:
     return {row["teamID"]: row["name"] for row in rows if int(row["yearID"]) == season}
 
 
+def team_leagues(rows: list[dict[str, str]], season: int) -> dict[str, str]:
+    """Teams.csv から、そのシーズンの teamID → リーグ (lgID)"""
+    return {row["teamID"]: row["lgID"] for row in rows if int(row["yearID"]) == season}
+
+
+def release_note(raw_dir: Path) -> str | None:
+    """readme の「Release Date: ...」の行 (どの版のデータかを出典に書くため)。見つからなければ None"""
+    for path in sorted(raw_dir.glob("readme*.txt")):
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        match = re.search(r"^Release Date:.*$", text, re.MULTILINE)
+        if match:
+            return match.group(0).strip()
+    return None
+
+
+def candidates(players: dict[str, PlayerSeason], min_pa: int) -> list[PlayerSeason]:
+    """プリセットにする選手 (PA が min_pa 以上。照合済みのプリセットがある選手は除く)。playerID の順"""
+    return sorted(
+        (p for p in players.values()
+         if p.pa is not None and p.pa >= min_pa and p.player_id not in EXCLUDED_PLAYER_IDS),
+        key=lambda p: p.player_id,
+    )
+
+
+def build_preset(
+    player: PlayerSeason,
+    season: int,
+    name: str,
+    teams: dict[str, str],
+    leagues: dict[str, str],
+    retrieved_at: str,
+    release: str | None,
+) -> dict:
+    """プリセット1件 (schemas/batter_preset.schema.json の形)。キーの順番は固定"""
+    stats = preset_stats(player)
+    if stats is None:
+        raise ValueError(f"{player.player_id}: 必要な項目が空欄です")
+    code = player.final_team
+    note = SOURCE_NOTE if release is None else f"{SOURCE_NOTE}使用した版：{release}。"
+    preset: dict = {
+        "id": f"{player.player_id}_{season}",
+        "name": name,
+        "team": teams[code],
+        "season": season,
+        "league": "MLB",
+        "verified": False,
+        "source": {
+            "provider": SOURCE_PROVIDER,
+            "url": SOURCE_URL,
+            "retrieved_at": retrieved_at,
+            "note": note,
+        },
+        "team_info": {"code": code, "name": teams[code], "league": leagues[code]},
+    }
+    if len(player.teams_played) > 1:
+        preset["teams_played"] = [{"code": team, "name": teams[team]} for team in player.teams_played]
+    preset["stats"] = stats
+    return preset
+
+
+def preset_json_text(preset: dict) -> str:
+    """ファイルに書く文字列。同じ内容からは必ず同じ文字列になる (インデント2、日本語はそのまま、末尾に改行1つ)"""
+    return json.dumps(preset, ensure_ascii=False, indent=2) + "\n"
+
+
+def write_preset(path: Path, preset: dict) -> None:
+    # 改行は OS に関係なく LF に固定する
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(preset_json_text(preset))
+
+
+def sample_players(cands: list[PlayerSeason], size: int, seed: int) -> list[PlayerSeason]:
+    """固定のシードで選ぶ (同じ入力・同じシードなら、同じ選手が選ばれる)。playerID の順で返す"""
+    chosen = random.Random(seed).sample(cands, min(size, len(cands)))
+    return sorted(chosen, key=lambda p: p.player_id)
+
+
 def player_names(rows: list[dict[str, str]]) -> dict[str, str]:
     """People.csv から、playerID → 「名 姓」"""
     return {
@@ -253,25 +349,105 @@ def dry_run(raw_dir: Path, season: int, min_pa: int, preset_dir: Path) -> str:
     return "\n".join(lines)
 
 
+def sample_table(raw_dir: Path, season: int, min_pa: int, size: int, seed: int) -> str:
+    """固定のシードで選んだ選手の成績の表 (公式サイトと見比べるため)"""
+    players = aggregate_batting(read_csv(raw_dir / "Batting.csv"), season)
+    people = player_names(read_csv(raw_dir / "People.csv"))
+    teams = team_names(read_csv(raw_dir / "Teams.csv"), season)
+    chosen = sample_players(candidates(players, min_pa), size, seed)
+    lines = [
+        f"# Lahman {season} から選んだ {len(chosen)} 人 (シード {seed}、PA >= {min_pa}、照合済みの2人を除く)",
+        "",
+        "| 選手 | playerID | 最終所属 | 在籍した球団 | " + " | ".join(PRESET_STAT_KEYS) + " |",
+        "|---|---|---|---|" + "---|" * len(PRESET_STAT_KEYS),
+    ]
+    for p in chosen:
+        stats = preset_stats(p) or {}
+        lines.append(
+            f"| {people.get(p.player_id, '?')} | {p.player_id} | {teams.get(p.final_team, '?')} ({p.final_team}) | "
+            f"{' → '.join(p.teams_played)} | " + " | ".join(str(stats.get(k, '')) for k in PRESET_STAT_KEYS) + " |"
+        )
+    return "\n".join(lines)
+
+
+def generate(raw_dir: Path, season: int, min_pa: int, output_dir: Path, retrieved_at: str) -> list[Path]:
+    """プリセットの JSON を output_dir に書く。1人でも入力検証に通らなければ、何も書かずに止める"""
+    players = aggregate_batting(read_csv(raw_dir / "Batting.csv"), season)
+    people = player_names(read_csv(raw_dir / "People.csv"))
+    team_rows = read_csv(raw_dir / "Teams.csv")
+    teams = team_names(team_rows, season)
+    leagues = team_leagues(team_rows, season)
+    release = release_note(raw_dir)
+
+    presets = []
+    problems = []
+    for player in candidates(players, min_pa):
+        name = people.get(player.player_id)
+        if not name:
+            problems.append(f"{player.player_id}: People.csv に名前がありません")
+            continue
+        preset = build_preset(player, season, name, teams, leagues, retrieved_at, release)
+        errors = validation_errors(preset["stats"])
+        if errors:
+            problems.append(f"{player.player_id}: {'; '.join(errors)}")
+        presets.append(preset)
+    if problems:
+        raise ValueError("プリセットを作れない選手がいます:\n" + "\n".join(problems))
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for preset in presets:
+        path = output_dir / f"{preset['id']}.json"
+        write_preset(path, preset)
+        paths.append(path)
+    return paths
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--raw", type=Path, default=REPO_ROOT / "data" / "raw" / "lahman",
                         help="Batting.csv・People.csv・Teams.csv のあるフォルダ")
     parser.add_argument("--season", type=int, default=2025, help="対象シーズン (既定: 2025)")
     parser.add_argument("--min-pa", type=int, default=DEFAULT_MIN_PA, help="対象にする最小の打席数")
-    parser.add_argument("--dry-run", action="store_true", help="集計して報告するだけ (ファイルは作らない)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="集計して報告するだけ (ファイルは作らない)")
+    mode.add_argument("--sample", action="store_true", help="固定のシードで選んだ選手の成績を表にする (ファイルは作らない)")
+    mode.add_argument("--generate", action="store_true", help="プリセットの JSON を --output に作る")
+    parser.add_argument("--sample-size", type=int, default=DEFAULT_SAMPLE_SIZE)
+    parser.add_argument("--seed", type=int, default=DEFAULT_SAMPLE_SEED, help="--sample のシード")
+    parser.add_argument("--output", type=Path, help="--generate の出力先のフォルダ")
+    parser.add_argument("--retrieved-at", help="--generate で出典に書く取得日 (YYYY-MM-DD。元データをダウンロードした日)")
     args = parser.parse_args(argv)
 
-    if not args.dry_run:
-        print("プリセットのファイルを作る処理は、まだ実装していません。--dry-run を付けて実行してください。",
-              file=sys.stderr)
+    if not (args.dry_run or args.sample or args.generate):
+        print("--dry-run・--sample・--generate のどれかを付けて実行してください。", file=sys.stderr)
         return 2
     missing = [name for name in ("Batting.csv", "People.csv", "Teams.csv") if not (args.raw / name).exists()]
     if missing:
         print(f"{args.raw} に次のファイルがありません: {', '.join(missing)}", file=sys.stderr)
         return 1
-    preset_dir = REPO_ROOT / "data" / "presets" / "mlb" / str(args.season)
-    print(dry_run(args.raw, args.season, args.min_pa, preset_dir))
+
+    if args.dry_run:
+        preset_dir = REPO_ROOT / "data" / "presets" / "mlb" / str(args.season)
+        print(dry_run(args.raw, args.season, args.min_pa, preset_dir))
+        return 0
+    if args.sample:
+        print(sample_table(args.raw, args.season, args.min_pa, args.sample_size, args.seed))
+        return 0
+
+    # --generate: 取得日は推測で埋めず、必ず指定してもらう
+    if args.output is None or args.retrieved_at is None:
+        print("--generate には --output と --retrieved-at が必要です。", file=sys.stderr)
+        return 2
+    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", args.retrieved_at):
+        print("--retrieved-at は YYYY-MM-DD の形で指定してください。", file=sys.stderr)
+        return 2
+    try:
+        paths = generate(args.raw, args.season, args.min_pa, args.output, args.retrieved_at)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+    print(f"{len(paths)} 件のプリセットを {args.output} に書きました。")
     return 0
 
 

@@ -12,6 +12,11 @@ PRESET_DIR = REPO_ROOT / "data" / "presets"
 with open(SCHEMA_PATH, encoding="utf-8") as f:
     SCHEMA = json.load(f)
 
+# 検証器は1回だけ作って使い回す。jsonschema.validate() は呼ぶたびにスキーマ自体の検査からやり直すため、
+# プリセットが数百件あると遅い (docs/DESIGN.md 2-4 に測定値)
+jsonschema.Draft7Validator.check_schema(SCHEMA)
+VALIDATOR = jsonschema.Draft7Validator(SCHEMA)
+
 
 def _all_preset_files():
     if not PRESET_DIR.exists():
@@ -21,12 +26,22 @@ def _all_preset_files():
 
 def check_preset(data: dict) -> None:
     """プリセット1件を検証する。スキーマに加えて、スキーマでは書けない決まりも確認する"""
-    jsonschema.validate(instance=data, schema=SCHEMA)
+    VALIDATOR.validate(data)
     reference = data.get("reference_metrics")
     if reference is not None and reference["season"] != data["season"]:
         raise ValueError(
             f"reference_metrics.season ({reference['season']}) が season ({data['season']}) と違います"
         )
+    teams_played = data.get("teams_played")
+    if teams_played is not None:
+        team_info = data.get("team_info")
+        if team_info is None:
+            raise ValueError("teams_played があるのに team_info がありません")
+        if teams_played[-1]["code"] != team_info["code"]:
+            raise ValueError(
+                f"teams_played の最後の球団 ({teams_played[-1]['code']}) が"
+                f" team_info.code ({team_info['code']}) と違います"
+            )
 
 
 @pytest.mark.parametrize("preset_path", _all_preset_files(), ids=lambda p: p.name)
@@ -157,6 +172,71 @@ def test_preset_requires_pa_of_at_least_one():
     # API (BatterCountStats) と同じく、PA は1以上
     data = _dummy()
     data["stats"]["PA"] = 0
+    with pytest.raises(jsonschema.ValidationError):
+        check_preset(data)
+
+
+TEAM_INFO = {"code": "T2", "name": "Test Team Two", "league": "AL"}
+TEAMS_PLAYED = [{"code": "T1", "name": "Test Team One"}, {"code": "T2", "name": "Test Team Two"}]
+
+
+def test_preset_with_team_info_is_valid():
+    check_preset(_dummy(team_info=TEAM_INFO))
+
+
+def test_preset_with_teams_played_is_valid():
+    check_preset(_dummy(team_info=TEAM_INFO, teams_played=TEAMS_PLAYED))
+
+
+def test_preset_may_return_to_an_earlier_team():
+    played = [*TEAMS_PLAYED, {"code": "T1", "name": "Test Team One"}]
+    check_preset(_dummy(team_info=dict(TEAM_INFO, code="T1", name="Test Team One"), teams_played=played))
+
+
+def test_teams_played_requires_team_info():
+    with pytest.raises(ValueError, match="team_info"):
+        check_preset(_dummy(teams_played=TEAMS_PLAYED))
+
+
+def test_last_team_played_must_match_team_info():
+    with pytest.raises(ValueError, match="最後の球団"):
+        check_preset(_dummy(team_info=dict(TEAM_INFO, code="T1"), teams_played=TEAMS_PLAYED))
+
+
+@pytest.mark.parametrize(
+    "team_info",
+    [
+        {"code": "T1", "name": "Test Team"},                                  # league が無い
+        {"code": "", "name": "Test Team", "league": "AL"},                    # code が空
+        {"code": "T1", "name": "Test Team", "league": "XX"},                  # 知らないリーグ
+        {"code": "T1", "name": "Test Team", "league": "AL", "city": "Test"},  # 知らないキー
+    ],
+    ids=lambda t: json.dumps(t, ensure_ascii=False),
+)
+def test_invalid_team_info_is_rejected(team_info):
+    with pytest.raises(jsonschema.ValidationError):
+        check_preset(_dummy(team_info=team_info))
+
+
+@pytest.mark.parametrize(
+    "teams_played",
+    [
+        [{"code": "T2", "name": "Test Team Two"}],                             # 1球団だけ
+        [{"code": "T1"}, {"code": "T2", "name": "Test Team Two"}],             # name が無い
+        ["T1", "T2"],                                                          # 文字列の配列
+    ],
+    ids=lambda t: json.dumps(t, ensure_ascii=False),
+)
+def test_invalid_teams_played_is_rejected(teams_played):
+    with pytest.raises(jsonschema.ValidationError):
+        check_preset(_dummy(team_info=TEAM_INFO, teams_played=teams_played))
+
+
+def test_source_note_is_optional_text():
+    data = _dummy()
+    data["source"]["note"] = "テスト用の補足"
+    check_preset(data)
+    data["source"]["note"] = 1
     with pytest.raises(jsonschema.ValidationError):
         check_preset(data)
 
