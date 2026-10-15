@@ -60,6 +60,8 @@ SearchText = Annotated[str | None, Query(max_length=40)]
 # 名前で検索したときに返す最大件数。総数は total で返す
 MAX_SEARCH_RESULTS = 50
 LEAGUE_ORDER = ("AL", "NL")
+# 球団の一覧での地区の並び (東・中・西)。地区の無い球団は最後
+DIVISION_ORDER = {"E": 0, "C": 1, "W": 2}
 
 
 def _with_summary(preset: dict) -> dict:
@@ -124,7 +126,8 @@ def get_preset_seasons(league: League = "mlb"):
 @app.get("/presets/teams")
 def get_preset_teams(league: League = "mlb", season: int = 2025):
     """
-    球団の一覧。リーグ (AL・NL) ごとに分け、球団名順に並べる。
+    球団の一覧。リーグ (AL・NL) ごとに分け、リーグの中は地区 (division。東 E・中 C・西 W の順) ごと、
+    地区の中は球団名順に並べる。地区の情報が無い球団は division を null にして、リーグの最後に並べる。
     count は、その球団を最終所属 (team_info.code) とする選手の数。移籍した選手は最終所属の球団だけで数える。
     team_info の無いプリセットは、どの球団にも数えず without_team に数を返す
     """
@@ -142,8 +145,21 @@ def get_preset_teams(league: League = "mlb", season: int = 2025):
         {
             "league": league_id,
             "teams": [
-                {"code": code, "name": info["name"], "league": info["league"], "count": counts[code]}
-                for code, info in sorted(team_info.items(), key=lambda item: (_fold(item[1]["name"]), item[0]))
+                {
+                    "code": code,
+                    "name": info["name"],
+                    "league": info["league"],
+                    "division": info.get("division"),
+                    "count": counts[code],
+                }
+                for code, info in sorted(
+                    team_info.items(),
+                    key=lambda item: (
+                        DIVISION_ORDER.get(item[1].get("division", ""), len(DIVISION_ORDER)),
+                        _fold(item[1]["name"]),
+                        item[0],
+                    ),
+                )
                 if info["league"] == league_id
             ],
         }
@@ -168,6 +184,8 @@ def _stats_to_summary(stats: BasicStats) -> dict:
         "AVG": round(batting_average(stats), 3),
         "OBP": round(on_base_percentage(stats), 3),
         "SLG": round(slugging_percentage(stats), 3),
+        # OPS = 出塁率 + 長打率。丸める前の値を足してから丸める (丸めた2つを足すと1桁ずれることがあるため)
+        "OPS": round(on_base_percentage(stats) + slugging_percentage(stats), 3),
         "SB": stats.SB,
         "CS": stats.CS,
         "SB_pct": round(stats.SB / (stats.SB + stats.CS), 3) if (stats.SB + stats.CS) else None,

@@ -209,6 +209,15 @@ def team_leagues(rows: list[dict[str, str]], season: int) -> dict[str, str]:
     return {row["teamID"]: row["lgID"] for row in rows if int(row["yearID"]) == season}
 
 
+def team_divisions(rows: list[dict[str, str]], season: int) -> dict[str, str]:
+    """Teams.csv から、そのシーズンの teamID → 地区 (divID。E・C・W)。空欄の球団は含めない"""
+    return {
+        row["teamID"]: row["divID"].strip()
+        for row in rows
+        if int(row["yearID"]) == season and row.get("divID", "").strip()
+    }
+
+
 def release_note(raw_dir: Path) -> str | None:
     """readme の「Release Date: ...」の行 (どの版のデータかを出典に書くため)。見つからなければ None"""
     for path in sorted(raw_dir.glob("readme*.txt")):
@@ -236,6 +245,7 @@ def build_preset(
     leagues: dict[str, str],
     retrieved_at: str,
     release: str | None,
+    divisions: dict[str, str] | None = None,
 ) -> dict:
     """プリセット1件 (schemas/batter_preset.schema.json の形)。キーの順番は固定"""
     stats = preset_stats(player)
@@ -260,6 +270,7 @@ def build_preset(
             "code": team_code(code),
             "name": teams[code],
             "league": leagues[code],
+            **({"division": divisions[code]} if divisions and code in divisions else {}),
             "lahman_id": code,
         },
     }
@@ -408,6 +419,7 @@ def generate(raw_dir: Path, season: int, min_pa: int, output_dir: Path, retrieve
     team_rows = read_csv(raw_dir / "Teams.csv")
     teams = team_names(team_rows, season)
     leagues = team_leagues(team_rows, season)
+    divisions = team_divisions(team_rows, season)
     release = release_note(raw_dir)
 
     presets = []
@@ -417,7 +429,7 @@ def generate(raw_dir: Path, season: int, min_pa: int, output_dir: Path, retrieve
         if not name:
             problems.append(f"{player.player_id}: People.csv に名前がありません")
             continue
-        preset = build_preset(player, season, name, teams, leagues, retrieved_at, release)
+        preset = build_preset(player, season, name, teams, leagues, retrieved_at, release, divisions)
         errors = validation_errors(preset["stats"])
         if errors:
             problems.append(f"{player.player_id}: {'; '.join(errors)}")

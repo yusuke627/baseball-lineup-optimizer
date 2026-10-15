@@ -19,7 +19,9 @@ STATS = {
 }
 
 
-def _preset(pid: str, name: str, code: str | None, league: str = "AL", **extra) -> dict:
+def _preset(
+    pid: str, name: str, code: str | None, league: str = "AL", division: str | None = None, **extra
+) -> dict:
     """テスト用の合成のプリセット (実在の選手・球団の記録ではない)"""
     preset = {
         "id": pid, "name": name, "season": 2025, "league": "MLB",
@@ -28,6 +30,8 @@ def _preset(pid: str, name: str, code: str | None, league: str = "AL", **extra) 
     }
     if code is not None:
         preset["team_info"] = {"code": code, "name": f"Team {code}", "league": league}
+        if division is not None:
+            preset["team_info"]["division"] = division
     preset.update(extra)
     return preset
 
@@ -156,12 +160,41 @@ def test_seasons(synthetic):
 def test_teams_grouped_by_league_sorted_by_name_with_counts(synthetic):
     data = client.get("/presets/teams", params={"season": 2025}).json()
     assert [group["league"] for group in data["leagues"]] == ["AL", "NL"]
-    assert data["leagues"][0]["teams"] == [{"code": "AAA", "name": "Team AAA", "league": "AL", "count": 2}]
+    assert data["leagues"][0]["teams"] == [
+        {"code": "AAA", "name": "Team AAA", "league": "AL", "division": None, "count": 2},
+    ]
     assert data["leagues"][1]["teams"] == [
-        {"code": "BBB", "name": "Team BBB", "league": "NL", "count": 1},
-        {"code": "CCC", "name": "Team CCC", "league": "NL", "count": 1},  # 移籍した選手は最終所属だけで数える
+        {"code": "BBB", "name": "Team BBB", "league": "NL", "division": None, "count": 1},
+        # 移籍した選手は最終所属だけで数える
+        {"code": "CCC", "name": "Team CCC", "league": "NL", "division": None, "count": 1},
     ]
     assert data["without_team"] == 1
+
+
+def test_teams_are_ordered_by_division_east_central_west_then_name(monkeypatch):
+    presets = [
+        _preset("w1", "W One", "AWB", division="W"),
+        _preset("e1", "E One", "AEZ", division="E"),
+        _preset("c1", "C One", "ACA", division="C"),
+        _preset("e2", "E Two", "AEA", division="E"),
+        _preset("n1", "No Division", "AND"),  # 地区の無い球団は最後
+        _preset("w2", "W Two", "AWA", division="W"),
+    ]
+    monkeypatch.setattr("app.main.list_presets", lambda league="mlb", season=2025: copy.deepcopy(presets))
+    teams = client.get("/presets/teams").json()["leagues"][0]["teams"]
+    assert [(t["division"], t["code"]) for t in teams] == [
+        ("E", "AEA"), ("E", "AEZ"), ("C", "ACA"), ("W", "AWA"), ("W", "AWB"), (None, "AND"),
+    ]
+
+
+def test_summary_includes_ops_from_unrounded_obp_and_slg(synthetic):
+    summary = client.get("/presets", params={"team": "AAA"}).json()["items"][0]["summary"]
+    # STATS: 出塁率 = (150+40+10)/(540+40+10+5)、長打率 = (100+60+15+60)/540
+    obp = (150 + 40 + 10) / (540 + 40 + 10 + 5)
+    slg = (100 + 2 * 30 + 3 * 5 + 4 * 15) / 540
+    assert summary["OPS"] == round(obp + slg, 3)
+    assert summary["OBP"] == round(obp, 3)
+    assert summary["SLG"] == round(slg, 3)
 
 
 # ---- 実際のデータ ----
@@ -173,8 +206,12 @@ def test_real_data_team_counts_add_up_to_all_presets():
     assert sum(counts) + data["without_team"] == total
     assert len(counts) == 30
     for group in data["leagues"]:
-        names = [t["name"] for t in group["teams"]]
-        assert names == sorted(names, key=str.casefold)
+        # 実データでは全球団に地区があり、各リーグで東・中・西が5球団ずつ
+        divisions = [t["division"] for t in group["teams"]]
+        assert divisions == ["E"] * 5 + ["C"] * 5 + ["W"] * 5
+        for division in ("E", "C", "W"):
+            names = [t["name"] for t in group["teams"] if t["division"] == division]
+            assert names == sorted(names, key=str.casefold)
     assert 2025 in client.get("/presets/seasons").json()["seasons"]
 
 
