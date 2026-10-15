@@ -141,7 +141,7 @@ wOBA・wRC+ はアプリでは計算しません。表示したい場合は、�
 
 ## ライセンス
 
-コードはMITライセンスです（[`LICENSE`](LICENSE)参照）。統計データ自体の著作権は出典元に帰属します。
+ソースコードは MIT ライセンスです（[`LICENSE`](LICENSE)参照）。`data/` 配下のプリセットの出典とライセンスは、[`data/NOTICE`](data/NOTICE) を参照してください。統計データ自体の著作権は出典元に帰属します。
 
 Lahman Baseball Database から生成したプリセットは、元のデータベースのライセンスである Creative Commons Attribution-ShareAlike 3.0 Unported（CC BY-SA 3.0、http://creativecommons.org/licenses/by-sa/3.0/ ）で提供します。元のデータベースの著作権表示（原文）は「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」です。元のデータからの改変の内容（同じシーズンの複数球団の成績の合算、打席数の計算など）は [`data/NOTICE`](data/NOTICE) に書いています。
 

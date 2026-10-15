@@ -380,38 +380,46 @@
 - 依頼内容: プリセットの team_info に地区（division。E・C・W）を加え、346件を生成し直し、照合済みの2件にも追加する（段階6b修正 C1 のデータ）
 - 変更ファイル: data/presets/mlb/2025/ の348ファイル（生成した346件と、aaron_judge_2025.json・luis_arraez_2025.json）, docs/EDIT_LOG.md
 - 変更理由: 球団の選択画面を、リーグの中で東地区・中地区・西地区に分けるため。値は Lahman の Teams.csv の divID（2025年の30球団すべてに値があり、E・C・W のいずれか）
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: e5a489b
+- 戻し方: git revert e5a489b
 - 注意点: 346件は同じ入力・同じ取得日（2026-10-14）で生成し直し、各ファイルの差分が division の1行だけであることを確認した。別のフォルダにもう一度生成し、346件すべてがバイト単位で同じ（再現性あり）。照合済みの2件は、Judge に "division": "E"、Arraez に "division": "W" の1行を足しただけ（成績・出典・ほかの欄は同一）。プリセットの確率の差は0（baseline.py）
 
 ## 2026-10-15 17:13 地区の欄をスキーマ・生成スクリプト・球団一覧APIに追加し、選手の要約にOPSを追加
 - 依頼内容: スキーマと生成スクリプトに地区を加え、GET /presets/teams を地区ごとの順に並べる（C1）。選手の要約（summary）に OPS を加える（C2）
 - 変更ファイル: schemas/batter_preset.schema.json, scripts/build_lahman_presets.py, backend/app/main.py, backend/app/core/optimizer.py（コメントの README の見出し名だけ）, backend/tests/test_presets_api.py, backend/tests/test_build_lahman_presets.py, backend/tests/test_preset_schema.py, docs/EDIT_LOG.md
 - 変更理由: スキーマの team_info に任意の division（E・C・W）を追加。生成スクリプトは Teams.csv の divID を team_info.division に書く。GET /presets/teams は各球団に division を返し、リーグの中を東・中・西の順、地区の中を球団名順に並べる（地区の無い球団は null で最後）。summary の OPS は、既存の出塁率・長打率の関数の丸める前の値を足してから小数3桁に丸める（AVG・OBP・SLG と同じく、分母が0のときは既存の関数どおり0を返す）
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 4fb2926、7bf8f4c（2回に分けてコミット）
+- 戻し方: git revert 7bf8f4c 4fb2926
 - 注意点: C1 と C2 はどちらも backend/app/main.py を変えるため、1つのコミットにまとめた。API の互換性：/presets/teams の各球団に division が加わり、並び順が球団名順から地区・球団名順に変わる。summary に OPS が加わる。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 完全一致、プリセットの確率の差0）。optimizer.py の変更は、README の見出しを「推奨打順の探索について」に変えたことに合わせたコメントだけ
 
 ## 2026-10-15 17:13 プリセットの選択画面のキーボード操作を直し、地区ごとの表示・上書きの確認・出典の1行表示にする
 - 依頼内容: ブラウザ確認の指摘のうち、B1（球団を選んだあと Tab で選手へ進めない）、B2（球団を選んだあと Esc が効かない）を直し、C3（狭い画面で選手を球団の直後に出す）、C4（出典をカードの一番下の1行に）、C5（上書きの確認をダイアログの中に）、C6（移籍の表示を球団コードに）、C1・C2 の画面側（地区ごとの表示、OPS）を実装する
 - 変更ファイル: frontend/src/components/PresetDialog.tsx, frontend/src/components/PresetInfo.tsx, frontend/src/components/BatterCards.tsx, frontend/src/components/CopyControls.tsx, frontend/src/format.ts, frontend/src/api/types.ts, frontend/src/index.css, frontend/src/preset.test.tsx, frontend/scripts/contrast.mjs, docs/EDIT_LOG.md
 - 変更理由: B1：選手の一覧が、HTML の上で30球団のボタンのあと（右の列）にあり、Tab では残りの球団のボタン（NYY からなら19個）を通らないと選手に届かなかった（Edge 155 で再現）。選手の一覧を選んだ球団のボタンの直後に置く開閉式（aria-expanded・aria-controls）にし、広い画面では CSS で見た目だけ右の列に出すようにした（C3 も同じ方式で実現）。B2：Edge 155（ヘッドレス）では、球団をキーボードで選んだ場合もマウスで選んだ場合も、ダイアログの中の何もない所をクリックしてフォーカスが外れた場合も Esc で閉じ、利用者の環境での現象は再現できなかった（原因は未特定）。念のため、ブラウザ標準の cancel イベントに加えて、ダイアログの中で押された Esc キーも直接受け取って閉じるようにした。C5：上書きの確認を、プリセットのダイアログに重ねるもう1つのダイアログ（role="alertdialog"）にし、Esc とキャンセルは確認だけを閉じてフォーカスを選んでいた選手へ戻す。その際、中の確認ダイアログの close・cancel イベントが React の仕組みで外側のダイアログにも届き、外側まで閉じてしまうことが分かったため、外側はイベントの発生元が自分のときだけ扱うようにした。カードの中のコピーの確認は変えていない
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 56baa72
+- 戻し方: git revert 56baa72
 - 注意点: B1・B2・C5 は jsdom の回帰テストを追加し（球団の次の Tab が選手、Esc キーで閉じる、確認の Esc は確認だけを閉じる）、さらに Edge 155（ヘッドレス）を DevTools Protocol でキーボード・マウス操作して、幅 1200px と 600px で確かめた。B2 の原因は未特定のため、利用者の環境で直ったかは未確認。jsdom は <dialog> の showModal を実装していないため、テストでは開閉だけを置き換えている。広い画面では、下のほうの球団を選んでも選手の一覧はダイアログの上端の右に出る（スクロールの位置によっては見えない）。test 164件・typecheck・lint・build・contrast（上書きの確認の枠線の1組を追加、すべて基準以上）が通った
 
 ## 2026-10-15 17:13 画面とREADMEの「最適打順」を「推奨打順」に変更
 - 依頼内容: 画面と README の「最適打順」を「推奨打順」に変える。API の項目名、アルゴリズム名、DESIGN の技術的な説明の「最適化」は変えない（C7）
 - 変更ファイル: frontend/src/components/ResultSummary.tsx, frontend/src/App.tsx, README.md（冒頭の説明、使い方、出力、見出し「推奨打順の探索について」）, docs/DESIGN.md（0章の概要と使い方、4章の「非効率%」の表示例）, docs/EDIT_LOG.md
 - 変更理由: 打順は近似探索で求めており、最も期待得点が高い打順とは限らないため。画面の注記も「推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。」にした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 2c3303d
+- 戻し方: git revert 2c3303d
 - 注意点: 変えていないもの：API の項目名（best_order など）、関数名（find_optimal_lineup など）、README の「厳密な最適解」「局所最適解」「打順最適化」、DESIGN の題名「野球打順最適化アプリ」と9章などの探索の技術的な説明、DESIGN 4章の API の値の説明（totals_by_games・warnings の行）と「非効率%」の計算式、backend のコメント（README の見出し名を指す optimizer.py の1か所だけは、見出しの変更に合わせて直した）・pyproject の説明。テストには「最適打順」という言葉は無かった。docs/DESIGN.md には、C7 のほかに C1・C3〜C6 の説明（2-2・2-3）の変更も入っている
 
 ## 2026-10-15 17:28 出典の表示を、カードごとからページ下部にまとめる
 - 依頼内容: カードごとの出典の1行（C4 で作ったもの）をすべて削除し、ページの一番下に常に表示する「データの出典」欄を作る（段階6b修正の追加）
 - 変更ファイル: frontend/src/components/DataSources.tsx（新規）, frontend/src/components/DataSources.test.tsx（新規）, frontend/src/components/PresetInfo.tsx, frontend/src/components/BatterCards.tsx, frontend/src/App.tsx, frontend/src/App.test.tsx, frontend/src/preset.test.tsx, frontend/src/index.css, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
 - 変更理由: 出典をカードごとに出すとカードが高くなり、同じ出典が何度も並ぶため。欄は見出し（h2「データの出典」）とリストで、Lahman Baseball Database (SABR) / CC BY-SA 3.0（集計の方法と「第二出典との照合は一部のみ（未確認）」）と、照合済みの2人（Aaron Judge・Luis Arraez）の出典を並べる。照合済みの2人の出典名・URL・取得日は画面のコードに書き、プリセットのファイルの source と同じであることをテストで確かめる。参考値（reference_metrics）の表示は変えていない
+- コミット: 56baa72（フロントのコミットに含めた）
+- 戻し方: git revert 56baa72（フロントの変更全体が戻る）
+- 注意点: 欄は main 要素の外の footer 要素に置いた（App は main と footer を並べて返す）。Lahman の URL（https://sabr.org/lahman-database/）は、プリセットのファイルを読まずに画面のコードに書いている（data/NOTICE・生成スクリプトと同じ値）。新しい色の組み合わせはない（補足の文字・リンク・本文と、ページの地の組み合わせは既存の確認に含まれる）
+
+## 2026-10-15 18:01 LICENSEを標準のMITライセンスの形に戻し、READMEにデータのライセンスの参照先を追記
+- 依頼内容: LICENSE の末尾の日本語の注記を削除して、標準の MIT ライセンスの本文と著作権表示だけにする。README のライセンス欄に「ソースコードは MIT、data/ のプリセットの出典とライセンスは data/NOTICE」を追記する。DESIGN の古い記述を直す（段階6d）
+- 変更ファイル: LICENSE, README.md（ライセンス欄の1文目）, docs/DESIGN.md（2-4 のライセンスの項の括弧書き）, docs/EDIT_LOG.md
+- 変更理由: LICENSE の注記（データの著作権・利用条件は「FanGraphs等」の出典元の規約に従い、データそのものの再配布権を主張しない、という内容）が、Lahman 由来のプリセットを CC BY-SA 3.0 で提供するという data/NOTICE・README の記載と食い違い、FanGraphs も今はデータの出典に使っていないため。MIT の本文（1〜21行目）は変えていない。DESIGN 2-4 の「具体的な表示の方法は、ファイルを生成する段階で決める」は、表示の場所が決まったため「表示は data/NOTICE、README のライセンス欄、画面の『データの出典』欄」に直した
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 欄は main 要素の外の footer 要素に置いた（App は main と footer を並べて返す）。Lahman の URL（https://sabr.org/lahman-database/）は、プリセットのファイルを読まずに画面のコードに書いている（data/NOTICE・生成スクリプトと同じ値）。新しい色の組み合わせはない（補足の文字・リンク・本文と、ページの地の組み合わせは既存の確認に含まれる）
+- 注意点: data/NOTICE は変更していない。NOTICE には、10人の目視照合の結果（照合は一部のみ）と、地区（team_info.division）を Teams.csv の divID から加えたことが書かれていない（報告済み、未修正）。README の参考文献欄（FanGraphs "Guts!" の行を含む）は触っていない。段階6b修正のハッシュ（e5a489b、4fb2926・7bf8f4c、56baa72、2c3303d）を、それぞれの記録に記入した。Actions は緑（ユーザーが確認）

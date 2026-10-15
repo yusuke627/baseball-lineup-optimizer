@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-本ライセンスはリポジトリ内のコードに適用されます。data/presets/ 以下の
-MLB選手統計データそのものの著作権・利用条件は各出典元(FanGraphs等)の
-規約に従い、本リポジトリはデータそのものの再配布権を主張するものでは
-ありません。詳細は docs/DESIGN.md を参照してください。

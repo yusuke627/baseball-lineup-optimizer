@@ -205,7 +205,7 @@ data/presets/mlb/2025/
 プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV からプリセットを作るスクリプト `scripts/build_lahman_presets.py` を用意している。`--dry-run`（集計して報告するだけ）、`--sample`（固定のシードで選んだ選手の成績を表にするだけ）、`--generate`（プリセットの JSON を作る）の3つの使い方がある。
 
 - 元データ（`Batting.csv`・`People.csv`・`Teams.csv`）は利用者がダウンロードして `data/raw/lahman/` に置く。スクリプトはネットワークから取得しない。`data/raw/` は `.gitignore` でリポジトリから除外している。使ったのは「The SABR Lahman Baseball Database 1871-2025」（readme の記載で Release Date: Dec 10, 2025）
-- ライセンス：readme には「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」「This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.」と書かれている（原文のまま）。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（具体的な表示の方法は、ファイルを生成する段階で決める）
+- ライセンス：readme には「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」「This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.」と書かれている（原文のまま）。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（表示は `data/NOTICE`、README のライセンス欄、画面の「データの出典」欄）
 - CSV の形式（2025年版で確認）：`People.csv` と `Teams.csv` は先頭に BOM があり、`Batting.csv` にはない。スクリプトは `utf-8-sig` で読むので、どちらでも列名を正しく読める。列名は `Batting.csv` が playerID, yearID, stint, teamID, lgID, G, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, SO, IBB, HBP, SH, SF, GIDP、`People.csv` に nameFirst・nameLast、`Teams.csv` に yearID・teamID・name がある
 - 集計：`Batting.csv` の対象シーズンの行を、選手（`playerID`）ごとに合算する（同じシーズンに複数の球団に在籍した場合は、在籍ごとの行＝stint を足す）。合算する列は G, AB, R, H, 2B, 3B, HR, RBI, SB, CS, BB, SO, IBB, HBP, SH, SF, GIDP
 - 空欄の扱い：どれか1つの stint で空欄の列は、合計を「欠損」とする（0 とはみなさない）。プリセットに使う項目が欠損している選手は、候補にしない。2025年の行（1692行）では、合算する17列のどれにも空欄はなかった
