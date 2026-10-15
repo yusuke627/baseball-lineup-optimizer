@@ -2,6 +2,12 @@
   "id": "aaron_judge_2025",
   "name": "Aaron Judge",
   "team": "New York Yankees (NYY)",
+  "team_info": {
+    "code": "NYY",
+    "name": "New York Yankees",
+    "league": "AL",
+    "lahman_id": "NYA"
+  },
   "season": 2025,
   "league": "MLB",
   "verified": true,

@@ -2,6 +2,12 @@
   "id": "luis_arraez_2025",
   "name": "Luis Arraez",
   "team": "San Diego Padres (SD)",
+  "team_info": {
+    "code": "SD",
+    "name": "San Diego Padres",
+    "league": "NL",
+    "lahman_id": "SDN"
+  },
   "season": 2025,
   "league": "MLB",
   "verified": true,
