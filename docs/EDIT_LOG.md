@@ -308,30 +308,70 @@
 - 依頼内容: スキーマに任意の team_info・teams_played（と source.note）を追加し、scripts/build_lahman_presets.py に --generate と --sample を追加する。検証器を使い回す形にテストを直す（段階11b の 1・2・3・6）
 - 変更ファイル: schemas/batter_preset.schema.json, backend/tests/test_preset_schema.py, scripts/build_lahman_presets.py, backend/tests/test_build_lahman_presets.py, docs/EDIT_LOG.md
 - 変更理由: Lahman から作るプリセットに、所属球団（Lahman の teamID・Teams.csv の name・lgID）と、移籍した選手の在籍した球団（出場した順）を持たせるため。teams_played の最後の球団と team_info.code の一致、teams_played があるときの team_info の存在は、check_preset で検査する。「機械的に生成し、第二出典との照合は未実施」を書く場所として、source に任意の note を足した（provider・url・retrieved_at だけでは書く場所がなかったため。追加はこの1つだけ）。生成は、照合済みのプリセットがある2人（judgeaa01・arraelu01）を除き、ファイル名と id を <playerID>_<シーズン> にし、キーの順番・インデント・LF・末尾の改行を固定した。取得日は推測で埋めないよう --retrieved-at を必須にした。--sample は固定のシード（既定 2025）で選んだ選手の成績の表を出す。jsonschema.validate() を1件ずつ呼ぶと数百件で数秒かかることを測ったため、テストは検証器を1回だけ作る形にした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 9a67eef
+- 戻し方: git revert 9a67eef
 - 注意点: 既存の2件は、新しい欄なしで変更せずに検証を通る（348件のスキーマのテストで確認）。テストのダミーの球団・選手は合成データで、実在のものではない。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15＝これまでと同じ値、案B 固定seed 3通りが完全一致、プリセットの確率の差0）
 
 ## 2026-10-14 16:37 Lahman 2025から打者のプリセット346件を生成
 - 依頼内容: Lahman 2025 から、PA 200 以上の選手のプリセットを生成する（照合済みの2人を除く）（段階11b の 2・7）
 - 変更ファイル: data/presets/mlb/2025/ の346ファイル（新規。<playerID>_2025.json）, docs/DESIGN.md（2-3 のスキーマの決まり、2-4 の生成したプリセットと測定値）, docs/EDIT_LOG.md
 - 変更理由: プリセットを数百件に増やすため。`python scripts/build_lahman_presets.py --season 2025 --generate --output data/presets/mlb/2025 --retrieved-at 2026-10-14` で生成した。取得日の 2026-10-14 は、利用者が回答した元データの取得日
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 491cf0a
+- 戻し方: git revert 491cf0a
 - 注意点: verified はすべて false（独立した第二出典との照合は未実施）。346件すべてが API と同じ入力検証・JSON Schema・PA 200 以上の確認を通った（pytest で各348件。既存2件を含む）。別のフォルダに生成し直し、346件すべてがバイト単位で同じになることを確認した。既存の2件のファイルはハッシュで変わっていないことを確認した。同じ名前の選手が2人いる（Max Muncy。muncyma01_2025 は Los Angeles Dodgers、muncyma02_2025 は Athletics）。球団名は Teams.csv の name のままで、「Los Angeles Angels of Anaheim」は一般に使われる「Los Angeles Angels」と異なる（書き換えていない）。固定のシードで選んだ10人と公式の成績との見比べは、利用者が行う（結果は未記録）。PA 200 以上に投手が含まれるかは未確認
 
 ## 2026-10-14 16:37 Lahman由来のプリセットの出典とライセンスの表示を追加
 - 依頼内容: data/NOTICE を作り、README に出典・ライセンスと、移籍した選手の扱いを書く（段階11b の 4・5）
 - 変更ファイル: data/NOTICE（新規）, README.md（データソース、プリセットデータについて、ライセンス）, docs/EDIT_LOG.md
 - 変更理由: Lahman Baseball Database の readme の著作権表示とライセンス（原文のまま）、ライセンスのリンク、元のデータからの改変の内容（stint の合算、PA の計算、PA 200 以上の選択、形式の変換）、ライセンスの範囲（Lahman から生成したプリセットは CC BY-SA 3.0、コードはルートの LICENSE）を書いた。README には、移籍した選手は最後に出場した球団にだけ置かれ、移籍前の球団の選手としては表示されないことを書いた
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: e63afab
+- 戻し方: git revert e63afab
 - 注意点: 法的な断定は書いていない。コードのライセンスは、ルートの LICENSE が MIT（README の記載とも一致）。LICENSE の著作権者の欄は「Copyright (c) 2026」で名前がない。照合済みの2件（Savant・Baseball-Reference 由来）のライセンスの扱いは、NOTICE では「Lahman から生成したものではない」と書くにとどめ、決めていない。README の参考文献欄は触っていない
 
 ## 2026-10-14 17:57 プリセットの球団コードを指定の表記に統一
 - 依頼内容: 球団コードを利用者が指定した表記に統一する（AZ・CWS・CHC・KC・LAA・LAD・NYY・NYM・SD・SF・STL・TB・WSH。指定のない球団は Lahman の teamID のまま）。元の teamID は team_info.lahman_id に残す（段階11c の後続）
 - 変更ファイル: scripts/build_lahman_presets.py, schemas/batter_preset.schema.json, backend/tests/test_build_lahman_presets.py, backend/tests/test_preset_schema.py, data/presets/mlb/2025/ の346ファイルのうち球団コードが変わったもの, data/NOTICE, docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
 - 変更理由: Lahman の teamID（NYA、SDN など）と、既存の照合済み2件の表記（NYY、SD）が別の体系で、同じ球団が2つのコードを持つ状態だったため。生成スクリプトに対応表 TEAM_CODE_BY_LAHMAN_ID（13球団）を置き、team_info.code と teams_played[].code を変換して書くようにした。スキーマは、球団コードを英大文字2〜3文字に制限し、任意の team_info.lahman_id を追加した。実際のプリセット全体で、球団コード・球団名・lahman_id の対応が1対1であることを検査するテストを追加した
+- コミット: d72b21d
+- 戻し方: git revert d72b21d
+- 注意点: 346件を同じ入力・同じ取得日（2026-10-14）で生成し直し、生成前と比べて、変わったのは球団コードの部分だけであることを確認した（team_info.code が変わったのは138件、teams_played が変わったのは22件。全346件に lahman_id が加わり、その値は生成前の team_info.code と一致）。既存の照合済み2件のファイルは変わっていない（team の表記「(NYY)」「(SD)」は統一したコードと一致）。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。ruff・mypy・pytest（1229件）が通った。teams_played の要素には lahman_id を持たせていない
+
+## 2026-10-15 16:07 LICENSEに著作権者の名前を記入
+- 依頼内容: LICENSE の著作権者を「Copyright (c) 2026 Yusuke Goto」にする。ほかの文言は変えない（段階6b M1）
+- 変更ファイル: LICENSE, docs/EDIT_LOG.md
+- 変更理由: 著作権者の名前が空欄だったため
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 346件を同じ入力・同じ取得日（2026-10-14）で生成し直し、生成前と比べて、変わったのは球団コードの部分だけであることを確認した（team_info.code が変わったのは138件、teams_played が変わったのは22件。全346件に lahman_id が加わり、その値は生成前の team_info.code と一致）。既存の照合済み2件のファイルは変わっていない（team の表記「(NYY)」「(SD)」は統一したコードと一致）。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。ruff・mypy・pytest（1229件）が通った。teams_played の要素には lahman_id を持たせていない
+- 注意点: README のライセンス欄には著作権者の記載がないため、README は変更していない。LICENSE の末尾の日本語の注記（データの著作権は「FanGraphs等」の出典元の規約に従い、データの再配布権を主張しない、という内容）は、指示に従い変えていないが、Lahman 由来のプリセットを CC BY-SA 3.0 で提供するという data/NOTICE・README の記載と食い違っている（報告済み、未修正）
+
+## 2026-10-15 16:07 照合済みの2件のプリセットに所属球団の欄を追加
+- 依頼内容: aaron_judge_2025.json と luis_arraez_2025.json に team_info を追加する。成績や出典の値は変えない（段階6b M2）
+- 変更ファイル: data/presets/mlb/2025/aaron_judge_2025.json, data/presets/mlb/2025/luis_arraez_2025.json, docs/DESIGN.md（2-4 の該当の1文）, docs/EDIT_LOG.md
+- 変更理由: 球団での絞り込み（GET /presets?team=）と球団の一覧に、照合済みの2件も含めるため。Judge は NYY・New York Yankees・AL・lahman_id NYA、Arraez は SD・San Diego Padres・NL・lahman_id SDN
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 変更前の写しと行単位で比べ、差分は team_info の6行の追加だけ（成績・出典・そのほかの欄は同一、キーの順番も同じ）。team の文字列「New York Yankees (NYY)」「San Diego Padres (SD)」は変えていない。スキーマと check_preset の検証、球団コード・球団名・lahman_id の1対1の検査、baseline.py（プリセットの確率の差0）が通った
+
+## 2026-10-15 16:07 10人の目視照合の結果をDESIGNに記録
+- 依頼内容: 固定シード2025で選んだ10人の目視照合の結果を DESIGN 2-4 に記録する（段階6b M3）
+- 変更ファイル: docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
+- 変更理由: 利用者から、10人の成績を公式サイトの数値と見比べて全員一致したと報告を受けた（2026-10-14）ため。照合先の公式サイト名は未記録、残りの336人は照合していないことも書いた
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 346件の verified は false のまま変えていない
+
+## 2026-10-15 16:07 プリセットのシーズン・球団の一覧と、球団・名前での絞り込みのAPIを追加
+- 依頼内容: GET /presets/seasons、GET /presets/teams、GET /presets?team=&q= を実装する（段階6b 1〜4）
+- 変更ファイル: backend/app/main.py, backend/app/data_loader.py, backend/tests/test_presets_api.py（新規）, README.md（API の説明）, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
+- 変更理由: プリセットが348件になり、全件の応答が約298 KB あるため、画面では球団や名前で絞り込んで取得する。球団の一覧はリーグ（AL・NL）ごとに球団名順で、選手数は最終所属で数える（移籍した選手は移籍前の球団に出ない）。q は球団に関係なく名前の一部で探し（大文字・小文字とアクセント記号を区別しない）、最大50件と総数を返す。team も q も無い呼び出しは、従来どおり全件を配列で返す（互換）
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: team か q を付けたときの応答の形は {"total", "items"} で、付けないとき（配列）と異なる。球団コードは英大文字2〜3文字だけを受け付け（それ以外は422）、存在しない球団・シーズンは空の結果を返す。テストは合成データ（実在の選手・球団ではない）と実データの両方で23件。起動したバックエンドに HTTP で問い合わせ、実データ348件で動くことを確認した（数値は DESIGN 2-2）。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 完全一致、プリセットの確率の差0）
+
+## 2026-10-15 16:07 プリセットを球団から選んでカードに読み込む画面を追加
+- 依頼内容: 「プリセットから読み込む」のダイアログ（シーズン → 球団 → 選手、検索の併用）、カードへの読み込み、上書きの確認、重複時の「 (2)」、編集済みの表示、「プリセットの値に戻す」、移籍した選手の表示、出典の表示、参考値の表示を実装する（段階6b 5〜10）
+- 変更ファイル: frontend/src/components/PresetDialog.tsx（新規）, frontend/src/components/PresetInfo.tsx（新規）, frontend/src/format.ts（新規）, frontend/src/components/BatterCards.tsx, frontend/src/components/CopyControls.tsx, frontend/src/state/lineup.ts, frontend/src/names.ts, frontend/src/App.tsx, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/index.css, frontend/src/test/setup.ts, frontend/src/preset.test.tsx（新規）, frontend/src/format.test.ts（新規）, frontend/src/api/client.test.ts, frontend/src/names.test.ts, frontend/scripts/contrast.mjs, README.md（フロントの状況）, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
+- 変更理由: プリセットを数が増えても選べるよう、ブラウザ標準の <dialog> で、シーズン（既定は最新）→ 球団（リーグごと、選手数つき）→ 選手（名前順、API の打率・出塁率・長打率・本塁打・打席）の順に選べるようにした。名前での検索も使える。読み込んだ打者のカードには、選手・シーズン・「球団名 (コード)」・移籍した選手の「年間合計（複数球団）」と在籍した球団・出典（Lahman 由来は「Lahman Baseball Database (SABR) / CC BY-SA 3.0」、verified が false なら「第二出典との照合は一部のみ（未確認）」）を出す。リンクは https:// で始まる URL だけで、rel="noopener noreferrer" を付ける。編集済みの判定は「今の入力がプリセットの成績と1項目でも違うか」で、値を戻せば解除される（空欄の犠打は0と同じに扱う）。参考値は編集していないときだけ表示する。コピーでは、プリセットとの結びつき・参考値は写さない
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 画面の数値はすべて API の値で、率の表示は桁と「.331」の形をそろえるだけ。jsdom が <dialog> の showModal を実装していないため、テストでは開閉だけを置き換えている（test/setup.ts）。フォーカスの閉じ込め・Esc キーで閉じる・ダイアログを閉じたときのフォーカスの戻り先は、ブラウザの標準動作で、自動テストでは確認していない（ブラウザでの確認が必要）。上書きの確認はダイアログを閉じたあとカードの中に出し、確認が終わると「プリセットから読み込む」ボタンへフォーカスを戻す。確認したのは typecheck・lint・test（157件、うちプリセットの画面15件）・build・contrast（新たに3組を追加し、すべて基準以上）と、開発サーバーのプロキシ経由で /api/presets/teams・/api/presets?team=CWS が実データを返すこと、初期画面のスクリーンショット。ダイアログを開いた状態の見た目は未確認
