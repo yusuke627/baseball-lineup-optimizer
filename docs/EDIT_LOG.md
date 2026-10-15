@@ -340,38 +340,78 @@
 - 依頼内容: LICENSE の著作権者を「Copyright (c) 2026 Yusuke Goto」にする。ほかの文言は変えない（段階6b M1）
 - 変更ファイル: LICENSE, docs/EDIT_LOG.md
 - 変更理由: 著作権者の名前が空欄だったため
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 91f3bfc
+- 戻し方: git revert 91f3bfc
 - 注意点: README のライセンス欄には著作権者の記載がないため、README は変更していない。LICENSE の末尾の日本語の注記（データの著作権は「FanGraphs等」の出典元の規約に従い、データの再配布権を主張しない、という内容）は、指示に従い変えていないが、Lahman 由来のプリセットを CC BY-SA 3.0 で提供するという data/NOTICE・README の記載と食い違っている（報告済み、未修正）
 
 ## 2026-10-15 16:07 照合済みの2件のプリセットに所属球団の欄を追加
 - 依頼内容: aaron_judge_2025.json と luis_arraez_2025.json に team_info を追加する。成績や出典の値は変えない（段階6b M2）
 - 変更ファイル: data/presets/mlb/2025/aaron_judge_2025.json, data/presets/mlb/2025/luis_arraez_2025.json, docs/DESIGN.md（2-4 の該当の1文）, docs/EDIT_LOG.md
 - 変更理由: 球団での絞り込み（GET /presets?team=）と球団の一覧に、照合済みの2件も含めるため。Judge は NYY・New York Yankees・AL・lahman_id NYA、Arraez は SD・San Diego Padres・NL・lahman_id SDN
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 40df20c
+- 戻し方: git revert 40df20c
 - 注意点: 変更前の写しと行単位で比べ、差分は team_info の6行の追加だけ（成績・出典・そのほかの欄は同一、キーの順番も同じ）。team の文字列「New York Yankees (NYY)」「San Diego Padres (SD)」は変えていない。スキーマと check_preset の検証、球団コード・球団名・lahman_id の1対1の検査、baseline.py（プリセットの確率の差0）が通った
 
 ## 2026-10-15 16:07 10人の目視照合の結果をDESIGNに記録
 - 依頼内容: 固定シード2025で選んだ10人の目視照合の結果を DESIGN 2-4 に記録する（段階6b M3）
 - 変更ファイル: docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
 - 変更理由: 利用者から、10人の成績を公式サイトの数値と見比べて全員一致したと報告を受けた（2026-10-14）ため。照合先の公式サイト名は未記録、残りの336人は照合していないことも書いた
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: ed3d19c
+- 戻し方: git revert ed3d19c
 - 注意点: 346件の verified は false のまま変えていない
 
 ## 2026-10-15 16:07 プリセットのシーズン・球団の一覧と、球団・名前での絞り込みのAPIを追加
 - 依頼内容: GET /presets/seasons、GET /presets/teams、GET /presets?team=&q= を実装する（段階6b 1〜4）
 - 変更ファイル: backend/app/main.py, backend/app/data_loader.py, backend/tests/test_presets_api.py（新規）, README.md（API の説明）, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
 - 変更理由: プリセットが348件になり、全件の応答が約298 KB あるため、画面では球団や名前で絞り込んで取得する。球団の一覧はリーグ（AL・NL）ごとに球団名順で、選手数は最終所属で数える（移籍した選手は移籍前の球団に出ない）。q は球団に関係なく名前の一部で探し（大文字・小文字とアクセント記号を区別しない）、最大50件と総数を返す。team も q も無い呼び出しは、従来どおり全件を配列で返す（互換）
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: ac7fd07
+- 戻し方: git revert ac7fd07
 - 注意点: team か q を付けたときの応答の形は {"total", "items"} で、付けないとき（配列）と異なる。球団コードは英大文字2〜3文字だけを受け付け（それ以外は422）、存在しない球団・シーズンは空の結果を返す。テストは合成データ（実在の選手・球団ではない）と実データの両方で23件。起動したバックエンドに HTTP で問い合わせ、実データ348件で動くことを確認した（数値は DESIGN 2-2）。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 完全一致、プリセットの確率の差0）
 
 ## 2026-10-15 16:07 プリセットを球団から選んでカードに読み込む画面を追加
 - 依頼内容: 「プリセットから読み込む」のダイアログ（シーズン → 球団 → 選手、検索の併用）、カードへの読み込み、上書きの確認、重複時の「 (2)」、編集済みの表示、「プリセットの値に戻す」、移籍した選手の表示、出典の表示、参考値の表示を実装する（段階6b 5〜10）
 - 変更ファイル: frontend/src/components/PresetDialog.tsx（新規）, frontend/src/components/PresetInfo.tsx（新規）, frontend/src/format.ts（新規）, frontend/src/components/BatterCards.tsx, frontend/src/components/CopyControls.tsx, frontend/src/state/lineup.ts, frontend/src/names.ts, frontend/src/App.tsx, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/index.css, frontend/src/test/setup.ts, frontend/src/preset.test.tsx（新規）, frontend/src/format.test.ts（新規）, frontend/src/api/client.test.ts, frontend/src/names.test.ts, frontend/scripts/contrast.mjs, README.md（フロントの状況）, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
 - 変更理由: プリセットを数が増えても選べるよう、ブラウザ標準の <dialog> で、シーズン（既定は最新）→ 球団（リーグごと、選手数つき）→ 選手（名前順、API の打率・出塁率・長打率・本塁打・打席）の順に選べるようにした。名前での検索も使える。読み込んだ打者のカードには、選手・シーズン・「球団名 (コード)」・移籍した選手の「年間合計（複数球団）」と在籍した球団・出典（Lahman 由来は「Lahman Baseball Database (SABR) / CC BY-SA 3.0」、verified が false なら「第二出典との照合は一部のみ（未確認）」）を出す。リンクは https:// で始まる URL だけで、rel="noopener noreferrer" を付ける。編集済みの判定は「今の入力がプリセットの成績と1項目でも違うか」で、値を戻せば解除される（空欄の犠打は0と同じに扱う）。参考値は編集していないときだけ表示する。コピーでは、プリセットとの結びつき・参考値は写さない
+- コミット: 821f2c9
+- 戻し方: git revert 821f2c9
+- 注意点: 画面の数値はすべて API の値で、率の表示は桁と「.331」の形をそろえるだけ。jsdom が <dialog> の showModal を実装していないため、テストでは開閉だけを置き換えている（test/setup.ts）。フォーカスの閉じ込め・Esc キーで閉じる・ダイアログを閉じたときのフォーカスの戻り先は、ブラウザの標準動作で、自動テストでは確認していない（ブラウザでの確認が必要）。上書きの確認はダイアログを閉じたあとカードの中に出し、確認が終わると「プリセットから読み込む」ボタンへフォーカスを戻す。確認したのは typecheck・lint・test（157件、うちプリセットの画面15件）・build・contrast（新たに3組を追加し、すべて基準以上）と、開発サーバーのプロキシ経由で /api/presets/teams・/api/presets?team=CWS が実データを返すこと、初期画面のスクリーンショット。ダイアログを開いた状態の見た目は未確認
+
+## 2026-10-15 17:13 プリセットの所属球団に地区を追加
+- 依頼内容: プリセットの team_info に地区（division。E・C・W）を加え、346件を生成し直し、照合済みの2件にも追加する（段階6b修正 C1 のデータ）
+- 変更ファイル: data/presets/mlb/2025/ の348ファイル（生成した346件と、aaron_judge_2025.json・luis_arraez_2025.json）, docs/EDIT_LOG.md
+- 変更理由: 球団の選択画面を、リーグの中で東地区・中地区・西地区に分けるため。値は Lahman の Teams.csv の divID（2025年の30球団すべてに値があり、E・C・W のいずれか）
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: 画面の数値はすべて API の値で、率の表示は桁と「.331」の形をそろえるだけ。jsdom が <dialog> の showModal を実装していないため、テストでは開閉だけを置き換えている（test/setup.ts）。フォーカスの閉じ込め・Esc キーで閉じる・ダイアログを閉じたときのフォーカスの戻り先は、ブラウザの標準動作で、自動テストでは確認していない（ブラウザでの確認が必要）。上書きの確認はダイアログを閉じたあとカードの中に出し、確認が終わると「プリセットから読み込む」ボタンへフォーカスを戻す。確認したのは typecheck・lint・test（157件、うちプリセットの画面15件）・build・contrast（新たに3組を追加し、すべて基準以上）と、開発サーバーのプロキシ経由で /api/presets/teams・/api/presets?team=CWS が実データを返すこと、初期画面のスクリーンショット。ダイアログを開いた状態の見た目は未確認
+- 注意点: 346件は同じ入力・同じ取得日（2026-10-14）で生成し直し、各ファイルの差分が division の1行だけであることを確認した。別のフォルダにもう一度生成し、346件すべてがバイト単位で同じ（再現性あり）。照合済みの2件は、Judge に "division": "E"、Arraez に "division": "W" の1行を足しただけ（成績・出典・ほかの欄は同一）。プリセットの確率の差は0（baseline.py）
+
+## 2026-10-15 17:13 地区の欄をスキーマ・生成スクリプト・球団一覧APIに追加し、選手の要約にOPSを追加
+- 依頼内容: スキーマと生成スクリプトに地区を加え、GET /presets/teams を地区ごとの順に並べる（C1）。選手の要約（summary）に OPS を加える（C2）
+- 変更ファイル: schemas/batter_preset.schema.json, scripts/build_lahman_presets.py, backend/app/main.py, backend/app/core/optimizer.py（コメントの README の見出し名だけ）, backend/tests/test_presets_api.py, backend/tests/test_build_lahman_presets.py, backend/tests/test_preset_schema.py, docs/EDIT_LOG.md
+- 変更理由: スキーマの team_info に任意の division（E・C・W）を追加。生成スクリプトは Teams.csv の divID を team_info.division に書く。GET /presets/teams は各球団に division を返し、リーグの中を東・中・西の順、地区の中を球団名順に並べる（地区の無い球団は null で最後）。summary の OPS は、既存の出塁率・長打率の関数の丸める前の値を足してから小数3桁に丸める（AVG・OBP・SLG と同じく、分母が0のときは既存の関数どおり0を返す）
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: C1 と C2 はどちらも backend/app/main.py を変えるため、1つのコミットにまとめた。API の互換性：/presets/teams の各球団に division が加わり、並び順が球団名順から地区・球団名順に変わる。summary に OPS が加わる。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 完全一致、プリセットの確率の差0）。optimizer.py の変更は、README の見出しを「推奨打順の探索について」に変えたことに合わせたコメントだけ
+
+## 2026-10-15 17:13 プリセットの選択画面のキーボード操作を直し、地区ごとの表示・上書きの確認・出典の1行表示にする
+- 依頼内容: ブラウザ確認の指摘のうち、B1（球団を選んだあと Tab で選手へ進めない）、B2（球団を選んだあと Esc が効かない）を直し、C3（狭い画面で選手を球団の直後に出す）、C4（出典をカードの一番下の1行に）、C5（上書きの確認をダイアログの中に）、C6（移籍の表示を球団コードに）、C1・C2 の画面側（地区ごとの表示、OPS）を実装する
+- 変更ファイル: frontend/src/components/PresetDialog.tsx, frontend/src/components/PresetInfo.tsx, frontend/src/components/BatterCards.tsx, frontend/src/components/CopyControls.tsx, frontend/src/format.ts, frontend/src/api/types.ts, frontend/src/index.css, frontend/src/preset.test.tsx, frontend/scripts/contrast.mjs, docs/EDIT_LOG.md
+- 変更理由: B1：選手の一覧が、HTML の上で30球団のボタンのあと（右の列）にあり、Tab では残りの球団のボタン（NYY からなら19個）を通らないと選手に届かなかった（Edge 155 で再現）。選手の一覧を選んだ球団のボタンの直後に置く開閉式（aria-expanded・aria-controls）にし、広い画面では CSS で見た目だけ右の列に出すようにした（C3 も同じ方式で実現）。B2：Edge 155（ヘッドレス）では、球団をキーボードで選んだ場合もマウスで選んだ場合も、ダイアログの中の何もない所をクリックしてフォーカスが外れた場合も Esc で閉じ、利用者の環境での現象は再現できなかった（原因は未特定）。念のため、ブラウザ標準の cancel イベントに加えて、ダイアログの中で押された Esc キーも直接受け取って閉じるようにした。C5：上書きの確認を、プリセットのダイアログに重ねるもう1つのダイアログ（role="alertdialog"）にし、Esc とキャンセルは確認だけを閉じてフォーカスを選んでいた選手へ戻す。その際、中の確認ダイアログの close・cancel イベントが React の仕組みで外側のダイアログにも届き、外側まで閉じてしまうことが分かったため、外側はイベントの発生元が自分のときだけ扱うようにした。カードの中のコピーの確認は変えていない
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: B1・B2・C5 は jsdom の回帰テストを追加し（球団の次の Tab が選手、Esc キーで閉じる、確認の Esc は確認だけを閉じる）、さらに Edge 155（ヘッドレス）を DevTools Protocol でキーボード・マウス操作して、幅 1200px と 600px で確かめた。B2 の原因は未特定のため、利用者の環境で直ったかは未確認。jsdom は <dialog> の showModal を実装していないため、テストでは開閉だけを置き換えている。広い画面では、下のほうの球団を選んでも選手の一覧はダイアログの上端の右に出る（スクロールの位置によっては見えない）。test 164件・typecheck・lint・build・contrast（上書きの確認の枠線の1組を追加、すべて基準以上）が通った
+
+## 2026-10-15 17:13 画面とREADMEの「最適打順」を「推奨打順」に変更
+- 依頼内容: 画面と README の「最適打順」を「推奨打順」に変える。API の項目名、アルゴリズム名、DESIGN の技術的な説明の「最適化」は変えない（C7）
+- 変更ファイル: frontend/src/components/ResultSummary.tsx, frontend/src/App.tsx, README.md（冒頭の説明、使い方、出力、見出し「推奨打順の探索について」）, docs/DESIGN.md（0章の概要と使い方、4章の「非効率%」の表示例）, docs/EDIT_LOG.md
+- 変更理由: 打順は近似探索で求めており、最も期待得点が高い打順とは限らないため。画面の注記も「推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。」にした
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 変えていないもの：API の項目名（best_order など）、関数名（find_optimal_lineup など）、README の「厳密な最適解」「局所最適解」「打順最適化」、DESIGN の題名「野球打順最適化アプリ」と9章などの探索の技術的な説明、DESIGN 4章の API の値の説明（totals_by_games・warnings の行）と「非効率%」の計算式、backend のコメント（README の見出し名を指す optimizer.py の1か所だけは、見出しの変更に合わせて直した）・pyproject の説明。テストには「最適打順」という言葉は無かった。docs/DESIGN.md には、C7 のほかに C1・C3〜C6 の説明（2-2・2-3）の変更も入っている
+
+## 2026-10-15 17:28 出典の表示を、カードごとからページ下部にまとめる
+- 依頼内容: カードごとの出典の1行（C4 で作ったもの）をすべて削除し、ページの一番下に常に表示する「データの出典」欄を作る（段階6b修正の追加）
+- 変更ファイル: frontend/src/components/DataSources.tsx（新規）, frontend/src/components/DataSources.test.tsx（新規）, frontend/src/components/PresetInfo.tsx, frontend/src/components/BatterCards.tsx, frontend/src/App.tsx, frontend/src/App.test.tsx, frontend/src/preset.test.tsx, frontend/src/index.css, docs/DESIGN.md（2-2）, docs/EDIT_LOG.md
+- 変更理由: 出典をカードごとに出すとカードが高くなり、同じ出典が何度も並ぶため。欄は見出し（h2「データの出典」）とリストで、Lahman Baseball Database (SABR) / CC BY-SA 3.0（集計の方法と「第二出典との照合は一部のみ（未確認）」）と、照合済みの2人（Aaron Judge・Luis Arraez）の出典を並べる。照合済みの2人の出典名・URL・取得日は画面のコードに書き、プリセットのファイルの source と同じであることをテストで確かめる。参考値（reference_metrics）の表示は変えていない
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 欄は main 要素の外の footer 要素に置いた（App は main と footer を並べて返す）。Lahman の URL（https://sabr.org/lahman-database/）は、プリセットのファイルを読まずに画面のコードに書いている（data/NOTICE・生成スクリプトと同じ値）。新しい色の組み合わせはない（補足の文字・リンク・本文と、ページの地の組み合わせは既存の確認に含まれる）

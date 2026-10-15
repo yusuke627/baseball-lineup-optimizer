@@ -9,7 +9,7 @@ find_optimal_lineup による全探索は、現行コードの実測で約8.5分
 (計測条件は docs/DESIGN.md 9章「計算速度の改善」)。API経由での同期的な応答には
 重すぎるため、API は multi_restart_hill_climb（複数回のランダム再スタートによる
 山登り法、近似解）を使う。全探索は、バックグラウンドジョブ等での利用を想定している
-(docs/DESIGN.md 9章「最適打順探索の実運用方式」、README「最適打順の探索について」)。
+(docs/DESIGN.md 9章「最適打順探索の実運用方式」、README「推奨打順の探索について」)。
 """
 from __future__ import annotations
 

@@ -5,6 +5,7 @@ import type { BatterStats, LineupEvaluationResponse, Preset, StatKey } from './a
 import ErrorBanner, { type DisplayError } from './components/ErrorBanner'
 import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './components/ErrorSummary'
 import BatterCards from './components/BatterCards'
+import DataSources from './components/DataSources'
 import ResultSummary from './components/ResultSummary'
 import { findNameIssues } from './names'
 import { createInitialLineup, displayName, lineupReducer } from './state/lineup'
@@ -129,71 +130,74 @@ export default function App() {
   }
 
   return (
-    <main>
-      <header className="page-header">
-        <h1>打順の得点期待値</h1>
-        <p>
-          9人の打者の成績から、入力した打順と最適打順の期待得点を計算して比べます。
-        </p>
-      </header>
-
-      <section aria-labelledby="input-heading" className="step">
-        <h2 id="input-heading">
-          <span className="step-number">1</span>成績の入力
-        </h2>
-        <p>
-          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
-        </p>
-        <BatterCards
-          slots={lineup.slots}
-          nameIssues={nameIssues}
-          showAllErrors={showAllErrors}
-          disabled={isRunning}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onNameChange={handleNameChange}
-          onNameBlur={handleNameBlur}
-          onCopy={handleCopy}
-          onLoadPreset={handleLoadPreset}
-          onRevertPreset={handleRevertPreset}
-        />
-      </section>
-
-      <section aria-labelledby="order-heading" className="step">
-        <h2 id="order-heading">
-          <span className="step-number">2</span>打順
-        </h2>
-        <p>この打順で計算します。現在は、成績を入力した順が打順になります（並べ替えは開発中です）。</p>
-        <ol className="order-list">
-          {lineup.order.map((id) => (
-            <li key={id}>{namesById[id]}</li>
-          ))}
-        </ol>
-      </section>
-
-      <section aria-labelledby="run-heading" className="step">
-        <h2 id="run-heading">
-          <span className="step-number">3</span>計算と結果
-        </h2>
-        <div className="run-controls">
-          <button type="button" onClick={handleRun} disabled={isRunning}>
-            期待得点を計算する
-          </button>
-          {isRunning && (
-            <button type="button" onClick={handleCancel}>
-              キャンセル
-            </button>
-          )}
-        </div>
-        {isRunning && (
-          <p role="status" className="note">
-            計算中です。入力した打順の評価と、最適打順の探索を行っています（数秒かかります）。
+    <>
+      <main>
+        <header className="page-header">
+          <h1>打順の得点期待値</h1>
+          <p>
+            9人の打者の成績から、入力した打順と推奨打順の期待得点を計算して比べます。
           </p>
-        )}
-        {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={focusField} />}
-        {run.status === 'error' && <ErrorBanner error={run.error} />}
-        {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
-      </section>
-    </main>
+        </header>
+
+        <section aria-labelledby="input-heading" className="step">
+          <h2 id="input-heading">
+            <span className="step-number">1</span>成績の入力
+          </h2>
+          <p>
+            各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
+          </p>
+          <BatterCards
+            slots={lineup.slots}
+            nameIssues={nameIssues}
+            showAllErrors={showAllErrors}
+            disabled={isRunning}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onNameChange={handleNameChange}
+            onNameBlur={handleNameBlur}
+            onCopy={handleCopy}
+            onLoadPreset={handleLoadPreset}
+            onRevertPreset={handleRevertPreset}
+          />
+        </section>
+
+        <section aria-labelledby="order-heading" className="step">
+          <h2 id="order-heading">
+            <span className="step-number">2</span>打順
+          </h2>
+          <p>この打順で計算します。現在は、成績を入力した順が打順になります（並べ替えは開発中です）。</p>
+          <ol className="order-list">
+            {lineup.order.map((id) => (
+              <li key={id}>{namesById[id]}</li>
+            ))}
+          </ol>
+        </section>
+
+        <section aria-labelledby="run-heading" className="step">
+          <h2 id="run-heading">
+            <span className="step-number">3</span>計算と結果
+          </h2>
+          <div className="run-controls">
+            <button type="button" onClick={handleRun} disabled={isRunning}>
+              期待得点を計算する
+            </button>
+            {isRunning && (
+              <button type="button" onClick={handleCancel}>
+                キャンセル
+              </button>
+            )}
+          </div>
+          {isRunning && (
+            <p role="status" className="note">
+              計算中です。入力した打順の評価と、推奨打順の探索を行っています（数秒かかります）。
+            </p>
+          )}
+          {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={focusField} />}
+          {run.status === 'error' && <ErrorBanner error={run.error} />}
+          {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
+        </section>
+      </main>
+      <DataSources />
+    </>
   )
 }

@@ -30,7 +30,7 @@ export default function ResultSummary({ result, names }: ResultSummaryProps) {
           <dd className="number">{formatRuns(result.input_order_runs_per_game)}</dd>
         </div>
         <div className="figure">
-          <dt>最適打順の期待得点（1試合あたり）</dt>
+          <dt>推奨打順の期待得点（1試合あたり）</dt>
           <dd className="number">{formatRuns(result.best_order_runs_per_game)}</dd>
         </div>
         <div className="figure">
@@ -42,7 +42,7 @@ export default function ResultSummary({ result, names }: ResultSummaryProps) {
       <dl className="orders">
         <dt>入力した打順（1番から9番）</dt>
         <dd>{orderText(result.input_order)}</dd>
-        <dt>最適打順（近似探索、1番から9番）</dt>
+        <dt>推奨打順（近似探索、1番から9番）</dt>
         <dd>{orderText(result.best_order)}</dd>
       </dl>
 
@@ -58,7 +58,7 @@ export default function ResultSummary({ result, names }: ResultSummaryProps) {
       )}
 
       <p className="note">
-        最適打順は近似探索の結果です。厳密な最適解とは限らず、実行のたびに変わることがあります。
+        推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。
       </p>
     </section>
   )
