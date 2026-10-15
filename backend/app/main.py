@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
@@ -19,7 +20,7 @@ from app.core.optimizer import (
     inefficiency_percent,
     multi_restart_hill_climb,
 )
-from app.data_loader import list_presets
+from app.data_loader import list_presets, list_seasons
 from app.schemas.batter import (
     TOTALS_GAMES,
     BatterCountStats,
@@ -51,23 +52,104 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/presets")
-def get_presets(
-    # league はプリセットのフォルダ名 (data/presets/<league>/) に使うため、英小文字のみ許可する
-    league: Annotated[str, Query(pattern="^[a-z]+$", max_length=20)] = "mlb",
-    season: int = 2025,
-):
+# league はプリセットのフォルダ名 (data/presets/<league>/) に使うため、英小文字のみ許可する
+League = Annotated[str, Query(pattern="^[a-z]+$", max_length=20)]
+# 球団コードは team_info.code と同じ形 (英大文字2〜3文字)
+TeamCode = Annotated[str | None, Query(pattern="^[A-Z]{2,3}$")]
+SearchText = Annotated[str | None, Query(max_length=40)]
+# 名前で検索したときに返す最大件数。総数は total で返す
+MAX_SEARCH_RESULTS = 50
+LEAGUE_ORDER = ("AL", "NL")
+
+
+def _with_summary(preset: dict) -> dict:
     """
-    プリセット一覧。各プリセットに表示用指標 (summary) をアプリ側で計算して付与する。
+    プリセットに表示用指標 (summary) をアプリ側で計算して付与する。
     wOBA・wRC+ はアプリでは計算しない。プリセットのJSONに公表値 (reference_metrics) があれば
     そのまま返し、無ければ null を返す。この値はモデルの計算には使わない。
     """
+    stats = _to_basic_stats(BatterCountStats.model_validate(preset["stats"]))
+    preset["summary"] = _stats_to_summary(stats)
+    preset.setdefault("reference_metrics", None)
+    return preset
+
+
+def _fold(text: str) -> str:
+    """検索用に、大文字・小文字とアクセント記号の違いをなくす (例: "José" と "jose" を同じにする)"""
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).casefold()
+
+
+def _name_sort_key(preset: dict) -> tuple[str, str]:
+    return (_fold(preset["name"]), preset["id"])
+
+
+@app.get("/presets")
+def get_presets(
+    league: League = "mlb",
+    season: int = 2025,
+    team: TeamCode = None,
+    q: SearchText = None,
+):
+    """
+    プリセット一覧。
+
+    - team も q も無いときは、従来どおり全件を配列で返す (互換のため)
+    - team (球団コード) か q (名前の一部) があるときは、{"total": 総数, "items": [...]} を返す。
+      items は名前順。team は最終所属の球団 (team_info.code) で絞り込み、移籍前の球団では見つからない。
+      q は球団に関係なく、名前の一部で探す (大文字・小文字とアクセント記号は区別しない)。
+      q があるときは最大 MAX_SEARCH_RESULTS 件を返す
+    """
     presets = list_presets(league=league, season=season)
-    for preset in presets:
-        stats = _to_basic_stats(BatterCountStats.model_validate(preset["stats"]))
-        preset["summary"] = _stats_to_summary(stats)
-        preset.setdefault("reference_metrics", None)
-    return presets
+    query = _fold(q.strip()) if q is not None else ""
+    if team is None and query == "":
+        return [_with_summary(preset) for preset in presets]
+
+    matched = [
+        preset for preset in presets
+        if (team is None or (preset.get("team_info") or {}).get("code") == team)
+        and (query == "" or query in _fold(preset["name"]))
+    ]
+    matched.sort(key=_name_sort_key)
+    items = matched[:MAX_SEARCH_RESULTS] if query else matched
+    return {"total": len(matched), "items": [_with_summary(preset) for preset in items]}
+
+
+@app.get("/presets/seasons")
+def get_preset_seasons(league: League = "mlb"):
+    """プリセットのあるシーズンの一覧 (古い順)"""
+    return {"league": league, "seasons": list_seasons(league)}
+
+
+@app.get("/presets/teams")
+def get_preset_teams(league: League = "mlb", season: int = 2025):
+    """
+    球団の一覧。リーグ (AL・NL) ごとに分け、球団名順に並べる。
+    count は、その球団を最終所属 (team_info.code) とする選手の数。移籍した選手は最終所属の球団だけで数える。
+    team_info の無いプリセットは、どの球団にも数えず without_team に数を返す
+    """
+    team_info: dict[str, dict[str, str]] = {}
+    counts: dict[str, int] = {}
+    without_team = 0
+    for preset in list_presets(league=league, season=season):
+        info = preset.get("team_info")
+        if info is None:
+            without_team += 1
+            continue
+        team_info.setdefault(info["code"], info)
+        counts[info["code"]] = counts.get(info["code"], 0) + 1
+    leagues = [
+        {
+            "league": league_id,
+            "teams": [
+                {"code": code, "name": info["name"], "league": info["league"], "count": counts[code]}
+                for code, info in sorted(team_info.items(), key=lambda item: (_fold(item[1]["name"]), item[0]))
+                if info["league"] == league_id
+            ],
+        }
+        for league_id in LEAGUE_ORDER
+    ]
+    return {"season": season, "leagues": leagues, "without_team": without_team}
 
 
 def _to_basic_stats(stats_model: BatterCountStats) -> BasicStats:
