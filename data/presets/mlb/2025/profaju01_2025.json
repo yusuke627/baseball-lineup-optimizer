@@ -14,7 +14,8 @@
   "team_info": {
     "code": "ATL",
     "name": "Atlanta Braves",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "ATL"
   },
   "stats": {
     "PA": 371,

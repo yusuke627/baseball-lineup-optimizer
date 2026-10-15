@@ -14,7 +14,8 @@
   "team_info": {
     "code": "TEX",
     "name": "Texas Rangers",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "TEX"
   },
   "stats": {
     "PA": 376,

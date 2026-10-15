@@ -176,12 +176,38 @@ def test_preset_requires_pa_of_at_least_one():
         check_preset(data)
 
 
-TEAM_INFO = {"code": "T2", "name": "Test Team Two", "league": "AL"}
-TEAMS_PLAYED = [{"code": "T1", "name": "Test Team One"}, {"code": "T2", "name": "Test Team Two"}]
+TEAM_INFO = {"code": "TBB", "name": "Test Team Two", "league": "AL"}
+TEAMS_PLAYED = [{"code": "TAA", "name": "Test Team One"}, {"code": "TBB", "name": "Test Team Two"}]
 
 
 def test_preset_with_team_info_is_valid():
     check_preset(_dummy(team_info=TEAM_INFO))
+
+
+def test_team_info_may_have_lahman_id():
+    check_preset(_dummy(team_info=dict(TEAM_INFO, lahman_id="XBB")))
+
+
+def test_team_codes_are_consistent_across_presets():
+    """実際のプリセット全体で、球団コード・球団名・Lahman の teamID の対応が1対1になっていること"""
+    names_by_code: dict[str, set[str]] = {}
+    lahman_by_code: dict[str, set[str]] = {}
+    codes_by_lahman: dict[str, set[str]] = {}
+    for path in _all_preset_files():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        info = data.get("team_info")
+        if info is None:
+            continue
+        key = (data["season"], info["code"])
+        names_by_code.setdefault(str(key), set()).add(info["name"])
+        for item in data.get("teams_played", []):
+            names_by_code.setdefault(str((data["season"], item["code"])), set()).add(item["name"])
+        if "lahman_id" in info:
+            lahman_by_code.setdefault(str(key), set()).add(info["lahman_id"])
+            codes_by_lahman.setdefault(str((data["season"], info["lahman_id"])), set()).add(info["code"])
+    assert {k: v for k, v in names_by_code.items() if len(v) > 1} == {}
+    assert {k: v for k, v in lahman_by_code.items() if len(v) > 1} == {}
+    assert {k: v for k, v in codes_by_lahman.items() if len(v) > 1} == {}
 
 
 def test_preset_with_teams_played_is_valid():
@@ -189,8 +215,8 @@ def test_preset_with_teams_played_is_valid():
 
 
 def test_preset_may_return_to_an_earlier_team():
-    played = [*TEAMS_PLAYED, {"code": "T1", "name": "Test Team One"}]
-    check_preset(_dummy(team_info=dict(TEAM_INFO, code="T1", name="Test Team One"), teams_played=played))
+    played = [*TEAMS_PLAYED, {"code": "TAA", "name": "Test Team One"}]
+    check_preset(_dummy(team_info=dict(TEAM_INFO, code="TAA", name="Test Team One"), teams_played=played))
 
 
 def test_teams_played_requires_team_info():
@@ -200,16 +226,21 @@ def test_teams_played_requires_team_info():
 
 def test_last_team_played_must_match_team_info():
     with pytest.raises(ValueError, match="最後の球団"):
-        check_preset(_dummy(team_info=dict(TEAM_INFO, code="T1"), teams_played=TEAMS_PLAYED))
+        check_preset(_dummy(team_info=dict(TEAM_INFO, code="TAA"), teams_played=TEAMS_PLAYED))
 
 
 @pytest.mark.parametrize(
     "team_info",
     [
-        {"code": "T1", "name": "Test Team"},                                  # league が無い
+        {"code": "TAA", "name": "Test Team"},                                  # league が無い
         {"code": "", "name": "Test Team", "league": "AL"},                    # code が空
-        {"code": "T1", "name": "Test Team", "league": "XX"},                  # 知らないリーグ
-        {"code": "T1", "name": "Test Team", "league": "AL", "city": "Test"},  # 知らないキー
+        {"code": "nyy", "name": "Test Team", "league": "AL"},                 # 小文字
+        {"code": "N", "name": "Test Team", "league": "AL"},                   # 1文字
+        {"code": "NYYY", "name": "Test Team", "league": "AL"},                # 4文字
+        {"code": "N1", "name": "Test Team", "league": "AL"},                  # 数字
+        {"code": "TAA", "name": "Test Team", "league": "AL", "lahman_id": ""},  # lahman_id が空
+        {"code": "TAA", "name": "Test Team", "league": "XX"},                  # 知らないリーグ
+        {"code": "TAA", "name": "Test Team", "league": "AL", "city": "Test"},  # 知らないキー
     ],
     ids=lambda t: json.dumps(t, ensure_ascii=False),
 )
@@ -221,9 +252,9 @@ def test_invalid_team_info_is_rejected(team_info):
 @pytest.mark.parametrize(
     "teams_played",
     [
-        [{"code": "T2", "name": "Test Team Two"}],                             # 1球団だけ
-        [{"code": "T1"}, {"code": "T2", "name": "Test Team Two"}],             # name が無い
-        ["T1", "T2"],                                                          # 文字列の配列
+        [{"code": "TBB", "name": "Test Team Two"}],                             # 1球団だけ
+        [{"code": "TAA"}, {"code": "TBB", "name": "Test Team Two"}],             # name が無い
+        ["TAA", "TBB"],                                                          # 文字列の配列
     ],
     ids=lambda t: json.dumps(t, ensure_ascii=False),
 )

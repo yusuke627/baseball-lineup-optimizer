@@ -14,7 +14,8 @@
   "team_info": {
     "code": "MIA",
     "name": "Miami Marlins",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "MIA"
   },
   "stats": {
     "PA": 619,

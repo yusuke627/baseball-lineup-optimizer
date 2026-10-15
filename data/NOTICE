@@ -27,6 +27,9 @@ data/presets/ のうち、出典（source.provider）が "Lahman Baseball Databa
   - 計算した打席数が 200 以上の選手だけを選びました。
   - プリセットの JSON の形式（schemas/batter_preset.schema.json）に並べ替えました。
   - 選手名は People.csv の nameFirst と nameLast、球団名は Teams.csv の name を使いました。
+  - 球団コード（team_info.code、teams_played の code）は、このプロジェクトで統一した表記にしました。
+    13球団は Lahman の teamID と異なる表記です（対応表は scripts/build_lahman_presets.py の TEAM_CODE_BY_LAHMAN_ID）。
+    元の teamID は team_info.lahman_id に残しています。
   - 生成に使ったスクリプトは scripts/build_lahman_presets.py です。
 
 これらのプリセットは、独立した第二の出典との照合を行っていません（verified: false）。

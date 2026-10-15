@@ -14,11 +14,12 @@
   "team_info": {
     "code": "MIL",
     "name": "Milwaukee Brewers",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "MIL"
   },
   "teams_played": [
     {
-      "code": "CHA",
+      "code": "CWS",
       "name": "Chicago White Sox"
     },
     {

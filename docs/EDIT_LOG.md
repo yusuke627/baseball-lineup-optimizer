@@ -327,3 +327,11 @@
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
 - 注意点: 法的な断定は書いていない。コードのライセンスは、ルートの LICENSE が MIT（README の記載とも一致）。LICENSE の著作権者の欄は「Copyright (c) 2026」で名前がない。照合済みの2件（Savant・Baseball-Reference 由来）のライセンスの扱いは、NOTICE では「Lahman から生成したものではない」と書くにとどめ、決めていない。README の参考文献欄は触っていない
+
+## 2026-10-14 17:57 プリセットの球団コードを指定の表記に統一
+- 依頼内容: 球団コードを利用者が指定した表記に統一する（AZ・CWS・CHC・KC・LAA・LAD・NYY・NYM・SD・SF・STL・TB・WSH。指定のない球団は Lahman の teamID のまま）。元の teamID は team_info.lahman_id に残す（段階11c の後続）
+- 変更ファイル: scripts/build_lahman_presets.py, schemas/batter_preset.schema.json, backend/tests/test_build_lahman_presets.py, backend/tests/test_preset_schema.py, data/presets/mlb/2025/ の346ファイルのうち球団コードが変わったもの, data/NOTICE, docs/DESIGN.md（2-4）, docs/EDIT_LOG.md
+- 変更理由: Lahman の teamID（NYA、SDN など）と、既存の照合済み2件の表記（NYY、SD）が別の体系で、同じ球団が2つのコードを持つ状態だったため。生成スクリプトに対応表 TEAM_CODE_BY_LAHMAN_ID（13球団）を置き、team_info.code と teams_played[].code を変換して書くようにした。スキーマは、球団コードを英大文字2〜3文字に制限し、任意の team_info.lahman_id を追加した。実際のプリセット全体で、球団コード・球団名・lahman_id の対応が1対1であることを検査するテストを追加した
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 346件を同じ入力・同じ取得日（2026-10-14）で生成し直し、生成前と比べて、変わったのは球団コードの部分だけであることを確認した（team_info.code が変わったのは138件、teams_played が変わったのは22件。全346件に lahman_id が加わり、その値は生成前の team_info.code と一致）。既存の照合済み2件のファイルは変わっていない（team の表記「(NYY)」「(SD)」は統一したコードと一致）。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 固定seed 3通りが完全一致、プリセットの確率の差0）。ruff・mypy・pytest（1229件）が通った。teams_played の要素には lahman_id を持たせていない

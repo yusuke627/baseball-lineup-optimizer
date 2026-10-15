@@ -14,11 +14,12 @@
   "team_info": {
     "code": "SEA",
     "name": "Seattle Mariners",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "SEA"
   },
   "teams_played": [
     {
-      "code": "ARI",
+      "code": "AZ",
       "name": "Arizona Diamondbacks"
     },
     {

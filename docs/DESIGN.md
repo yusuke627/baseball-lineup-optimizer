@@ -205,7 +205,26 @@ data/presets/mlb/2025/
 - 上の 348人のうち、照合済みのプリセットがある2人（playerID が `judgeaa01`・`arraelu01`）を除く **346件** を `data/presets/mlb/2025/` に作った。既存の2件のファイルは変更していない
 - ファイル名と `id` は `<playerID>_<シーズン>`（例：`meadcu01_2025`）。既存の2件は `<名前>_<シーズン>`（`aaron_judge_2025`）だが、同じ名前の選手（Max Muncy が2人。`muncyma01_2025` と `muncyma02_2025`）がいても衝突しないよう、生成するものは playerID を使う。`name` は名前のままなので、同じ名前のプリセットが2件ある（球団で区別する）
 - `verified` は `false`。`source` は provider が「Lahman Baseball Database (SABR)」、url が Lahman の readme に書かれた Web サイト（https://sabr.org/lahman-database/）、`retrieved_at` は利用者が元データを取得した日（2026-10-14）、`note` に「機械的に生成し、独立した第二出典との照合は未実施」であることと、使用した版（readme の Release Date）を書く
-- `team` と `team_info.name` は `Teams.csv` の `name` のまま、`team_info.code` は `teamID`、`team_info.league` は `lgID`。複数の球団に在籍した35人には `teams_played` を付けた
+- `team` と `team_info.name` は `Teams.csv` の `name` のまま、`team_info.league` は `lgID`。複数の球団に在籍した35人には `teams_played` を付けた
+- 球団コード（`team_info.code` と `teams_played[].code`）は、利用者が指定した表記に統一する（2026-10-14）。Lahman の `teamID` と異なる表記にするのは次の13球団で、ほかの17球団は `teamID` のまま。元の `teamID` は `team_info.lahman_id` に残す。対応表は `scripts/build_lahman_presets.py` の `TEAM_CODE_BY_LAHMAN_ID`
+
+  | 球団 | Lahman の teamID | 統一した球団コード |
+  |---|---|---|
+  | Arizona Diamondbacks | ARI | AZ |
+  | Chicago White Sox | CHA | CWS |
+  | Chicago Cubs | CHN | CHC |
+  | Kansas City Royals | KCA | KC |
+  | Los Angeles Angels of Anaheim | LAA | LAA（teamID と同じ。teamIDretro は ANA） |
+  | Los Angeles Dodgers | LAN | LAD |
+  | New York Yankees | NYA | NYY |
+  | New York Mets | NYN | NYM |
+  | San Diego Padres | SDN | SD |
+  | San Francisco Giants | SFN | SF |
+  | St. Louis Cardinals | SLN | STL |
+  | Tampa Bay Rays | TBA | TB |
+  | Washington Nationals | WAS | WSH |
+
+  球団コードは英大文字2〜3文字（スキーマで検査）で、2文字と3文字が混ざる。実際のプリセット全体で、球団コード・球団名・`lahman_id` の対応が1対1であることをテストで確認している。既存の照合済み2件の `team` の表記（「New York Yankees (NYY)」「San Diego Padres (SD)」）は、統一した球団コードと一致する（2件は `team_info` を持たない）
 - 同じ入力からは同じファイルになる（キーの順番、インデント2、改行は LF、末尾に改行1つ）。生成し直して346件すべてがバイト単位で同じになることを確認した
 - 生成したすべてのファイルが、API と同じ入力検証（2-1）と JSON Schema（`check_preset`）を通る（pytest で確認）
 - 固定のシード（2025）で選んだ10人の成績を、公式の成績と見比べる確認は、利用者が行う。結果はここにはまだ書かない

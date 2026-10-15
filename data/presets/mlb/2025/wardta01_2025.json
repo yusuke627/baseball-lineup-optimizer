@@ -14,7 +14,8 @@
   "team_info": {
     "code": "LAA",
     "name": "Los Angeles Angels of Anaheim",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "LAA"
   },
   "stats": {
     "PA": 663,

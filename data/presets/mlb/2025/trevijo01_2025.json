@@ -14,7 +14,8 @@
   "team_info": {
     "code": "CIN",
     "name": "Cincinnati Reds",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "CIN"
   },
   "stats": {
     "PA": 302,

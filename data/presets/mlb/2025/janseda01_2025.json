@@ -14,11 +14,12 @@
   "team_info": {
     "code": "MIL",
     "name": "Milwaukee Brewers",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "MIL"
   },
   "teams_played": [
     {
-      "code": "TBA",
+      "code": "TB",
       "name": "Tampa Bay Rays"
     },
     {

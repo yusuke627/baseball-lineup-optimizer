@@ -50,6 +50,30 @@ SOURCE_NOTE = (
     "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、"
     "PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。"
 )
+# プリセットに書く球団コード。Lahman の teamID と異なる表記にする球団だけを並べる (利用者の指定、2026-10-14)。
+# ここに無い球団は、Lahman の teamID をそのまま使う。元の teamID は team_info.lahman_id に残す
+TEAM_CODE_BY_LAHMAN_ID = {
+    "ARI": "AZ",   # Arizona Diamondbacks
+    "CHA": "CWS",  # Chicago White Sox
+    "CHN": "CHC",  # Chicago Cubs
+    "KCA": "KC",   # Kansas City Royals
+    "LAA": "LAA",  # Los Angeles Angels of Anaheim (teamID と同じ。teamIDretro は ANA)
+    "LAN": "LAD",  # Los Angeles Dodgers
+    "NYA": "NYY",  # New York Yankees
+    "NYN": "NYM",  # New York Mets
+    "SDN": "SD",   # San Diego Padres
+    "SFN": "SF",   # San Francisco Giants
+    "SLN": "STL",  # St. Louis Cardinals
+    "TBA": "TB",   # Tampa Bay Rays
+    "WAS": "WSH",  # Washington Nationals
+}
+
+
+def team_code(lahman_id: str) -> str:
+    """プリセットに書く球団コード (TEAM_CODE_BY_LAHMAN_ID に無ければ Lahman の teamID のまま)"""
+    return TEAM_CODE_BY_LAHMAN_ID.get(lahman_id, lahman_id)
+
+
 DEFAULT_SAMPLE_SIZE = 10
 DEFAULT_SAMPLE_SEED = 2025
 
@@ -232,10 +256,17 @@ def build_preset(
             "retrieved_at": retrieved_at,
             "note": note,
         },
-        "team_info": {"code": code, "name": teams[code], "league": leagues[code]},
+        "team_info": {
+            "code": team_code(code),
+            "name": teams[code],
+            "league": leagues[code],
+            "lahman_id": code,
+        },
     }
     if len(player.teams_played) > 1:
-        preset["teams_played"] = [{"code": team, "name": teams[team]} for team in player.teams_played]
+        preset["teams_played"] = [
+            {"code": team_code(team), "name": teams[team]} for team in player.teams_played
+        ]
     preset["stats"] = stats
     return preset
 

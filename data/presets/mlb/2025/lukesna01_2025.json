@@ -14,7 +14,8 @@
   "team_info": {
     "code": "TOR",
     "name": "Toronto Blue Jays",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "TOR"
   },
   "stats": {
     "PA": 438,

@@ -14,7 +14,8 @@
   "team_info": {
     "code": "BOS",
     "name": "Boston Red Sox",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "BOS"
   },
   "stats": {
     "PA": 654,

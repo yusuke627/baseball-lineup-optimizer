@@ -14,7 +14,8 @@
   "team_info": {
     "code": "DET",
     "name": "Detroit Tigers",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "DET"
   },
   "stats": {
     "PA": 326,

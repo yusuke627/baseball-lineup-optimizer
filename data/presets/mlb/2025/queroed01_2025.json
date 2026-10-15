@@ -12,9 +12,10 @@
     "note": "Lahman Baseball Database から機械的に生成（同じシーズンに複数の球団に在籍した選手は成績を合算し、PA は AB+BB+HBP+SF+SH で算出）。独立した第二出典との照合は未実施。使用した版：Release Date: Dec 10, 2025。"
   },
   "team_info": {
-    "code": "CHA",
+    "code": "CWS",
     "name": "Chicago White Sox",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "CHA"
   },
   "stats": {
     "PA": 403,

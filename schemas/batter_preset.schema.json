@@ -14,9 +14,14 @@
       "required": ["code", "name", "league"],
       "additionalProperties": false,
       "properties": {
-        "code": { "type": "string", "minLength": 1, "description": "球団コード (Lahman Baseball Database の teamID。例: NYA)" },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,3}$",
+          "description": "球団コード (英大文字2〜3文字。例: NYY、SD)。プロジェクトで統一した表記で、Lahman の teamID と異なる球団がある (scripts/build_lahman_presets.py の TEAM_CODE_BY_LAHMAN_ID)"
+        },
         "name": { "type": "string", "minLength": 1, "description": "球団名 (Lahman の Teams.csv の name のまま)" },
-        "league": { "type": "string", "enum": ["AL", "NL"], "description": "所属リーグ (Lahman の lgID)" }
+        "league": { "type": "string", "enum": ["AL", "NL"], "description": "所属リーグ (Lahman の lgID)" },
+        "lahman_id": { "type": "string", "minLength": 1, "description": "Lahman Baseball Database の teamID (元データとの対応を追うため。省略可)" }
       }
     },
     "teams_played": {
@@ -28,7 +33,7 @@
         "required": ["code", "name"],
         "additionalProperties": false,
         "properties": {
-          "code": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "pattern": "^[A-Z]{2,3}$", "description": "team_info.code と同じ表記の球団コード" },
           "name": { "type": "string", "minLength": 1 }
         }
       }

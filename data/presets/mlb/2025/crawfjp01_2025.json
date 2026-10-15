@@ -14,7 +14,8 @@
   "team_info": {
     "code": "SEA",
     "name": "Seattle Mariners",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "SEA"
   },
   "stats": {
     "PA": 654,

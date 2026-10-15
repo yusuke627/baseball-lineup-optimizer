@@ -14,7 +14,8 @@
   "team_info": {
     "code": "HOU",
     "name": "Houston Astros",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "HOU"
   },
   "stats": {
     "PA": 543,

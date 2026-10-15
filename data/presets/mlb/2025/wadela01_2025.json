@@ -14,11 +14,12 @@
   "team_info": {
     "code": "LAA",
     "name": "Los Angeles Angels of Anaheim",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "LAA"
   },
   "teams_played": [
     {
-      "code": "SFN",
+      "code": "SF",
       "name": "San Francisco Giants"
     },
     {

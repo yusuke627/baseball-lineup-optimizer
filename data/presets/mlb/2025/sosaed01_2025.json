@@ -14,7 +14,8 @@
   "team_info": {
     "code": "PHI",
     "name": "Philadelphia Phillies",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "PHI"
   },
   "stats": {
     "PA": 260,

@@ -14,7 +14,8 @@
   "team_info": {
     "code": "PIT",
     "name": "Pittsburgh Pirates",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "PIT"
   },
   "stats": {
     "PA": 281,

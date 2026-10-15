@@ -14,11 +14,12 @@
   "team_info": {
     "code": "BOS",
     "name": "Boston Red Sox",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "BOS"
   },
   "teams_played": [
     {
-      "code": "WAS",
+      "code": "WSH",
       "name": "Washington Nationals"
     },
     {

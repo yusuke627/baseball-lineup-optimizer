@@ -14,7 +14,8 @@
   "team_info": {
     "code": "MIN",
     "name": "Minnesota Twins",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "MIN"
   },
   "stats": {
     "PA": 392,

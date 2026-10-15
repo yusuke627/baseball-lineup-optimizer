@@ -14,7 +14,8 @@
   "team_info": {
     "code": "MIL",
     "name": "Milwaukee Brewers",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "MIL"
   },
   "stats": {
     "PA": 589,

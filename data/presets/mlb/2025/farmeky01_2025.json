@@ -14,7 +14,8 @@
   "team_info": {
     "code": "COL",
     "name": "Colorado Rockies",
-    "league": "NL"
+    "league": "NL",
+    "lahman_id": "COL"
   },
   "stats": {
     "PA": 300,

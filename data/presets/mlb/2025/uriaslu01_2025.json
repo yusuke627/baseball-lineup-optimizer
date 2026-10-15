@@ -14,7 +14,8 @@
   "team_info": {
     "code": "ATH",
     "name": "Athletics",
-    "league": "AL"
+    "league": "AL",
+    "lahman_id": "ATH"
   },
   "stats": {
     "PA": 327,
