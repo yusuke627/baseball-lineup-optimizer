@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { ApiError, evaluateLineup, fetchPresets } from './client'
+import {
+  ApiError,
+  evaluateLineup,
+  fetchPresets,
+  fetchPresetSeasons,
+  fetchPresetTeams,
+  searchPresets,
+} from './client'
 import type { LineupEvaluationRequest } from './types'
 
 const REQUEST: LineupEvaluationRequest = { batters: {}, input_order: [] }
@@ -37,6 +44,20 @@ describe('呼び出し先', () => {
     const mock = stubFetch(async () => jsonResponse([]))
     await expect(fetchPresets()).resolves.toEqual([])
     expect(mock).toHaveBeenCalledWith('/api/presets?league=mlb&season=2025', { signal: undefined })
+  })
+
+  test('シーズン・球団の一覧と、球団・名前での絞り込みの呼び出し先', async () => {
+    const mock = stubFetch(async () => jsonResponse({}))
+    await fetchPresetSeasons()
+    await fetchPresetTeams(2025)
+    await searchPresets({ season: 2025, team: 'NYY' })
+    await searchPresets({ season: 2024, q: 'josé ramírez' })
+    expect(mock.mock.calls.map((call) => (call as unknown as [string])[0])).toEqual([
+      '/api/presets/seasons?league=mlb',
+      '/api/presets/teams?league=mlb&season=2025',
+      '/api/presets?league=mlb&season=2025&team=NYY',
+      '/api/presets?league=mlb&season=2024&q=jos%C3%A9+ram%C3%ADrez',
+    ])
   })
 
   test('評価は相対パス /api/lineup/evaluate に JSON を POST する', async () => {

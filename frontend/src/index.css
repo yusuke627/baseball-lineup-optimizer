@@ -133,6 +133,201 @@ p {
   background: var(--color-surface);
 }
 
+/* 画面には見せず、読み上げだけに使う文 (リンクが新しいタブで開くことなど) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+/* カードの上端のプリセットの欄 */
+.preset-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.preset-area > .button-secondary,
+.preset-info .button-secondary {
+  padding: var(--space-1) var(--space-3);
+}
+
+.preset-info {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg);
+}
+
+.preset-info p {
+  margin: 0 0 var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.preset-info-label,
+.preset-info-source,
+.preset-info-reference,
+.preset-info-edited {
+  color: var(--color-muted);
+}
+
+.preset-info-moved,
+.preset-player-moved {
+  font-weight: bold;
+}
+
+/* プリセットを選ぶダイアログ (ブラウザ標準の <dialog>) */
+.preset-dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  box-sizing: border-box;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.preset-dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+.preset-dialog h2 {
+  margin: 0;
+}
+
+.preset-dialog h3 {
+  margin: 0 0 var(--space-2);
+}
+
+.preset-dialog h4 {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.preset-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.preset-dialog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.preset-dialog-controls select,
+.preset-search input {
+  font: inherit;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.preset-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.preset-search input {
+  width: 16em;
+  max-width: 100%;
+}
+
+/* 広い画面では「球団」と「選手」を左右に、狭い画面では上下に並べる */
+.preset-dialog-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 720px) {
+  .preset-dialog-body {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
+
+.preset-team-list,
+.preset-player-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preset-team-button {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  margin-bottom: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: normal;
+  text-align: left;
+}
+
+.preset-team-button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: bold;
+}
+
+.preset-team-count {
+  white-space: nowrap;
+}
+
+.preset-player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.preset-player-detail p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.preset-player-stats {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.preset-player button {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+}
+
 /* エラーのある入力欄を含むカードは、枠の色を変える */
 .batter-card:has([aria-invalid='true']) {
   border-color: var(--color-error);

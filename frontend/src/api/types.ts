@@ -25,6 +25,24 @@ export interface PresetSource {
   provider: string
   url: string
   retrieved_at: string
+  /** 生成の方法や照合の状況などの補足 */
+  note?: string
+}
+
+/** 所属球団 (移籍した選手は、そのシーズンの最後に出場した球団) */
+export interface TeamInfo {
+  /** 球団コード (例: NYY、SD) */
+  code: string
+  name: string
+  league: 'AL' | 'NL'
+  /** Lahman Baseball Database の teamID */
+  lahman_id?: string
+}
+
+/** 在籍した球団 (出場した順)。複数の球団に在籍した選手だけにある */
+export interface TeamPlayed {
+  code: string
+  name: string
 }
 
 /** GET /presets がアプリ側で計算して付ける表示用指標 */
@@ -65,6 +83,38 @@ export interface Preset {
   summary: PresetSummary
   /** 参考値。プリセットに無ければ null */
   reference_metrics: ReferenceMetrics | null
+  team_info?: TeamInfo
+  teams_played?: TeamPlayed[]
+}
+
+/** GET /presets/seasons */
+export interface PresetSeasons {
+  league: string
+  /** プリセットのあるシーズン (古い順) */
+  seasons: number[]
+}
+
+export interface PresetTeam {
+  code: string
+  name: string
+  league: 'AL' | 'NL'
+  /** この球団を最終所属とする選手の数 */
+  count: number
+}
+
+/** GET /presets/teams */
+export interface PresetTeams {
+  season: number
+  leagues: { league: 'AL' | 'NL'; teams: PresetTeam[] }[]
+  /** 球団の情報が無いプリセットの数 */
+  without_team: number
+}
+
+/** GET /presets に team か q を付けたときの応答 */
+export interface PresetSearchResult {
+  /** 条件に合う総数 (q があるときは、items が上限で切られていることがある) */
+  total: number
+  items: Preset[]
 }
 
 export interface LineupEvaluationRequest {

@@ -45,6 +45,24 @@ export function checkDisplayName(value: string): NameCheck {
 }
 
 /**
+ * ほかの打者と重ならない表示名を作る。base が使われていなければそのまま、
+ * 使われていれば「base (2)」「base (3)」… のうち空いている最小の番号を付ける
+ */
+export function uniqueDisplayName(base: string, otherNames: string[]): string {
+  const taken = new Set(otherNames.map((name) => name.trim()))
+  const name = base.trim()
+  if (!taken.has(name)) {
+    return name
+  }
+  for (let n = 2; ; n += 1) {
+    const candidate = `${name} (${n})`
+    if (!taken.has(candidate)) {
+      return candidate
+    }
+  }
+}
+
+/**
  * 打者ごとの表示名の問題を返す (問題が無い打者は含めない)。
  * 同じ名前が複数あるときは、その全員を重複として報告する。
  */

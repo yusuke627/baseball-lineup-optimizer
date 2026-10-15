@@ -1,4 +1,11 @@
-import type { LineupEvaluationRequest, LineupEvaluationResponse, Preset } from './types'
+import type {
+  LineupEvaluationRequest,
+  LineupEvaluationResponse,
+  Preset,
+  PresetSearchResult,
+  PresetSeasons,
+  PresetTeams,
+} from './types'
 
 // API は相対パスで呼ぶ。開発時は Vite のプロキシが /api をバックエンドに転送する (vite.config.ts)。
 const API_BASE = '/api'
@@ -108,6 +115,30 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function fetchPresets(signal?: AbortSignal): Promise<Preset[]> {
   return request<Preset[]>('/presets?league=mlb&season=2025', { signal })
+}
+
+export function fetchPresetSeasons(signal?: AbortSignal): Promise<PresetSeasons> {
+  return request<PresetSeasons>('/presets/seasons?league=mlb', { signal })
+}
+
+export function fetchPresetTeams(season: number, signal?: AbortSignal): Promise<PresetTeams> {
+  const params = new URLSearchParams({ league: 'mlb', season: String(season) })
+  return request<PresetTeams>(`/presets/teams?${params}`, { signal })
+}
+
+/** 球団 (team) か選手名の一部 (q) で、プリセットを探す。q があるときは、最大50件と総数が返る */
+export function searchPresets(
+  { season, team, q }: { season: number; team?: string; q?: string },
+  signal?: AbortSignal,
+): Promise<PresetSearchResult> {
+  const params = new URLSearchParams({ league: 'mlb', season: String(season) })
+  if (team) {
+    params.set('team', team)
+  }
+  if (q) {
+    params.set('q', q)
+  }
+  return request<PresetSearchResult>(`/presets?${params}`, { signal })
 }
 
 export function evaluateLineup(

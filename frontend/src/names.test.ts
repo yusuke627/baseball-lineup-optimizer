@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 // バックエンドのテスト (backend/tests/test_validation.py) と同じ入力例を使い、検証結果が一致することを確認する
 import casesFile from '../../schemas/display_name_validation_cases.json'
-import { checkDisplayName, findNameIssues, MAX_DISPLAY_NAME_LENGTH } from './names'
+import { checkDisplayName, findNameIssues, MAX_DISPLAY_NAME_LENGTH, uniqueDisplayName } from './names'
 
 interface SharedNameCase {
   name: string
@@ -32,6 +32,22 @@ describe('バックエンドと共通の表示名の例', () => {
     } else {
       expect(check.issue.rule).toBe(testCase.rule)
     }
+  })
+})
+
+describe('重ならない表示名を作る', () => {
+  test('使われていなければ、そのまま', () => {
+    expect(uniqueDisplayName('Max Muncy', ['打者B'])).toBe('Max Muncy')
+  })
+
+  test('使われていれば「 (2)」、それも使われていれば「 (3)」を付ける', () => {
+    expect(uniqueDisplayName('Max Muncy', ['Max Muncy'])).toBe('Max Muncy (2)')
+    expect(uniqueDisplayName('Max Muncy', ['Max Muncy', 'Max Muncy (2)'])).toBe('Max Muncy (3)')
+    expect(uniqueDisplayName('Max Muncy', ['Max Muncy', 'Max Muncy (3)'])).toBe('Max Muncy (2)')
+  })
+
+  test('前後の空白を除いて比べる', () => {
+    expect(uniqueDisplayName(' Max Muncy ', [' Max Muncy'])).toBe('Max Muncy (2)')
   })
 })
 

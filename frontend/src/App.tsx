@@ -1,7 +1,7 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
 
 import { ApiError, evaluateLineup } from './api/client'
-import type { BatterStats, LineupEvaluationResponse, StatKey } from './api/types'
+import type { BatterStats, LineupEvaluationResponse, Preset, StatKey } from './api/types'
 import ErrorBanner, { type DisplayError } from './components/ErrorBanner'
 import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './components/ErrorSummary'
 import BatterCards from './components/BatterCards'
@@ -74,6 +74,16 @@ export default function App() {
     clearRun()
   }
 
+  function handleLoadPreset(slotId: string, preset: Preset, name: string) {
+    dispatch({ type: 'loadPreset', slotId, preset, name })
+    clearRun()
+  }
+
+  function handleRevertPreset(slotId: string) {
+    dispatch({ type: 'revertPreset', slotId })
+    clearRun()
+  }
+
   async function handleRun() {
     setShowAllErrors(true)
 
@@ -132,7 +142,7 @@ export default function App() {
           <span className="step-number">1</span>成績の入力
         </h2>
         <p>
-          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。入力した成績は、ほかの打者にコピーできます。
+          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
         </p>
         <BatterCards
           slots={lineup.slots}
@@ -144,6 +154,8 @@ export default function App() {
           onNameChange={handleNameChange}
           onNameBlur={handleNameBlur}
           onCopy={handleCopy}
+          onLoadPreset={handleLoadPreset}
+          onRevertPreset={handleRevertPreset}
         />
       </section>
 

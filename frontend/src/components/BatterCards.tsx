@@ -1,20 +1,25 @@
 import { memo, useCallback, useState } from 'react'
 
-import type { StatKey } from '../api/types'
-import type { NameIssue } from '../names'
+import type { Preset, StatKey } from '../api/types'
+import { uniqueDisplayName, type NameIssue } from '../names'
 import {
   displayName,
   hasAnyStat,
+  isPresetEdited,
   nameFieldId,
   statFieldId,
   type BatterSlot,
 } from '../state/lineup'
 import { parseAndValidate, STAT_LABELS, type ValidationIssue } from '../validation'
-import CopyControls, { type PendingCopy } from './CopyControls'
+import CopyControls, { presetButtonId, type PendingCopy } from './CopyControls'
+import PresetDialog from './PresetDialog'
+import PresetInfo from './PresetInfo'
 
-/** コピーの操作の状態。確認と通知は、操作したカード (cardId) の中に出す */
+/** コピーとプリセットの読み込みの状態。確認と通知は、操作したカード (cardId) の中に出す */
 interface CopyState {
-  pending?: { cardId: string; fromId: string; toIds: string[]; overwrittenNames: string[] }
+  pending?:
+    | { kind: 'copy'; cardId: string; fromId: string; toIds: string[]; overwrittenNames: string[] }
+    | { kind: 'preset'; cardId: string; preset: Preset }
   notice?: { cardId: string; text: string }
 }
 
@@ -33,6 +38,10 @@ interface BatterCardsProps {
   onNameBlur: (slotId: string) => void
   /** fromId の打者の成績を、toIds の打者に写す */
   onCopy: (fromId: string, toIds: string[]) => void
+  /** プリセットの成績と表示名 (name) を、その打者に読み込む */
+  onLoadPreset: (slotId: string, preset: Preset, name: string) => void
+  /** 読み込んだプリセットの成績に戻す */
+  onRevertPreset: (slotId: string) => void
 }
 
 /** カードの中での項目のまとまり。上から順に並べると、API の項目の順 (STAT_KEYS) と同じになる */
@@ -80,8 +89,12 @@ export default function BatterCards({
   onNameChange,
   onNameBlur,
   onCopy,
+  onLoadPreset,
+  onRevertPreset,
 }: BatterCardsProps) {
   const [copy, setCopy] = useState<CopyState>({})
+  /** プリセットを選ぶダイアログを開いているカード (閉じていれば null) */
+  const [presetTarget, setPresetTarget] = useState<string | null>(null)
 
   // 入力を変えたら、前のコピーの通知と確認は消す。
   // カードの中身は memo しているので、渡す関数は作り直さない (useCallback)
@@ -121,21 +134,57 @@ export default function BatterCards({
       runCopy(fromId, toIds, cardId)
       return
     }
-    setCopy({ pending: { cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) } })
+    setCopy({
+      pending: { kind: 'copy', cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) },
+    })
+  }
+
+  function runLoadPreset(slotId: string, preset: Preset) {
+    // 同じ名前の打者がほかにいれば「 (2)」などを付ける (表示名は重複できないため)
+    const others = slots.filter((slot) => slot.id !== slotId).map(displayName)
+    const name = uniqueDisplayName(preset.name, others)
+    onLoadPreset(slotId, preset, name)
+    setCopy({ notice: { cardId: slotId, text: `プリセット「${preset.name}」を読み込みました。` } })
+  }
+
+  /** ダイアログで選んだプリセットを読み込む。入力済みの成績があれば、先にカードの中で確認する */
+  function choosePreset(preset: Preset) {
+    const slotId = presetTarget
+    setPresetTarget(null)
+    const slot = slots.find((candidate) => candidate.id === slotId)
+    if (slotId === null || slot === undefined) {
+      return
+    }
+    if (hasAnyStat(slot)) {
+      setCopy({ pending: { kind: 'preset', cardId: slotId, preset } })
+    } else {
+      runLoadPreset(slotId, preset)
+    }
   }
 
   function confirmCopy() {
-    if (copy.pending) {
-      runCopy(copy.pending.fromId, copy.pending.toIds, copy.pending.cardId)
+    const pending = copy.pending
+    if (pending?.kind === 'copy') {
+      runCopy(pending.fromId, pending.toIds, pending.cardId)
+    } else if (pending?.kind === 'preset') {
+      runLoadPreset(pending.cardId, pending.preset)
     }
   }
 
   function cancelCopy() {
-    if (copy.pending) {
-      setCopy({
-        notice: { cardId: copy.pending.cardId, text: 'コピーをやめました。成績は変えていません。' },
-      })
+    const pending = copy.pending
+    if (pending) {
+      const text =
+        pending.kind === 'copy'
+          ? 'コピーをやめました。成績は変えていません。'
+          : 'プリセットの読み込みをやめました。成績は変えていません。'
+      setCopy({ notice: { cardId: pending.cardId, text } })
     }
+  }
+
+  function revertPreset(slotId: string) {
+    onRevertPreset(slotId)
+    setCopy({ notice: { cardId: slotId, text: 'プリセットの値に戻しました。' } })
   }
 
   function pendingFor(slotId: string): PendingCopy | undefined {
@@ -143,16 +192,43 @@ export default function BatterCards({
     if (pending === undefined || pending.cardId !== slotId) {
       return undefined
     }
+    if (pending.kind === 'preset') {
+      return { kind: 'preset', playerName: pending.preset.name }
+    }
     // このカードがコピー先なら「他の打者からコピー」、コピー元なら「ほかの全員にコピー」の確認
     return pending.fromId === slotId
       ? { kind: 'toAll', overwrittenNames: pending.overwrittenNames }
       : { kind: 'from', fromName: nameOf(pending.fromId) }
   }
 
+  const targetSlot = slots.find((slot) => slot.id === presetTarget)
+
   return (
     <div className="batter-cards">
       {slots.map((slot) => (
         <section className="batter-card" aria-label={displayName(slot)} key={slot.id}>
+          <div className="preset-area">
+            <button
+              type="button"
+              id={presetButtonId(slot.id)}
+              className="button-secondary"
+              aria-label={`${displayName(slot)}：プリセットから読み込む`}
+              aria-haspopup="dialog"
+              disabled={disabled}
+              onClick={() => setPresetTarget(slot.id)}
+            >
+              プリセットから読み込む
+            </button>
+            {slot.preset && (
+              <PresetInfo
+                slotId={slot.id}
+                preset={slot.preset}
+                edited={isPresetEdited(slot)}
+                disabled={disabled}
+                onRevert={() => revertPreset(slot.id)}
+              />
+            )}
+          </div>
           <BatterFields
             slot={slot}
             nameError={nameIssues[slot.id]?.message}
@@ -185,6 +261,12 @@ export default function BatterCards({
           />
         </section>
       ))}
+      <PresetDialog
+        open={targetSlot !== undefined}
+        targetName={targetSlot ? displayName(targetSlot) : ''}
+        onClose={() => setPresetTarget(null)}
+        onChoose={choosePreset}
+      />
     </div>
   )
 }

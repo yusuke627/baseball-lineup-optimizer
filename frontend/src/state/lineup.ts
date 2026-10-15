@@ -1,4 +1,4 @@
-import type { StatKey } from '../api/types'
+import { STAT_KEYS, type Preset, type StatKey } from '../api/types'
 import { emptyRawStats, type RawStats } from '../validation'
 
 export const LINEUP_SIZE = 9
@@ -16,6 +16,11 @@ export interface BatterSlot {
   raw: RawStats
   /** 一度でも入力欄から離れた項目。未入力エラーを早く出しすぎないために使う */
   touched: Partial<Record<StatKey, boolean>>
+  /**
+   * 読み込んだプリセット (API が返したまま)。手入力・コピー・貼り付けの打者は null。
+   * 読み込んだあとに成績を編集しても残す (編集済みかどうかは isPresetEdited で判定する)
+   */
+  preset: Preset | null
 }
 
 export interface LineupState {
@@ -31,6 +36,40 @@ export type LineupAction =
   | { type: 'setName'; slotId: string; value: string }
   | { type: 'commitName'; slotId: string }
   | { type: 'copyStats'; fromId: string; toIds: string[] }
+  | { type: 'loadPreset'; slotId: string; preset: Preset; name: string }
+  | { type: 'revertPreset'; slotId: string }
+
+/** プリセットの成績を、入力欄の文字列にする */
+export function presetRawStats(preset: Preset): RawStats {
+  const raw = emptyRawStats()
+  for (const key of STAT_KEYS) {
+    const value = preset.stats[key]
+    raw[key] = value === undefined ? '' : String(value)
+  }
+  return raw
+}
+
+/** 入力欄の1項目を比べるための値。空欄の犠打は0として扱う (送るときと同じ) */
+function comparableValue(key: StatKey, text: string): number | null {
+  const trimmed = text.trim()
+  if (trimmed === '' && key === 'SH') {
+    return 0
+  }
+  return /^-?\d+$/.test(trimmed) ? Number(trimmed) : null
+}
+
+/** プリセットを読み込んだあとに、成績が1項目でも変わっているか (値を元に戻せば false に戻る) */
+export function isPresetEdited(slot: Pick<BatterSlot, 'raw' | 'preset'>): boolean {
+  const { preset } = slot
+  if (preset === null) {
+    return false
+  }
+  const original = presetRawStats(preset)
+  return STAT_KEYS.some((key) => {
+    const current = comparableValue(key, slot.raw[key])
+    return current === null || current !== comparableValue(key, original[key])
+  })
+}
 
 /** 画面と API で使う表示名。前後の空白を除き、空欄なら既定名にする */
 export function displayName(slot: Pick<BatterSlot, 'name' | 'defaultName'>): string {
@@ -60,6 +99,7 @@ export function createInitialLineup(): LineupState {
       defaultName,
       raw: emptyRawStats(),
       touched: {},
+      preset: null,
     }
   })
   return { slots, order: slots.map((slot) => slot.id) }
@@ -94,7 +134,8 @@ export function lineupReducer(state: LineupState, action: LineupAction): LineupS
         return name === slot.name ? slot : { ...slot, name }
       })
     case 'copyStats': {
-      // 写すのは成績の入力内容だけ (空欄は空欄のまま写す)。表示名と内部IDは変えない
+      // 写すのは成績の入力内容だけ (空欄は空欄のまま写す)。表示名と内部IDは変えない。
+      // コピー先はプリセットとの結びつきを外し、手入力の扱いにする (参考値などは写さない)
       const source = state.slots.find((slot) => slot.id === action.fromId)
       if (source === undefined) {
         return state
@@ -103,10 +144,22 @@ export function lineupReducer(state: LineupState, action: LineupAction): LineupS
         ...state,
         slots: state.slots.map((slot) =>
           action.toIds.includes(slot.id) && slot.id !== source.id
-            ? { ...slot, raw: { ...source.raw }, touched: {} }
+            ? { ...slot, raw: { ...source.raw }, touched: {}, preset: null }
             : slot,
         ),
       }
     }
+    case 'loadPreset':
+      return updateSlot(state, action.slotId, (slot) => ({
+        ...slot,
+        name: action.name,
+        raw: presetRawStats(action.preset),
+        touched: {},
+        preset: action.preset,
+      }))
+    case 'revertPreset':
+      return updateSlot(state, action.slotId, (slot) =>
+        slot.preset === null ? slot : { ...slot, raw: presetRawStats(slot.preset), touched: {} },
+      )
   }
 }
