@@ -15,6 +15,7 @@
     "code": "BOS",
     "name": "Boston Red Sox",
     "league": "AL",
+    "division": "E",
     "lahman_id": "BOS"
   },
   "teams_played": [

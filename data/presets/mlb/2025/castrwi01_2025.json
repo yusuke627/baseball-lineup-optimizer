@@ -15,6 +15,7 @@
     "code": "CHC",
     "name": "Chicago Cubs",
     "league": "NL",
+    "division": "C",
     "lahman_id": "CHN"
   },
   "teams_played": [

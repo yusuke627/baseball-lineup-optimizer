@@ -15,6 +15,7 @@
     "code": "SEA",
     "name": "Seattle Mariners",
     "league": "AL",
+    "division": "W",
     "lahman_id": "SEA"
   },
   "teams_played": [

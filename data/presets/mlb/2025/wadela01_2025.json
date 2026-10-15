@@ -15,6 +15,7 @@
     "code": "LAA",
     "name": "Los Angeles Angels of Anaheim",
     "league": "AL",
+    "division": "W",
     "lahman_id": "LAA"
   },
   "teams_played": [

@@ -6,6 +6,7 @@
     "code": "NYY",
     "name": "New York Yankees",
     "league": "AL",
+    "division": "E",
     "lahman_id": "NYA"
   },
   "season": 2025,

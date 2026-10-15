@@ -15,6 +15,7 @@
     "code": "CIN",
     "name": "Cincinnati Reds",
     "league": "NL",
+    "division": "C",
     "lahman_id": "CIN"
   },
   "teams_played": [

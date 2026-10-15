@@ -15,6 +15,7 @@
     "code": "NYY",
     "name": "New York Yankees",
     "league": "AL",
+    "division": "E",
     "lahman_id": "NYA"
   },
   "teams_played": [

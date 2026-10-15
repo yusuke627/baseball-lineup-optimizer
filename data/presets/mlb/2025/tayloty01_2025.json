@@ -15,6 +15,7 @@
     "code": "NYM",
     "name": "New York Mets",
     "league": "NL",
+    "division": "E",
     "lahman_id": "NYN"
   },
   "stats": {

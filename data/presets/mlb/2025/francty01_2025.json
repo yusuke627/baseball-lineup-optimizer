@@ -15,6 +15,7 @@
     "code": "TOR",
     "name": "Toronto Blue Jays",
     "league": "AL",
+    "division": "E",
     "lahman_id": "TOR"
   },
   "teams_played": [

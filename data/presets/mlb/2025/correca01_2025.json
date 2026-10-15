@@ -15,6 +15,7 @@
     "code": "HOU",
     "name": "Houston Astros",
     "league": "AL",
+    "division": "W",
     "lahman_id": "HOU"
   },
   "teams_played": [

@@ -15,6 +15,7 @@
     "code": "CLE",
     "name": "Cleveland Guardians",
     "league": "AL",
+    "division": "C",
     "lahman_id": "CLE"
   },
   "stats": {

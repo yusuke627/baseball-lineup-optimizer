@@ -15,6 +15,7 @@
     "code": "PHI",
     "name": "Philadelphia Phillies",
     "league": "NL",
+    "division": "E",
     "lahman_id": "PHI"
   },
   "teams_played": [

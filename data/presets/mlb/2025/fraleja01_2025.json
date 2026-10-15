@@ -15,6 +15,7 @@
     "code": "ATL",
     "name": "Atlanta Braves",
     "league": "NL",
+    "division": "E",
     "lahman_id": "ATL"
   },
   "teams_played": [

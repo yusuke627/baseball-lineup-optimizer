@@ -15,6 +15,7 @@
     "code": "BAL",
     "name": "Baltimore Orioles",
     "league": "AL",
+    "division": "E",
     "lahman_id": "BAL"
   },
   "stats": {

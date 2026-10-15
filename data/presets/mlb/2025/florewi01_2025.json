@@ -15,6 +15,7 @@
     "code": "SF",
     "name": "San Francisco Giants",
     "league": "NL",
+    "division": "W",
     "lahman_id": "SFN"
   },
   "stats": {

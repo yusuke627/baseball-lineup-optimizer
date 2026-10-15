@@ -15,6 +15,7 @@
     "code": "LAD",
     "name": "Los Angeles Dodgers",
     "league": "NL",
+    "division": "W",
     "lahman_id": "LAN"
   },
   "stats": {

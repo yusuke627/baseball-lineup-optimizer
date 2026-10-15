@@ -15,6 +15,7 @@
     "code": "TEX",
     "name": "Texas Rangers",
     "league": "AL",
+    "division": "W",
     "lahman_id": "TEX"
   },
   "stats": {

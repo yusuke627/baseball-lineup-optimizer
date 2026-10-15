@@ -15,6 +15,7 @@
     "code": "AZ",
     "name": "Arizona Diamondbacks",
     "league": "NL",
+    "division": "W",
     "lahman_id": "ARI"
   },
   "stats": {

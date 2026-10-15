@@ -15,6 +15,7 @@
     "code": "KC",
     "name": "Kansas City Royals",
     "league": "AL",
+    "division": "C",
     "lahman_id": "KCA"
   },
   "teams_played": [

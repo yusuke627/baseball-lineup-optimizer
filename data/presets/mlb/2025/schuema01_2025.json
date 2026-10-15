@@ -15,6 +15,7 @@
     "code": "ATH",
     "name": "Athletics",
     "league": "AL",
+    "division": "W",
     "lahman_id": "ATH"
   },
   "stats": {

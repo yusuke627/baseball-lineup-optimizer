@@ -15,6 +15,7 @@
     "code": "MIL",
     "name": "Milwaukee Brewers",
     "league": "NL",
+    "division": "C",
     "lahman_id": "MIL"
   },
   "stats": {

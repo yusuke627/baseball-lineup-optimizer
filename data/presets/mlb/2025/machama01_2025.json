@@ -15,6 +15,7 @@
     "code": "SD",
     "name": "San Diego Padres",
     "league": "NL",
+    "division": "W",
     "lahman_id": "SDN"
   },
   "stats": {

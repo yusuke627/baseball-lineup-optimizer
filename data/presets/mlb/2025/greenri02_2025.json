@@ -15,6 +15,7 @@
     "code": "DET",
     "name": "Detroit Tigers",
     "league": "AL",
+    "division": "C",
     "lahman_id": "DET"
   },
   "stats": {

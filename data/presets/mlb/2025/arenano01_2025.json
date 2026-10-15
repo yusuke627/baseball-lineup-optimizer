@@ -15,6 +15,7 @@
     "code": "STL",
     "name": "St. Louis Cardinals",
     "league": "NL",
+    "division": "C",
     "lahman_id": "SLN"
   },
   "stats": {

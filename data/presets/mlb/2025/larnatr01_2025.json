@@ -15,6 +15,7 @@
     "code": "MIN",
     "name": "Minnesota Twins",
     "league": "AL",
+    "division": "C",
     "lahman_id": "MIN"
   },
   "stats": {
