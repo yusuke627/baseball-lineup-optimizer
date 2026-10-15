@@ -308,6 +308,31 @@ def test_generated_presets_use_the_unified_team_codes(tmp_path):
     ]
 
 
+def test_generated_presets_include_the_division_from_teams_csv(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    _write_csv(raw / "Batting.csv", COLUMNS, [_row("aaa01", 1, "NYA", AB=180, H=50, BB=20)])
+    _write_csv(raw / "People.csv", ["playerID", "nameFirst", "nameLast"], [
+        {"playerID": "aaa01", "nameFirst": "Test", "nameLast": "One"},
+    ])
+    _write_csv(raw / "Teams.csv", ["yearID", "lgID", "teamID", "divID", "name"], [
+        {"yearID": "2025", "lgID": "AL", "teamID": "NYA", "divID": "E", "name": "Test Name A"},
+    ])
+    lahman.generate(raw, 2025, 200, tmp_path / "out", "2026-01-02")
+    info = json.loads((tmp_path / "out" / "aaa01_2025.json").read_text(encoding="utf-8"))["team_info"]
+    assert list(info) == ["code", "name", "league", "division", "lahman_id"]
+    assert info["division"] == "E"
+
+
+def test_team_divisions_skip_blank_values():
+    rows = [
+        {"yearID": "2025", "teamID": "AAA", "divID": "W"},
+        {"yearID": "2025", "teamID": "BBB", "divID": ""},
+        {"yearID": "2024", "teamID": "CCC", "divID": "E"},
+    ]
+    assert lahman.team_divisions(rows, 2025) == {"AAA": "W"}
+
+
 def test_generated_presets_pass_the_preset_schema(tmp_path):
     from tests.test_preset_schema import check_preset
 

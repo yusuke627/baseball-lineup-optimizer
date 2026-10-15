@@ -188,6 +188,11 @@ def test_team_info_may_have_lahman_id():
     check_preset(_dummy(team_info=dict(TEAM_INFO, lahman_id="XBB")))
 
 
+@pytest.mark.parametrize("division", ["E", "C", "W"])
+def test_team_info_may_have_division(division):
+    check_preset(_dummy(team_info=dict(TEAM_INFO, division=division)))
+
+
 def test_team_codes_are_consistent_across_presets():
     """実際のプリセット全体で、球団コード・球団名・Lahman の teamID の対応が1対1になっていること"""
     names_by_code: dict[str, set[str]] = {}
@@ -239,6 +244,8 @@ def test_last_team_played_must_match_team_info():
         {"code": "NYYY", "name": "Test Team", "league": "AL"},                # 4文字
         {"code": "N1", "name": "Test Team", "league": "AL"},                  # 数字
         {"code": "TAA", "name": "Test Team", "league": "AL", "lahman_id": ""},  # lahman_id が空
+        {"code": "TAA", "name": "Test Team", "league": "AL", "division": "N"},  # 知らない地区
+        {"code": "TAA", "name": "Test Team", "league": "AL", "division": "e"},  # 小文字
         {"code": "TAA", "name": "Test Team", "league": "XX"},                  # 知らないリーグ
         {"code": "TAA", "name": "Test Team", "league": "AL", "city": "Test"},  # 知らないキー
     ],

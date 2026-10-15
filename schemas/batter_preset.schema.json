@@ -21,6 +21,7 @@
         },
         "name": { "type": "string", "minLength": 1, "description": "球団名 (Lahman の Teams.csv の name のまま)" },
         "league": { "type": "string", "enum": ["AL", "NL"], "description": "所属リーグ (Lahman の lgID)" },
+        "division": { "type": "string", "enum": ["E", "C", "W"], "description": "所属地区 (E: 東地区、C: 中地区、W: 西地区。Lahman の Teams.csv の divID)。省略可" },
         "lahman_id": { "type": "string", "minLength": 1, "description": "Lahman Baseball Database の teamID (元データとの対応を追うため。省略可)" }
       }
     },
