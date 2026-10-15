@@ -1,6 +1,6 @@
 // 画面に出す値の書式。ここでは API が返した値の桁や表記をそろえるだけで、値の計算はしない。
 
-import type { TeamInfo, TeamPlayed } from './api/types'
+import type { Division, TeamInfo, TeamPlayed } from './api/types'
 
 /** 打率などの率を、野球で一般的な「.331」の形にする (1以上は「1.000」) */
 export function formatRate(value: number | null | undefined): string {
@@ -29,7 +29,18 @@ export function safeHttpsUrl(url: string | undefined): string | null {
   }
 }
 
+/** 移籍した選手の在籍した球団を、球団コードで出場した順に並べる (例: TB → CWS) */
+export function teamsPlayedLabel(teams: TeamPlayed[]): string {
+  return `在籍した球団：${teams.map((team) => team.code).join(' → ')}`
+}
+
 export const LEAGUE_LABELS: Record<'AL' | 'NL', string> = {
-  AL: 'アメリカン・リーグ (AL)',
-  NL: 'ナショナル・リーグ (NL)',
+  AL: 'アメリカン・リーグ',
+  NL: 'ナショナル・リーグ',
+}
+
+export const DIVISION_LABELS: Record<Division, string> = {
+  E: '東地区',
+  C: '中地区',
+  W: '西地区',
 }

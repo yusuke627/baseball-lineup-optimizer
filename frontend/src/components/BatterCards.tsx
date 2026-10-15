@@ -15,11 +15,12 @@ import CopyControls, { presetButtonId, type PendingCopy } from './CopyControls'
 import PresetDialog from './PresetDialog'
 import PresetInfo from './PresetInfo'
 
-/** コピーとプリセットの読み込みの状態。確認と通知は、操作したカード (cardId) の中に出す */
+/**
+ * コピーの操作の状態。確認と通知は、操作したカード (cardId) の中に出す。
+ * (プリセットの読み込みの上書きの確認は、プリセットのダイアログの中で行う。ここには読み込んだ通知だけを出す)
+ */
 interface CopyState {
-  pending?:
-    | { kind: 'copy'; cardId: string; fromId: string; toIds: string[]; overwrittenNames: string[] }
-    | { kind: 'preset'; cardId: string; preset: Preset }
+  pending?: { cardId: string; fromId: string; toIds: string[]; overwrittenNames: string[] }
   notice?: { cardId: string; text: string }
 }
 
@@ -134,9 +135,7 @@ export default function BatterCards({
       runCopy(fromId, toIds, cardId)
       return
     }
-    setCopy({
-      pending: { kind: 'copy', cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) },
-    })
+    setCopy({ pending: { cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) } })
   }
 
   function runLoadPreset(slotId: string, preset: Preset) {
@@ -147,38 +146,28 @@ export default function BatterCards({
     setCopy({ notice: { cardId: slotId, text: `プリセット「${preset.name}」を読み込みました。` } })
   }
 
-  /** ダイアログで選んだプリセットを読み込む。入力済みの成績があれば、先にカードの中で確認する */
+  /** ダイアログで選んだプリセットを読み込む (上書きの確認は、ダイアログの中で済んでいる) */
   function choosePreset(preset: Preset) {
     const slotId = presetTarget
     setPresetTarget(null)
-    const slot = slots.find((candidate) => candidate.id === slotId)
-    if (slotId === null || slot === undefined) {
-      return
-    }
-    if (hasAnyStat(slot)) {
-      setCopy({ pending: { kind: 'preset', cardId: slotId, preset } })
-    } else {
+    if (slotId !== null) {
       runLoadPreset(slotId, preset)
     }
   }
 
   function confirmCopy() {
     const pending = copy.pending
-    if (pending?.kind === 'copy') {
+    if (pending) {
       runCopy(pending.fromId, pending.toIds, pending.cardId)
-    } else if (pending?.kind === 'preset') {
-      runLoadPreset(pending.cardId, pending.preset)
     }
   }
 
   function cancelCopy() {
     const pending = copy.pending
     if (pending) {
-      const text =
-        pending.kind === 'copy'
-          ? 'コピーをやめました。成績は変えていません。'
-          : 'プリセットの読み込みをやめました。成績は変えていません。'
-      setCopy({ notice: { cardId: pending.cardId, text } })
+      setCopy({
+        notice: { cardId: pending.cardId, text: 'コピーをやめました。成績は変えていません。' },
+      })
     }
   }
 
@@ -191,9 +180,6 @@ export default function BatterCards({
     const pending = copy.pending
     if (pending === undefined || pending.cardId !== slotId) {
       return undefined
-    }
-    if (pending.kind === 'preset') {
-      return { kind: 'preset', playerName: pending.preset.name }
     }
     // このカードがコピー先なら「他の打者からコピー」、コピー元なら「ほかの全員にコピー」の確認
     return pending.fromId === slotId
@@ -221,7 +207,6 @@ export default function BatterCards({
             </button>
             {slot.preset && (
               <PresetInfo
-                slotId={slot.id}
                 preset={slot.preset}
                 edited={isPresetEdited(slot)}
                 disabled={disabled}
@@ -264,6 +249,7 @@ export default function BatterCards({
       <PresetDialog
         open={targetSlot !== undefined}
         targetName={targetSlot ? displayName(targetSlot) : ''}
+        targetHasValues={targetSlot ? hasAnyStat(targetSlot) : false}
         onClose={() => setPresetTarget(null)}
         onChoose={choosePreset}
       />

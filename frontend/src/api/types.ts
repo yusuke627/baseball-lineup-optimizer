@@ -35,9 +35,13 @@ export interface TeamInfo {
   code: string
   name: string
   league: 'AL' | 'NL'
+  /** 地区 (E: 東、C: 中、W: 西) */
+  division?: Division
   /** Lahman Baseball Database の teamID */
   lahman_id?: string
 }
+
+export type Division = 'E' | 'C' | 'W'
 
 /** 在籍した球団 (出場した順)。複数の球団に在籍した選手だけにある */
 export interface TeamPlayed {
@@ -52,6 +56,8 @@ export interface PresetSummary {
   AVG: number
   OBP: number
   SLG: number
+  /** OPS = 出塁率 + 長打率 (API が計算した値) */
+  OPS: number
   SB: number
   CS: number
   SB_pct: number | null
@@ -98,6 +104,8 @@ export interface PresetTeam {
   code: string
   name: string
   league: 'AL' | 'NL'
+  /** 地区。地区の情報が無い球団は null */
+  division: Division | null
   /** この球団を最終所属とする選手の数 */
   count: number
 }

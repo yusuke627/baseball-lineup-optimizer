@@ -4,10 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 export type PendingCopy =
   | { kind: 'from'; fromName: string }
   | { kind: 'toAll'; overwrittenNames: string[] }
-  // プリセットの読み込み (上書きの確認はコピーと同じ場所に出す)
-  | { kind: 'preset'; playerName: string }
 
-/** プリセットを読み込むボタンの要素ID。読み込みの確認が終わったら、ここへフォーカスを戻す */
+/** プリセットを読み込むボタンの要素ID */
 export function presetButtonId(slotId: string): string {
   return `preset-button-${slotId}`
 }
@@ -54,30 +52,17 @@ export default function CopyControls({
   /** 確認を出す前にフォーカスがあった操作。確認が終わったら、そこへフォーカスを戻す */
   const returnFocusRef = useRef<'select' | 'toAll' | null>(null)
   const isPending = pending !== undefined
-  /** 出ている確認の種類 (確認が終わったあとに、どこへフォーカスを戻すかを決めるため) */
-  const pendingKindRef = useRef<PendingCopy['kind'] | null>(null)
 
   // 確認を出したら「上書きする」へ、確認が終わったら元の操作へフォーカスを移す (キーボードで続けて操作できるように)
   useEffect(() => {
     if (isPending) {
       confirmRef.current?.focus()
-      return
-    }
-    if (pendingKindRef.current === 'preset') {
-      document.getElementById(presetButtonId(slotId))?.focus()
     } else if (returnFocusRef.current !== null) {
       const target = returnFocusRef.current === 'select' ? selectRef.current : toAllRef.current
       target?.focus()
+      returnFocusRef.current = null
     }
-    returnFocusRef.current = null
-    pendingKindRef.current = null
-  }, [isPending, slotId])
-
-  useEffect(() => {
-    if (pending !== undefined) {
-      pendingKindRef.current = pending.kind
-    }
-  }, [pending])
+  }, [isPending])
 
   function handleCopyFrom() {
     if (sourceId === '') {
@@ -108,8 +93,6 @@ export default function CopyControls({
               `${name} には入力済みの成績があります。${pending.fromName} の成績で上書きしますか？`}
             {pending.kind === 'toAll' &&
               `入力済みの成績がある打者が${pending.overwrittenNames.length}人います（${pending.overwrittenNames.join('、')}）。${name} の成績で上書きしますか？`}
-            {pending.kind === 'preset' &&
-              `${name} には入力済みの成績があります。プリセット「${pending.playerName}」の成績と名前で上書きしますか？`}
           </p>
           <div className="copy-actions">
             <button type="button" ref={confirmRef} aria-describedby={confirmId} onClick={onConfirm}>

@@ -179,10 +179,53 @@ a {
 }
 
 .preset-info-label,
-.preset-info-source,
 .preset-info-reference,
 .preset-info-edited {
   color: var(--color-muted);
+}
+
+/* ページの一番下の「データの出典」欄 */
+.page-footer {
+  max-width: 1100px;
+  margin: var(--space-8) auto 0;
+  padding: var(--space-4) var(--space-4) var(--space-8);
+  border-top: 1px solid var(--color-border-subtle);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.page-footer h2 {
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.data-sources {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.data-sources li {
+  margin-bottom: var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+/* 上書きの確認 (プリセットのダイアログに重ねて開く) */
+.preset-confirm {
+  max-width: min(420px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: var(--space-4);
+  border: 2px solid var(--color-warning);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.preset-confirm::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+
+.preset-confirm p {
+  margin: 0 0 var(--space-2);
 }
 
 .preset-info-moved,
@@ -258,16 +301,53 @@ a {
   max-width: 100%;
 }
 
-/* 広い画面では「球団」と「選手」を左右に、狭い画面では上下に並べる */
+/*
+ * 選手の一覧は、HTML の上では選んだ球団のボタンの直後にある (キーボードと読み上げの順番のため)。
+ * 狭い画面では、そのままボタンの下に出す。広い画面では、見た目だけ右側の列に出す (position: absolute)。
+ */
 .preset-dialog-body {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
+  position: relative;
+}
+
+.preset-dialog h5 {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--color-muted);
+}
+
+.preset-team-panel {
+  margin: var(--space-1) 0 var(--space-3) var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-accent);
+}
+
+.preset-search-results {
+  margin-bottom: var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-accent);
 }
 
 @media (min-width: 720px) {
-  .preset-dialog-body {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  .preset-teams {
+    width: 40%;
+  }
+
+  .preset-team-panel {
+    position: absolute;
+    top: 0;
+    left: calc(40% + var(--space-6));
+    right: 0;
+    margin: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .preset-players-hint {
+    position: absolute;
+    top: 0;
+    left: calc(40% + var(--space-6));
+    right: 0;
   }
 }
 
@@ -292,7 +372,7 @@ a {
   text-align: left;
 }
 
-.preset-team-button[aria-pressed='true'] {
+.preset-team-button[aria-expanded='true'] {
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: var(--color-on-accent);

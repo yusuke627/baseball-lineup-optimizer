@@ -77,7 +77,8 @@ describe('入力フォーム', () => {
   test('画面は「成績の入力 → 打順 → 計算と結果」の3つの段階に分かれている', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
-    expect(headings).toEqual(['1成績の入力', '2打順', '3計算と結果'])
+    // ページの一番下に「データの出典」欄がある
+    expect(headings).toEqual(['1成績の入力', '2打順', '3計算と結果', 'データの出典'])
   })
 
   test('打者ごとにカードがあり、項目はまとまりごとに分かれている', () => {

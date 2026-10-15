@@ -26,9 +26,9 @@ function preset(id: string, name: string, overrides: Partial<Preset> = {}): Pres
       retrieved_at: '2026-01-01',
     },
     stats: STATS_A,
-    summary: { PA: 600, HR: 15, AVG: 0.278, OBP: 0.336, SLG: 0.426, SB: 10, CS: 3, SB_pct: 0.769 },
+    summary: { PA: 600, HR: 15, AVG: 0.278, OBP: 0.336, SLG: 0.426, OPS: 0.762, SB: 10, CS: 3, SB_pct: 0.769 },
     reference_metrics: null,
-    team_info: { code: 'XAA', name: 'Test Team A', league: 'AL' },
+    team_info: { code: 'XAA', name: 'Test Team A', league: 'AL', division: 'E' },
     ...overrides,
   }
 }
@@ -36,7 +36,7 @@ function preset(id: string, name: string, overrides: Partial<Preset> = {}): Pres
 const ALPHA = preset('alpha_2025', 'Test Alpha')
 const BETA = preset('beta_2025', 'Test Beta', { stats: { ...STATS_A, HR: 30, H: 160 } })
 const MOVED = preset('moved_2025', 'Test Moved', {
-  team_info: { code: 'XBB', name: 'Test Team B', league: 'NL' },
+  team_info: { code: 'XBB', name: 'Test Team B', league: 'NL', division: 'W' },
   teams_played: [
     { code: 'XAA', name: 'Test Team A' },
     { code: 'XBB', name: 'Test Team B' },
@@ -45,7 +45,7 @@ const MOVED = preset('moved_2025', 'Test Moved', {
 const VERIFIED = preset('verified_2025', 'Test Verified', {
   verified: true,
   source: { provider: 'Test Source', url: 'http://example.com/not-https', retrieved_at: '2026-01-02' },
-  team_info: { code: 'XBB', name: 'Test Team B', league: 'NL' },
+  team_info: { code: 'XBB', name: 'Test Team B', league: 'NL', division: 'W' },
   reference_metrics: {
     wOBA: 0.345,
     wRC_plus: 120,
@@ -55,11 +55,19 @@ const VERIFIED = preset('verified_2025', 'Test Verified', {
   },
 })
 
+// API は、リーグの中を地区 (東・中・西) の順、地区の中を球団名の順に並べて返す
 const TEAMS: PresetTeams = {
   season: 2025,
   leagues: [
-    { league: 'AL', teams: [{ code: 'XAA', name: 'Test Team A', league: 'AL', count: 2 }] },
-    { league: 'NL', teams: [{ code: 'XBB', name: 'Test Team B', league: 'NL', count: 2 }] },
+    {
+      league: 'AL',
+      teams: [
+        { code: 'XAA', name: 'Test Team A', league: 'AL', division: 'E', count: 2 },
+        { code: 'XAC', name: 'Test Team C', league: 'AL', division: 'C', count: 0 },
+        { code: 'XAW', name: 'Test Team W', league: 'AL', division: 'W', count: 0 },
+      ],
+    },
+    { league: 'NL', teams: [{ code: 'XBB', name: 'Test Team B', league: 'NL', division: 'W', count: 2 }] },
   ],
   without_team: 0,
 }
@@ -110,19 +118,24 @@ function input(name: string, key: StatKey): HTMLInputElement {
 const card = (name: string) => screen.getByRole('region', { name })
 const openButton = (name: string) => screen.getByRole('button', { name: `${name}：プリセットから読み込む` })
 const dialog = () => screen.getByRole('dialog', { name: 'プリセットから読み込む' })
+const teamButton = (team: string) =>
+  within(dialog()).findByRole('button', { name: new RegExp(`^${team} \\([A-Z]+\\)\\d+人$`) })
 
 async function openAndChooseTeam(user: ReturnType<typeof userEvent.setup>, cardName: string, team: string) {
   await user.click(openButton(cardName))
-  await user.click(await within(dialog()).findByRole('button', { name: new RegExp(`^${team} \\([A-Z]+\\)\\d+人$`) }))
+  await user.click(await teamButton(team))
 }
+
+const loadButton = (player: string, cardName: string) =>
+  within(dialog()).findByRole('button', { name: new RegExp(`^${player}（.*を${cardName}に読み込む$`) })
 
 async function loadPlayer(user: ReturnType<typeof userEvent.setup>, cardName: string, team: string, player: string) {
   await openAndChooseTeam(user, cardName, team)
-  await user.click(await within(dialog()).findByRole('button', { name: new RegExp(`^${player}（.*を${cardName}に読み込む$`) }))
+  await user.click(await loadButton(player, cardName))
 }
 
 describe('プリセットの選択ダイアログ', () => {
-  test('シーズン（新しい年が既定）と、リーグごとの球団・選手数を表示する', async () => {
+  test('シーズン（新しい年が既定）と、リーグ → 地区（東・中・西）ごとの球団・選手数を表示する', async () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(openButton('打者A'))
@@ -130,23 +143,69 @@ describe('プリセットの選択ダイアログ', () => {
     const d = dialog()
     expect(within(d).getByText('読み込み先：打者A')).toBeInTheDocument()
     await waitFor(() => expect(within(d).getByLabelText('シーズン')).toHaveValue('2025'))
-    const al = await within(d).findByRole('region', { name: 'アメリカン・リーグ (AL)' })
+    const al = await within(d).findByRole('region', { name: 'アメリカン・リーグ' })
+    expect(within(al).getAllByRole('heading', { level: 5 }).map((h) => h.textContent)).toEqual([
+      '東地区',
+      '中地区',
+      '西地区',
+    ])
     expect(within(al).getByRole('button', { name: 'Test Team A (XAA)2人' })).toBeInTheDocument()
-    const nl = within(d).getByRole('region', { name: 'ナショナル・リーグ (NL)' })
-    expect(within(nl).getByRole('button', { name: 'Test Team B (XBB)2人' })).toBeInTheDocument()
+    const nl = within(d).getByRole('region', { name: 'ナショナル・リーグ' })
+    expect(within(nl).getAllByRole('heading', { level: 5 }).map((h) => h.textContent)).toEqual(['西地区'])
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('/api/presets/teams?league=mlb&season=2025')
   })
 
-  test('球団を選ぶと、その球団の選手を API の値で表示する（率は .xxx の形）', async () => {
+  test('球団を選ぶと、そのボタンの直後に選手の一覧を出し、ボタンは aria-expanded で開いたことを伝える', async () => {
     const user = userEvent.setup()
     render(<App />)
     await openAndChooseTeam(user, '打者A', 'Test Team A')
 
     const d = dialog()
-    expect(await within(d).findByRole('heading', { name: 'Test Team A (XAA) の選手' })).toBeInTheDocument()
-    expect(within(d).getByRole('button', { name: /Test Team A/, pressed: true })).toBeInTheDocument()
-    expect(within(d).getAllByText(/打率 \.278 ／ 出塁率 \.336 ／ 長打率 \.426 ／\s*本塁打 15 ／ 打席 600/)).toHaveLength(2)
+    const button = await teamButton('Test Team A')
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    const panel = await within(d).findByRole('region', { name: 'Test Team A (XAA) の選手' })
+    expect(button).toHaveAttribute('aria-controls', panel.id)
+    // HTML の上で、選手の一覧は選んだ球団のボタンの直後 (同じ li の中) にある
+    expect(button.nextElementSibling).toBe(panel)
+    expect(await teamButton('Test Team C')).toHaveAttribute('aria-expanded', 'false')
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('/api/presets?league=mlb&season=2025&team=XAA')
+  })
+
+  test('選手の一覧は API の値を表示する（率は .xxx の形。OPS も API の値）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await openAndChooseTeam(user, '打者A', 'Test Team A')
+
+    const panel = await within(dialog()).findByRole('region', { name: 'Test Team A (XAA) の選手' })
+    expect(
+      await within(panel).findAllByText(/打率 \.278 ／ 出塁率 \.336 ／ 長打率 \.426 ／\s*OPS \.762 ／ 本塁打 15 ／ 打席 600/),
+    ).toHaveLength(2)
+  })
+
+  test('【B1 の回帰】球団を選んだあと、Tab キーの次は選手の「読み込む」ボタン（ほかの球団のボタンを通らない）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await openAndChooseTeam(user, '打者A', 'Test Team A')
+    const first = await loadButton('Test Alpha', '打者A')
+    expect(await teamButton('Test Team A')).toHaveFocus()
+
+    await user.tab()
+    expect(first).toHaveFocus()
+    await user.tab()
+    expect(await loadButton('Test Beta', '打者A')).toHaveFocus()
+    await user.tab()
+    expect(await teamButton('Test Team C')).toHaveFocus() // 選手のあとに、次の球団へ進む
+  })
+
+  test('【B2 の回帰】球団を選んだあとも、Esc キーでダイアログが閉じる', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await openAndChooseTeam(user, '打者A', 'Test Team A')
+    await loadButton('Test Alpha', '打者A')
+
+    fireEvent.keyDown(await teamButton('Test Team A'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(input('打者A', 'PA')).toHaveValue('')
   })
 
   test('キーボードだけで、球団 → 選手と選んで読み込める', async () => {
@@ -155,18 +214,17 @@ describe('プリセットの選択ダイアログ', () => {
     openButton('打者A').focus()
     await user.keyboard('{Enter}')
 
-    const teamButton = await within(dialog()).findByRole('button', { name: /Test Team A/ })
-    teamButton.focus()
+    ;(await teamButton('Test Team A')).focus()
     await user.keyboard('{Enter}')
-    const load = await within(dialog()).findByRole('button', { name: 'Test Alpha（Test Team A (XAA)）を打者Aに読み込む' })
-    load.focus()
+    await loadButton('Test Alpha', '打者A')
+    await user.tab()
     await user.keyboard('{Enter}')
 
     expect(input('Test Alpha', 'PA')).toHaveValue('600')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  test('名前で検索でき、上限で切られたときは総数と一緒に知らせる', async () => {
+  test('名前で検索でき、結果は検索欄の直後に出る。上限で切られたときは総数と一緒に知らせる', async () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(openButton('打者A'))
@@ -174,12 +232,14 @@ describe('プリセットの選択ダイアログ', () => {
     await user.type(within(d).getByLabelText('選手名で検索（すべての球団）'), 'test')
     await user.click(within(d).getByRole('button', { name: '検索' }))
 
-    expect(await within(d).findByText('57人のうち、名前順で最初の1人を表示しています。名前をもう少し詳しく入力してください。')).toBeInTheDocument()
-    expect(within(d).getByRole('heading', { name: '「test」の検索結果' })).toBeInTheDocument()
+    const results = await within(d).findByRole('region', { name: '「test」の検索結果' })
+    expect(
+      await within(results).findByText('57人のうち、名前順で最初の1人を表示しています。名前をもう少し詳しく入力してください。'),
+    ).toBeInTheDocument()
     expect(fetchMock.mock.calls.map(([url]) => url)).toContain('/api/presets?league=mlb&season=2025&q=test')
   })
 
-  test('移籍した選手には「年間合計（複数球団）」と在籍した球団を文字で示す', async () => {
+  test('移籍した選手には「年間合計（複数球団）」と、在籍した球団を球団コードで示す', async () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(openButton('打者A'))
@@ -189,10 +249,10 @@ describe('プリセットの選択ダイアログ', () => {
 
     const button = await within(d).findByRole('button', { name: 'Test Moved（Test Team B (XBB)）を打者Aに読み込む' })
     // 読み込むボタンの説明に含めて、読み上げでも伝わるようにする
-    expect(button).toHaveAccessibleDescription(/年間合計（複数球団）：在籍した球団は Test Team A \(XAA\) → Test Team B \(XBB\)/)
+    expect(button).toHaveAccessibleDescription(/年間合計（複数球団）／在籍した球団：XAA → XBB/)
 
     await user.click(button)
-    expect(within(card('Test Moved')).getByText(/年間合計（複数球団）/)).toBeInTheDocument()
+    expect(within(card('Test Moved')).getByText('年間合計（複数球団）／在籍した球団：XAA → XBB')).toBeInTheDocument()
   })
 
   test('球団の一覧を読み込めないときは、エラーを表示する', async () => {
@@ -213,8 +273,72 @@ describe('プリセットの選択ダイアログ', () => {
   })
 })
 
+describe('上書きの確認（ダイアログの中）', () => {
+  async function chooseForFilledCard(user: ReturnType<typeof userEvent.setup>) {
+    fireEvent.change(input('打者A', 'PA'), { target: { value: '123' } })
+    await openAndChooseTeam(user, '打者A', 'Test Team A')
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    return screen.getByRole('alertdialog', { name: '打者Aの入力を上書きします。よろしいですか？' })
+  }
+
+  test('入力済みのカードに読み込もうとすると、確認を出してフォーカスを移す', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const confirm = await chooseForFilledCard(user)
+    expect(within(confirm).getByRole('button', { name: '上書きする' })).toHaveFocus()
+    expect(within(confirm).getByRole('button', { name: 'キャンセル' })).toBeInTheDocument()
+    expect(dialog()).toBeInTheDocument()
+    // カードの中には確認を出さない (コピーの確認とは別)
+    expect(within(card('打者A')).queryByRole('button', { name: '上書きする' })).not.toBeInTheDocument()
+  })
+
+  test('Esc キーは確認だけを閉じ、プリセットのダイアログは閉じない。フォーカスは選んだ選手に戻る', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const confirm = await chooseForFilledCard(user)
+
+    fireEvent.keyDown(within(confirm).getByRole('button', { name: '上書きする' }), { key: 'Escape' })
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(dialog()).toBeInTheDocument()
+    await waitFor(async () => expect(await loadButton('Test Alpha', '打者A')).toHaveFocus())
+    expect(input('打者A', 'PA')).toHaveValue('123')
+  })
+
+  test('「キャンセル」で何も変えず、選手の選択に戻る', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const confirm = await chooseForFilledCard(user)
+    await user.click(within(confirm).getByRole('button', { name: 'キャンセル' }))
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(dialog()).toBeInTheDocument()
+    await waitFor(async () => expect(await loadButton('Test Alpha', '打者A')).toHaveFocus())
+    expect(input('打者A', 'PA')).toHaveValue('123')
+    expect(screen.getByLabelText('打者Aの表示名')).toHaveValue('打者A')
+  })
+
+  test('「上書きする」で読み込み、ダイアログを閉じる', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const confirm = await chooseForFilledCard(user)
+    await user.click(within(confirm).getByRole('button', { name: '上書きする' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(input('Test Alpha', 'PA')).toHaveValue('600')
+  })
+
+  test('空のカードには、確認を出さずに読み込む', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(input('Test Alpha', 'PA')).toHaveValue('600')
+  })
+})
+
 describe('カードへの読み込み', () => {
-  test('成績14項目と名前が入り、プリセットの情報と出典を表示する', async () => {
+  test('成績14項目と名前が入り、プリセットの情報をカードの上に表示する（出典はカードに出さない）', async () => {
     const user = userEvent.setup()
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
@@ -226,25 +350,22 @@ describe('カードへの読み込み', () => {
     expect(within(c).getByText(/プリセット：/).closest('p')).toHaveTextContent(
       'プリセット：Test Alpha（2025年、Test Team A (XAA)）',
     )
-    const source = within(c).getByText(/出典：/)
-    // リンクの文字には、読み上げ用の「（新しいタブで開きます）」が続く
-    expect(source).toHaveTextContent(/^出典：Lahman Baseball Database \(SABR\)（新しいタブで開きます） \/ CC BY-SA 3.0（取得日 2026-01-01）/)
-    expect(source).toHaveTextContent('第二出典との照合は一部のみ（未確認）')
-    const link = within(c).getByRole('link', { name: /Lahman Baseball Database \(SABR\)/ })
-    expect(link).toHaveAttribute('href', 'https://example.com/lahman')
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    // 成績の出典はカードごとには出さず、ページの一番下の「データの出典」欄にまとめる
+    expect(within(c).queryByText(/出典/)).not.toBeInTheDocument()
+    expect(within(c).queryByText(/照合は一部のみ/)).not.toBeInTheDocument()
+    expect(within(c).queryByRole('link')).not.toBeInTheDocument()
     expect(within(c).getByRole('status')).toHaveTextContent('プリセット「Test Alpha」を読み込みました。')
   })
 
-  test('https でない出典の URL はリンクにしない。照合済みのものには「未確認」を出さない', async () => {
+  test('「データの出典」欄は、プリセットを読み込む前からページの一番下に常にある', async () => {
     const user = userEvent.setup()
-    render(<App />)
-    await loadPlayer(user, '打者A', 'Test Team B', 'Test Verified')
+    const { container } = render(<App />)
+    const sources = screen.getByRole('region', { name: 'データの出典' })
+    expect(container.lastElementChild).toContainElement(sources)
+    expect(within(sources).getByText(/第二出典との照合は一部のみ（未確認）/)).toBeInTheDocument()
 
-    const c = card('Test Verified')
-    expect(within(c).getByText(/出典：/)).toHaveTextContent('出典：Test Source（取得日 2026-01-02）')
-    expect(within(c).queryByRole('link', { name: /Test Source/ })).not.toBeInTheDocument()
-    expect(within(c).queryByText(/未確認/)).not.toBeInTheDocument()
+    await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
+    expect(screen.getAllByRole('region', { name: 'データの出典' })).toHaveLength(1)
   })
 
   test('同じ選手を別の打者に読み込むと、表示名に「 (2)」を付ける', async () => {
@@ -256,26 +377,6 @@ describe('カードへの読み込み', () => {
     expect(screen.getByLabelText('打者Aの表示名')).toHaveValue('Test Alpha')
     expect(screen.getByLabelText('打者Bの表示名')).toHaveValue('Test Alpha (2)')
     expect(screen.queryByText(/表示名がほかの打者と重複しています/)).not.toBeInTheDocument()
-  })
-
-  test('入力済みのカードには、上書きの前にカードの中で確認する。やめると変わらない', async () => {
-    const user = userEvent.setup()
-    render(<App />)
-    fireEvent.change(input('打者A', 'PA'), { target: { value: '123' } })
-    await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
-
-    const c = card('打者A')
-    expect(within(c).getByText('打者A には入力済みの成績があります。プリセット「Test Alpha」の成績と名前で上書きしますか？')).toBeInTheDocument()
-    expect(within(c).getByRole('button', { name: '上書きする' })).toHaveFocus()
-
-    await user.click(within(c).getByRole('button', { name: 'やめる' }))
-    expect(input('打者A', 'PA')).toHaveValue('123')
-    expect(screen.getByLabelText('打者Aの表示名')).toHaveValue('打者A')
-    expect(openButton('打者A')).toHaveFocus() // 読み込みのボタンへ戻る
-
-    await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
-    await user.click(within(card('打者A')).getByRole('button', { name: '上書きする' }))
-    expect(input('Test Alpha', 'PA')).toHaveValue('600')
   })
 
   test('編集すると「（編集済み）」を出して参考値を隠し、「プリセットの値に戻す」で元に戻る', async () => {
@@ -299,7 +400,7 @@ describe('カードへの読み込み', () => {
     expect(within(c()).getByText(/参考値（モデルの計算には使っていません）/)).toBeInTheDocument()
   })
 
-  test('値を手で元に戻しても、編集済みではなくなる。犠打の空欄は0と同じに扱う', async () => {
+  test('値を手で元に戻しても、編集済みではなくなる', async () => {
     const user = userEvent.setup()
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
@@ -309,7 +410,7 @@ describe('カードへの読み込み', () => {
     expect(card('Test Alpha')).not.toHaveTextContent('（編集済み）')
   })
 
-  test('プリセットの打者からコピーしても、コピー先にはプリセットの情報や参考値は写らない', async () => {
+  test('プリセットの打者からコピーしても、コピー先にはプリセットの情報・出典・参考値は写らない', async () => {
     const user = userEvent.setup()
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team B', 'Test Verified')
@@ -318,6 +419,7 @@ describe('カードへの読み込み', () => {
 
     expect(input('打者B', 'HR')).toHaveValue('15')
     expect(within(card('打者B')).queryByText(/プリセット：/)).not.toBeInTheDocument()
+    expect(within(card('打者B')).queryByText(/出典：/)).not.toBeInTheDocument()
     expect(within(card('打者B')).queryByText(/参考値/)).not.toBeInTheDocument()
   })
 
