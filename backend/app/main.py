@@ -30,6 +30,8 @@ from app.schemas.batter import (
     GamesTotal,
     LineupEvaluationRequest,
     LineupEvaluationResponse,
+    WarningItem,
+    stats_warning_items,
     stats_warnings,
 )
 
@@ -221,8 +223,14 @@ def batter_metrics(req: BatterMetricsRequest):
         avg = batting_average(stats) if has_ab else None
         obp = on_base_percentage(stats) if has_obp_denominator else None
         slg = slugging_percentage(stats) if has_ab else None
+        # 種類つきの注意を1回だけ作り、warnings はその message から作る (2つの欄がずれないように)
+        items = [
+            WarningItem(code=code, message=message)
+            for code, message in stats_warning_items(names[bid], stats_model)
+        ]
         result[bid] = BatterMetrics(
             PA=stats.PA,
+            H=stats.H,
             HR=stats.HR,
             SB=stats.SB,
             CS=stats.CS,
@@ -232,7 +240,8 @@ def batter_metrics(req: BatterMetricsRequest):
             OPS=obp + slg if obp is not None and slg is not None else None,
             BB_pct=stats.BB / stats.PA,  # PA は検証で1以上
             SO_pct=stats.SO / stats.PA,
-            warnings=stats_warnings(names[bid], stats_model),
+            warnings=[item.message for item in items],
+            warning_items=items,
         )
     return BatterMetricsResponse(batters=result)
 

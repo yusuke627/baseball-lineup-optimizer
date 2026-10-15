@@ -36,6 +36,7 @@ def _metrics(batters: dict[str, dict], **extra) -> dict:
 def test_metrics_follow_standard_definitions():
     m = _metrics({"b1": BASE})["b1"]
     assert m["PA"] == 600
+    assert m["H"] == 150  # 入力値のまま
     assert m["HR"] == 15
     assert m["SB"] == 10
     assert m["CS"] == 3
@@ -52,7 +53,9 @@ def test_metrics_follow_standard_definitions():
 def test_metrics_do_not_include_woba_or_wrc_plus():
     # wOBA・wRC+ は、このアプリでは計算しない (DESIGN 3-2)
     m = _metrics({"b1": BASE})["b1"]
-    assert set(m) == {"PA", "HR", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "BB_pct", "SO_pct", "warnings"}
+    assert set(m) == {
+        "PA", "H", "HR", "SB", "CS", "AVG", "OBP", "SLG", "OPS", "BB_pct", "SO_pct", "warnings", "warning_items",
+    }
 
 
 def test_metrics_are_returned_per_batter():
@@ -158,6 +161,46 @@ def test_low_pa_warning_message_names_batter_and_pa():
     assert message.startswith("Luis Arraez: 打席数(PA)=150 は少なめです（目安：200未満）。")
     assert "標本が小さい" in message
     assert "計算はそのまま行っています" in message
+
+
+def test_no_warning_items_for_normal_stats():
+    m = _metrics({"b1": BASE})["b1"]
+    assert m["warning_items"] == []
+    assert m["warnings"] == []
+
+
+def test_low_pa_warning_item_code():
+    m = _metrics({"b1": _with_pa(150)})["b1"]
+    assert [item["code"] for item in m["warning_items"]] == ["LOW_PA"]
+
+
+def test_pa_sum_mismatch_warning_item_code():
+    stats = dict(BASE, PA=610)  # 内訳の合計は600。PA は200以上
+    m = _metrics({"b1": stats})["b1"]
+    assert [item["code"] for item in m["warning_items"]] == ["PA_SUM_MISMATCH"]
+    assert "一致しません" in m["warning_items"][0]["message"]
+
+
+@pytest.mark.parametrize(
+    ("pa", "expected"),
+    [(LOW_PA_THRESHOLD - 1, ["LOW_PA"]), (LOW_PA_THRESHOLD, []), (LOW_PA_THRESHOLD + 1, [])],
+)
+def test_low_pa_warning_item_boundary_in_api(pa, expected):
+    m = _metrics({"b1": _with_pa(pa)})["b1"]
+    assert [item["code"] for item in m["warning_items"]] == expected
+
+
+@pytest.mark.parametrize(
+    "stats",
+    [BASE, _with_pa(150), dict(BASE, PA=610), dict(_with_pa(150), PA=160)],
+    ids=["none", "low_pa", "mismatch", "both"],
+)
+def test_warnings_are_the_messages_of_warning_items_in_order(stats):
+    m = _metrics({"b1": stats}, display_names={"b1": "Test Name"})["b1"]
+    assert m["warnings"] == [item["message"] for item in m["warning_items"]]
+    for item in m["warning_items"]:
+        assert item["message"].startswith("Test Name: ")
+        assert set(item) == {"code", "message"}
 
 
 def test_low_pa_and_pa_mismatch_warnings_can_both_appear():

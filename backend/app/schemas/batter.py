@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel,
@@ -86,7 +86,11 @@ class BatterCountStats(BaseModel):
         return self.AB + self.BB + self.HBP + self.SF + self.SH
 
 
-def stats_warning_items(batter_id: str, stats: BatterCountStats) -> list[tuple[str, str]]:
+# 注意の種類 (API の warning_items の code)
+WarningCode = Literal["PA_SUM_MISMATCH", "LOW_PA"]
+
+
+def stats_warning_items(batter_id: str, stats: BatterCountStats) -> list[tuple[WarningCode, str]]:
     """
     エラーにはしないが利用者に知らせる点を、(種類, 文) の組で返す。batter_id は文頭に出す名前
     (表示名が指定されていれば表示名、なければ打者ID)。
@@ -95,7 +99,7 @@ def stats_warning_items(batter_id: str, stats: BatterCountStats) -> list[tuple[s
       正規化される)が、入力ミスの可能性やモデルの前提との関係があるため警告にとどめる。
     - LOW_PA: 打席数が少ない (LOW_PA_THRESHOLD 未満)。成績の標本が小さいことを知らせる。
     """
-    items = []
+    items: list[tuple[WarningCode, str]] = []
     component_sum = stats.pa_component_sum()
     if component_sum != stats.PA:
         items.append((
@@ -144,6 +148,15 @@ class BatterMetricsRequest(_WithDisplayNames):
     batters: dict[BatterId, BatterCountStats] = Field(min_length=1, max_length=9)
 
 
+class WarningItem(BaseModel):
+    """種類つきの注意。code で種類を区別し、message は画面にそのまま出す文"""
+
+    # PA_SUM_MISMATCH: 打席数と内訳 (打数+四球+死球+犠飛+犠打) の合計が合わない
+    # LOW_PA: 打席数が少ない (LOW_PA_THRESHOLD 未満)
+    code: WarningCode
+    message: str
+
+
 class BatterMetrics(BaseModel):
     """
     打者1人分の表示用の指標。分母が0で計算できない指標は null (None) を返す。
@@ -151,6 +164,7 @@ class BatterMetrics(BaseModel):
     """
 
     PA: int
+    H: int
     HR: int
     SB: int
     CS: int
@@ -160,8 +174,11 @@ class BatterMetrics(BaseModel):
     OPS: float | None  # OPS = 出塁率 + 長打率
     BB_pct: float  # 四球率 = BB / PA
     SO_pct: float  # 三振率 = SO / PA
-    # この打者についての注意 (LineupEvaluationResponse.warnings と同じ文)
+    # この打者についての注意 (LineupEvaluationResponse.warnings と同じ文)。
+    # 以前からの互換のために残している欄で、warning_items の message を同じ順に並べたもの
     warnings: list[str] = []
+    # 種類つきの注意。画面で「打席数が少ない打者」だけを選ぶときなどに使う
+    warning_items: list[WarningItem] = []
 
 
 class BatterMetricsResponse(BaseModel):
