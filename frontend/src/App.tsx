@@ -5,14 +5,18 @@ import type { BatterStats, LineupEvaluationResponse, Preset, StatKey } from './a
 import ErrorBanner, { type DisplayError } from './components/ErrorBanner'
 import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './components/ErrorSummary'
 import BatterCards from './components/BatterCards'
+import BatterWarnings from './components/BatterWarnings'
 import DataSources from './components/DataSources'
+import OrderList, { type OrderEntry } from './components/OrderList'
 import ResultSummary from './components/ResultSummary'
 import { findNameIssues } from './names'
-import { createInitialLineup, displayName, lineupReducer } from './state/lineup'
+import { createInitialLineup, displayName, isPresetEdited, lineupReducer } from './state/lineup'
+import { useBatterMetrics } from './useBatterMetrics'
 import { parseAndValidate } from './validation'
 
 type RunState =
-  | { status: 'idle' }
+  // cleared: 計算したあとに入力・打順を変えたため、前の結果を消した (そのことを画面で知らせる)
+  | { status: 'idle'; cleared?: boolean }
   | { status: 'invalid'; summaries: BatterErrorSummary[] }
   | { status: 'running' }
   // names は実行した時点の表示名 (打者の内部ID → 表示名)。結果の打順を表示名で出すために使う
@@ -39,10 +43,31 @@ export default function App() {
     lineup.slots.map((slot) => [slot.id, displayName(slot)]),
   )
 
-  // 入力を変えたら、前の入力に対する結果・エラーは消す (画面の結果と入力が食い違わないように)
+  // 入力や打順を変えたら、前の入力に対する結果・エラーは消す (画面の結果と入力が食い違わないように)。
+  // 結果を消したときは、そのことを画面に出す
   const clearRun = useCallback(() => {
-    setRun((current) => (current.status === 'idle' ? current : { status: 'idle' }))
+    setRun((current) => {
+      if (current.status === 'done') {
+        return { status: 'idle', cleared: true }
+      }
+      return current.status === 'idle' ? current : { status: 'idle' }
+    })
   }, [])
+
+  const metrics = useBatterMetrics(lineup.slots, nameIssues)
+  const orderEntries: OrderEntry[] = lineup.order.map((id) => {
+    const slot = lineup.slots.find((candidate) => candidate.id === id)
+    return {
+      id,
+      name: namesById[id],
+      unchangedPreset: slot && slot.preset && !isPresetEdited(slot) ? slot.preset : null,
+    }
+  })
+
+  function handleMove(from: number, to: number) {
+    dispatch({ type: 'moveInOrder', from, to })
+    clearRun()
+  }
 
   // 表の各行は memo しているので、行に渡す関数は作り直さない (useCallback)
   const handleChange = useCallback(
@@ -165,13 +190,13 @@ export default function App() {
           <h2 id="order-heading">
             <span className="step-number">2</span>打順
           </h2>
-          <p>この打順で計算します。現在は、成績を入力した順が打順になります（並べ替えは開発中です）。</p>
-          <ol className="order-list">
-            {lineup.order.map((id) => (
-              <li key={id}>{namesById[id]}</li>
-            ))}
-          </ol>
+          <p>
+            上から1番〜9番の順で計算します。取っ手（⋮⋮）のドラッグ、「上へ」「下へ」、移動先の番号で並べ替えられます。各打者の指標はサーバーが計算した値です。
+          </p>
+          <OrderList entries={orderEntries} metrics={metrics} disabled={isRunning} onMove={handleMove} />
         </section>
+
+        <BatterWarnings entries={orderEntries} metrics={metrics} />
 
         <section aria-labelledby="run-heading" className="step">
           <h2 id="run-heading">
@@ -192,7 +217,12 @@ export default function App() {
               計算中です。入力した打順の評価と、推奨打順の探索を行っています（数秒かかります）。
             </p>
           )}
-          {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={focusField} />}
+          {run.status === 'idle' && run.cleared && (
+            <p className="note result-cleared" role="status">
+              計算したあとに成績・表示名・打順が変わったため、前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。
+            </p>
+          )}
+          {run.status === 'invalid' &&<ErrorSummary summaries={run.summaries} onJump={focusField} />}
           {run.status === 'error' && <ErrorBanner error={run.error} />}
           {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
         </section>

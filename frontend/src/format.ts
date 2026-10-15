@@ -11,6 +11,14 @@ export function formatRate(value: number | null | undefined): string {
   return text.startsWith('0.') ? text.slice(1) : text
 }
 
+/** 四球率などの割合 (0〜1) を「6.7%」の形にする (桁をそろえるだけで、値は変えない) */
+export function formatShare(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return '—'
+  }
+  return `${(value * 100).toFixed(1)}%`
+}
+
 /** 球団の表記「球団名 (コード)」(例: New York Yankees (NYY)) */
 export function teamLabel(team: Pick<TeamInfo, 'name' | 'code'> | TeamPlayed): string {
   return `${team.name} (${team.code})`

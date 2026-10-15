@@ -134,6 +134,45 @@ export interface LineupEvaluationRequest {
   display_names?: Record<string, string>
 }
 
+/** POST /batters/metrics のリクエスト (1〜9人) */
+export interface BatterMetricsRequest {
+  batters: Record<string, BatterStats>
+  display_names?: Record<string, string>
+}
+
+/** 打者1人分の表示用の指標 (API が計算した値。分母が0のものは null) */
+/** 注意の種類 (PA_SUM_MISMATCH: 打席数と内訳の合計が合わない、LOW_PA: 打席数が少ない) */
+export type WarningCode = 'PA_SUM_MISMATCH' | 'LOW_PA'
+
+export interface WarningItem {
+  code: WarningCode
+  /** 画面にそのまま出す文 */
+  message: string
+}
+
+export interface BatterMetrics {
+  PA: number
+  /** 安打 (入力値のまま) */
+  H: number
+  HR: number
+  SB: number
+  CS: number
+  AVG: number | null
+  OBP: number | null
+  SLG: number | null
+  OPS: number | null
+  BB_pct: number
+  SO_pct: number
+  /** この打者についての注意 (打席数が少ない、打席数と内訳が合わない など)。API の文のまま */
+  warnings: string[]
+  /** 種類つきの注意 (message は warnings と同じ文) */
+  warning_items: WarningItem[]
+}
+
+export interface BatterMetricsResponse {
+  batters: Record<string, BatterMetrics>
+}
+
 export interface GamesTotal {
   n_games: number
   input_order_runs: number

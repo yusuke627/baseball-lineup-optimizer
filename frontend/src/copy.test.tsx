@@ -223,7 +223,8 @@ describe('コピーと、ほかの操作との関係', () => {
 
     await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
 
-    const body = JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body))
+    const call = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([url]) => url === '/api/lineup/evaluate')
+    const body = JSON.parse(String(call?.[1].body))
     expect(Object.keys(body.batters)).toHaveLength(9)
     expect(body.batters.b9).toEqual(VALID)
   })

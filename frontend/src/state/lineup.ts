@@ -17,7 +17,7 @@ export interface BatterSlot {
   /** 一度でも入力欄から離れた項目。未入力エラーを早く出しすぎないために使う */
   touched: Partial<Record<StatKey, boolean>>
   /**
-   * 読み込んだプリセット (API が返したまま)。手入力・コピー・貼り付けの打者は null。
+   * 読み込んだプリセット (API が返したまま)。手入力の打者と、ほかの打者からコピーした打者は null。
    * 読み込んだあとに成績を編集しても残す (編集済みかどうかは isPresetEdited で判定する)
    */
   preset: Preset | null
@@ -38,6 +38,19 @@ export type LineupAction =
   | { type: 'copyStats'; fromId: string; toIds: string[] }
   | { type: 'loadPreset'; slotId: string; preset: Preset; name: string }
   | { type: 'revertPreset'; slotId: string }
+  /** 打順の中で、from 番目 (0始まり) の打者を to 番目に動かす。ほかの打者は順番を保ったまま詰める */
+  | { type: 'moveInOrder'; from: number; to: number }
+
+/** 打順の並べ替え。範囲外や同じ位置への移動は、元の並びをそのまま返す */
+export function moveInOrder(order: string[], from: number, to: number): string[] {
+  if (from === to || from < 0 || to < 0 || from >= order.length || to >= order.length) {
+    return order
+  }
+  const next = [...order]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  return next
+}
 
 /** プリセットの成績を、入力欄の文字列にする */
 export function presetRawStats(preset: Preset): RawStats {
@@ -157,6 +170,10 @@ export function lineupReducer(state: LineupState, action: LineupAction): LineupS
         touched: {},
         preset: action.preset,
       }))
+    case 'moveInOrder': {
+      const order = moveInOrder(state.order, action.from, action.to)
+      return order === state.order ? state : { ...state, order }
+    }
     case 'revertPreset':
       return updateSlot(state, action.slotId, (slot) =>
         slot.preset === null ? slot : { ...slot, raw: presetRawStats(slot.preset), touched: {} },

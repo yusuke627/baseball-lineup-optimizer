@@ -61,6 +61,15 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
+/** 計算 (POST /api/lineup/evaluate) の呼び出し。打者ごとの指標 (POST /api/batters/metrics) の呼び出しと区別する */
+function evaluateCall(mock: ReturnType<typeof vi.fn>): [string, RequestInit | undefined] {
+  const call = mock.mock.calls.find(([url]) => url === '/api/lineup/evaluate')
+  if (call === undefined) {
+    throw new Error('計算の API が呼ばれていない')
+  }
+  return call as [string, RequestInit | undefined]
+}
+
 const runButton = () => screen.getByRole('button', { name: '期待得点を計算する' })
 
 afterEach(() => {
@@ -109,7 +118,7 @@ describe('入力フォーム', () => {
   test('打順の欄には、表示名が入力の順に並ぶ', () => {
     render(<App />)
     const order = screen.getByRole('region', { name: '2打順' })
-    const names = () => within(order).getAllByRole('listitem').map((item) => item.textContent)
+    const names = () => [...order.querySelectorAll('.order-name')].map((item) => item.textContent)
     expect(names()).toEqual(NAMES)
 
     fireEvent.change(nameInput('打者C'), { target: { value: 'Luis Arraez' } })
@@ -188,7 +197,7 @@ describe('打者の表示名', () => {
 
     const result = await screen.findByRole('region', { name: '結果' })
     expect(within(result).getByText(['Aaron Judge', ...NAMES.slice(1)].join(' → '))).toBeInTheDocument()
-    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
+    const body = JSON.parse(String(evaluateCall(fetchMock)[1]?.body))
     expect(body.input_order).toEqual(SLOT_IDS) // 内部IDは変わらない
     expect(body.display_names.b1).toBe('Aaron Judge')
   })
@@ -213,7 +222,7 @@ describe('打者の表示名', () => {
 
     await user.click(runButton())
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
     expect(screen.getByRole('alert')).toHaveTextContent('2件の入力エラーがあります（打者2人）')
     expect(nameInput('打者A')).toHaveFocus()
   })
@@ -249,7 +258,7 @@ describe('計算の実行', () => {
 
     await user.click(runButton())
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
     const alert = screen.getByRole('alert')
     expect(within(alert).getByText('入力エラー：')).toBeInTheDocument()
     // 実行後は、触っていない欄の未入力エラーも、打者ごとに1行にまとめて表示する
@@ -269,7 +278,7 @@ describe('計算の実行', () => {
 
     await user.click(runButton())
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('3件の入力エラーがあります（打者2人）')
     const items = within(alert).getAllByRole('listitem')
@@ -314,7 +323,7 @@ describe('計算の実行', () => {
     expect(within(result).getByText(NAMES.join(' → '))).toBeInTheDocument()
     expect(within(result).getByText([...NAMES].reverse().join(' → '))).toBeInTheDocument()
 
-    const [url, init] = fetchMock.mock.calls[0]
+    const [url, init] = evaluateCall(fetchMock)
     expect(url).toBe('/api/lineup/evaluate')
     const body = JSON.parse(String(init?.body))
     expect(body.input_order).toEqual(SLOT_IDS)

@@ -580,17 +580,163 @@ a {
   font-weight: bold;
 }
 
-/* 打順の一覧 */
-.order-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
-  gap: var(--space-1) var(--space-6);
+/* 打順の並べ替え。1行が1人の打者 */
+.order-rows {
   margin: 0;
-  padding-left: 2em;
+  padding: 0;
+  list-style: none;
 }
 
-.order-list li {
+.order-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+@media (min-width: 900px) {
+  .order-row {
+    grid-template-columns: minmax(12em, 1fr) minmax(0, 2.2fr) auto;
+    align-items: center;
+  }
+}
+
+.order-row-dragging {
+  position: relative;
+  z-index: 1;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
+}
+
+.order-row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* ドラッグの取っ手。タッチでドラッグするとき、画面のスクロールにならないようにする */
+.order-handle {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: grab;
+  touch-action: none;
+  line-height: 1;
+}
+
+.order-position {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.order-name {
+  font-weight: bold;
   overflow-wrap: anywhere;
+}
+
+.order-row-details p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.order-metrics {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+ul.order-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.order-metrics li {
+  white-space: nowrap;
+}
+
+ul.order-metrics abbr {
+  margin-right: 0.25em;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.order-reference {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.order-warnings {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.order-warnings li {
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+}
+
+.order-row-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.order-row-controls button {
+  padding: var(--space-1) var(--space-3);
+}
+
+/* aria-disabled のボタン (押せないが、フォーカスでき、理由が読み上げられる) */
+.order-row-controls button[aria-disabled='true'] {
+  border-color: var(--color-border-subtle);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.order-move {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+}
+
+.order-move select {
+  font: inherit;
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.order-message:empty {
+  display: none;
+}
+
+.order-message {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+}
+
+.batter-warnings h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+}
+
+.batter-warnings p {
+  margin: 0 0 var(--space-1);
 }
 
 .run-controls {

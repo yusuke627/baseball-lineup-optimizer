@@ -1,4 +1,6 @@
 import type {
+  BatterMetricsRequest,
+  BatterMetricsResponse,
   LineupEvaluationRequest,
   LineupEvaluationResponse,
   Preset,
@@ -139,6 +141,23 @@ export function searchPresets(
     params.set('q', q)
   }
   return request<PresetSearchResult>(`/presets?${params}`, { signal })
+}
+
+/** 打者ごとの表示用の指標と注意を求める (得点期待値の計算はしない) */
+export async function fetchBatterMetrics(
+  body: BatterMetricsRequest,
+  signal?: AbortSignal,
+): Promise<BatterMetricsResponse> {
+  const data = await request<BatterMetricsResponse>('/batters/metrics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+  if (typeof data !== 'object' || data === null || typeof data.batters !== 'object' || data.batters === null) {
+    throw new ApiError('network', MESSAGES.invalidResponse)
+  }
+  return data
 }
 
 export function evaluateLineup(

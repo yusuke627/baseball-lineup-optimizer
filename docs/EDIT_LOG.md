@@ -420,22 +420,54 @@
 - 依頼内容: LICENSE の末尾の日本語の注記を削除して、標準の MIT ライセンスの本文と著作権表示だけにする。README のライセンス欄に「ソースコードは MIT、data/ のプリセットの出典とライセンスは data/NOTICE」を追記する。DESIGN の古い記述を直す（段階6d）
 - 変更ファイル: LICENSE, README.md（ライセンス欄の1文目）, docs/DESIGN.md（2-4 のライセンスの項の括弧書き）, docs/EDIT_LOG.md
 - 変更理由: LICENSE の注記（データの著作権・利用条件は「FanGraphs等」の出典元の規約に従い、データそのものの再配布権を主張しない、という内容）が、Lahman 由来のプリセットを CC BY-SA 3.0 で提供するという data/NOTICE・README の記載と食い違い、FanGraphs も今はデータの出典に使っていないため。MIT の本文（1〜21行目）は変えていない。DESIGN 2-4 の「具体的な表示の方法は、ファイルを生成する段階で決める」は、表示の場所が決まったため「表示は data/NOTICE、README のライセンス欄、画面の『データの出典』欄」に直した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: ddb48df
+- 戻し方: git revert ddb48df
 - 注意点: data/NOTICE は変更していない。NOTICE には、10人の目視照合の結果（照合は一部のみ）と、地区（team_info.division）を Teams.csv の divID から加えたことが書かれていない（報告済み、未修正）。README の参考文献欄（FanGraphs "Guts!" の行を含む）は触っていない。段階6b修正のハッシュ（e5a489b、4fb2926・7bf8f4c、56baa72、2c3303d）を、それぞれの記録に記入した。Actions は緑（ユーザーが確認）
 
 ## 2026-10-15 18:12 NOTICEに目視照合の結果と地区の追加を記載し、READMEの照合状況の説明を合わせる
 - 依頼内容: data/NOTICE の照合状況の記述を、10人の目視照合の結果に合わせて直し、改変の一覧に地区（team_info.division）の追加を書く。照合状況の記述の食い違いを確認する（段階6e の1・2）
 - 変更ファイル: data/NOTICE, README.md（プリセットデータについての Lahman の項）, docs/EDIT_LOG.md
 - 変更理由: NOTICE の「独立した第二の出典との照合を行っていません」は、固定シードで選んだ10人を利用者が公式サイトの数値と目視で照合し一致を確認したこと（2026-10-14）と合っていなかった。「一部（--sample で固定のシードにより選んだ10人）は公式サイトの数値と目視で照合し一致を確認。照合先の公式サイト名は記録していない。残りは照合していない。いずれも verified は false」に直した。改変の一覧に「所属地区（team_info.division。E・C・W）は Teams.csv の divID から加えた」を足した。README の「独立した第二の出典との照合はしていないため、verified: false」も同じ趣旨に直した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: b6bb55b
+- 戻し方: git revert b6bb55b
 - 注意点: 法的な断定は書いていない。画面の「データの出典」欄の「第二出典との照合は一部のみ（未確認）」と DESIGN 2-4 の記述は、直した NOTICE・README と食い違わないため変えていない。生成した346件の各ファイルの source.note には「独立した第二出典との照合は未実施」と書かれたままで、照合済みの10人も同じ文（データは変えていない。報告済み）
 
 ## 2026-10-15 18:12 貼り付け入力を導入しない方針をREADMEとDESIGNに反映
 - 依頼内容: 表計算ソフトなどからの貼り付け入力（旧段階6c）を導入しない方針（2026-10-15 決定）を、README・DESIGN に反映する。2026年のプリセットが無い理由も書く（段階6e の3）
 - 変更ファイル: README.md（プリセットデータについての項に2026年と貼り付けの方針、今後の拡張候補から貼り付けを削除）, docs/DESIGN.md（2-2：コピーの説明から貼り付けを外し、貼り付けを導入しない方針と2026年のプリセットについて追記）, docs/EDIT_LOG.md
 - 変更理由: 貼り付けの機能を作らないことになったため、計画として残っていた記述を直した。2026年のプリセットは無く、2026年を含む Lahman の版が公開されれば同じ生成スクリプトで作れる見込みだが、公開の時期と内容は未確認と書いた
+- コミット: 33ad24f
+- 戻し方: git revert 33ad24f
+- 注意点: frontend/src/state/lineup.ts の20行目のコメント「手入力・コピー・貼り付けの打者は null」に「貼り付け」が残っている（frontend のコードは変更しない指示のため、直していない。報告済み）。CLAUDE.md（公開しない）の概要も、貼り付けを外して現状に合わせた（コミットの対象外）。段階6d（ddb48df と思われるが、利用者からの連絡を待つ）のハッシュは、まだ記入していない
+
+## 2026-10-15 18:42 打順のドラッグ用にdnd-kitを追加
+- 依頼内容: 打順の並べ替えのドラッグに使う dnd-kit（@dnd-kit/core、@dnd-kit/sortable、@dnd-kit/utilities）を追加する（段階7）
+- 変更ファイル: frontend/package.json, frontend/package-lock.json, docs/EDIT_LOG.md
+- 変更理由: マウス・タッチ・キーボードでのドラッグと、読み上げの仕組みを1つの部品でそろえるため。導入前に npm のレジストリで確認した内容：latest は @dnd-kit/core 6.3.1（最終公開 2024-12-05）、@dnd-kit/sortable 10.0.0（同 2024-12-04）、@dnd-kit/utilities 3.2.2（同 2023-11-06）。間接的に入る @dnd-kit/accessibility 3.1.1（同 2024-11-23）と tslib 2.8.1。ライセンスはすべて MIT。peer 依存は react >=16.8.0（sortable は @dnd-kit/core ^6.3.0 も）で、使っている React 19.3 と合う
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: frontend/src/state/lineup.ts の20行目のコメント「手入力・コピー・貼り付けの打者は null」に「貼り付け」が残っている（frontend のコードは変更しない指示のため、直していない。報告済み）。CLAUDE.md（公開しない）の概要も、貼り付けを外して現状に合わせた（コミットの対象外）。段階6d（ddb48df と思われるが、利用者からの連絡を待つ）のハッシュは、まだ記入していない
+- 注意点: npm install で5パッケージが加わり、npm audit は 0 件。package.json の記載は ^6.3.1・^10.0.0・^3.2.2（既存の依存と同じ ^ の形）で、実際に入る版は package-lock.json で固定。ビルドした JS は 250.83 kB から 306.87 kB に増えた（gzip で 78.79 kB から 97.37 kB。この段階の画面の追加分を含む）。更新が止まっている可能性（npm の公開日からの見立て）は DESIGN 2-2 に書いた
+
+## 2026-10-15 18:42 打順の並べ替えと、打者ごとの指標・注意の表示を追加
+- 依頼内容: 打順をドラッグ・「上へ」「下へ」・移動先の番号で並べ替えられるようにし、打者ごとの指標（POST /batters/metrics）と注意を表示する。計算と結果の上に注意の一覧を出す。lineup.ts のコメントを貼り付けを導入しない方針に合わせる（段階7）
+- 変更ファイル: frontend/src/components/OrderList.tsx（新規）, frontend/src/components/BatterWarnings.tsx（新規）, frontend/src/useBatterMetrics.ts（新規）, frontend/src/App.tsx, frontend/src/state/lineup.ts, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/format.ts, frontend/src/index.css, frontend/src/order.test.tsx（新規）, frontend/src/state/lineup.test.ts（新規）, frontend/src/App.test.tsx, frontend/src/copy.test.tsx, README.md（フロントの状況）, docs/DESIGN.md（2-2 に「打順の並べ替え」）, docs/EDIT_LOG.md
+- 変更理由: 打順を入力の枠とは別に並べ替え、そのまま計算の input_order に使うため。ドラッグが使えない環境でも、ボタンと番号の指定だけで全ての操作ができる。並べ替えたあとは動かした打者の同じ操作にフォーカスを戻し、aria-live で知らせる（ドラッグのときは dnd-kit の読み上げと二重にならないよう、こちらでは知らせない）。先頭の「上へ」と末尾の「下へ」は aria-disabled にして、理由を読み上げで伝える。計算したあとに成績・表示名・打順を変えると前の結果を消し、そのことを表示する（以前は黙って消していた）。指標と注意は API の値・文をそのまま表示する（フロントでは計算しない。値が null のときは「—」）。画面の「並べ替えは開発中です」の文言は削除した。lineup.ts のコメントは「手入力の打者と、ほかの打者からコピーした打者は null」にした
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 「計算と結果」の上の一覧は、打席数が少ない打者だけでなく、API が返した注意がある打者すべてを出す（API が注意を文としてだけ返し、種類を区別できないため。基準値をフロントに持たせず、文の照合もしない）。打席数の注意だけに絞るにはバックエンドの変更が必要（報告済み、未対応）。バックエンドは変更していない。テストは 182件（並べ替えのロジック・ボタン・番号の指定・境界・aria-live の文・警告の表示・計算との関係など）。既存のテストのうち、最初の API の呼び出しを計算の呼び出しとみなしていた箇所と「API を呼ばない」の確認を、指標の API の呼び出しと区別する形に直した。ドラッグそのもの（jsdom では確認できない）は、Edge 155（ヘッドレス）を DevTools Protocol で操作して、キーボード（スペース→上矢印2回→スペース）・マウス・タッチのそれぞれで並び替わることと、読み上げの文を確かめた（幅 1200px と 400px、400px はダーク表示も）。実機のタッチ端末と、実際のスクリーンリーダーでの確認は未確認
+
+## 2026-10-15 19:13 打者ごとの指標のAPIに、種類つきの注意と安打を追加
+- 依頼内容: POST /batters/metrics の各打者に、種類つきの注意 warning_items（code と message）と、安打（H）を加える（段階7の追加）
+- 変更ファイル: backend/app/schemas/batter.py, backend/app/main.py, backend/tests/test_metrics_api.py, docs/DESIGN.md（4章の POST /batters/metrics）, docs/EDIT_LOG.md
+- 変更理由: 画面の「計算と結果」の上に、打席数が少ない打者だけの一覧を出すため。今ある注意は2種類で、バックエンドの中では既に PA_SUM_MISMATCH（打席数と内訳の合計が合わない）と LOW_PA（打席数が LOW_PA_THRESHOLD 未満）の名前で区別していた。PA_SUM_MISMATCH は共通の入力例とフロントの入力検証でも同じ名前なので、そのまま使った。種類は型（WarningCode）として1か所で定義した。warnings は互換のために残し、1回作った注意（warning_items）の message から作るので、2つはずれない。安打は、指標の表示に加えるため、PA・HR・SB と同じく入力値のまま返す
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: LOW_PA_THRESHOLD の値（200）と注意の文言は変えていない。POST /lineup/evaluate の応答は変えていない。追加したテスト：通常の成績では注意なし、各 code が出る条件、LOW_PA の境界（199 で出て、200・201 で出ない）、warnings と warning_items の message の一致（なし・LOW_PA だけ・PA_SUM_MISMATCH だけ・両方）、H の値。計算結果は変わらない（baseline.py: 案A 16パターンの最大差 1.776e-15、案B 完全一致、プリセットの確率の差0）
+
+## 2026-10-15 19:13 打順の画面の指標の並びと表記を変え、「打席数が少ない打者」の一覧を種類で選ぶ
+- 依頼内容: 打順の各行の指標を AVG → PA → H → HR → OBP → SLG → OPS → K% → BB% → SB の順と略号の表記にし、読み上げは日本語にする。「計算と結果」の上の一覧を、種類が LOW_PA の注意がある打者だけにする（段階7の追加）
+- 変更ファイル: frontend/src/components/OrderList.tsx, frontend/src/components/BatterWarnings.tsx, frontend/src/api/types.ts, frontend/src/index.css, frontend/src/order.test.tsx, docs/DESIGN.md（2-2 の打順の並べ替え）, docs/EDIT_LOG.md
+- 変更理由: 指標は、画面には略号（AVG・PA・H・HR・OBP・SLG・OPS・K%・BB%・SB）を、読み上げには日本語（打率・打席・安打・本塁打・出塁率・長打率・OPS・三振率・四球率・盗塁）を出す（略号は abbr で aria-hidden、日本語は読み上げ専用の文）。以前出していた項目のうち、この一覧にないものはなかった（盗塁死は前から出していない）。安打は API の値を出す。K% と BB% は、API が返す割合（0〜1）を「21.5%」の形（小数点以下1桁のパーセント）にしている。「計算と結果」の上の一覧は、見出しを「打席数が少ない打者」にし、warning_items の code が LOW_PA の打者だけを出す。各行には、これまでどおりすべての注意を出す
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: K%・BB% の表示は、前の段階から既に「6.7%」の形（割合×100、小数点以下1桁）だった。割合をパーセントの表記にするのは表記をそろえるだけで、新しい値は作らない（判断の理由は報告に記載）。フロントは基準の打席数や注意の文の判定をしていない。プリセットの選択画面の選手一覧の指標（「打率 .331 ／ …」の日本語の表記）は変えていない。test 184件・typecheck・lint・build・contrast が通った。新しいバックエンドで、プロキシ経由の API が warning_items と H を返すこと、画面に「打席数が少ない打者（1人）」が出ることを、Edge 155（ヘッドレス）で確かめた
