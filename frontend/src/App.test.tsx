@@ -22,11 +22,12 @@ const RESPONSE: LineupEvaluationResponse = {
   best_order_runs_per_game: 4.234567,
   best_order_runs_n_games: 605.543081,
   inefficiency_percent: 2.62391,
+  runs_lost_per_game: 0.111111,
   n_games: 143,
   monte_carlo: { mean: 4.1, std: 2.9, min: 0, max: 20, n_trials: 5000 },
   totals_by_games: [
-    { n_games: 143, input_order_runs: 589.654208, best_order_runs: 605.543081 },
-    { n_games: 162, input_order_runs: 667.999872, best_order_runs: 685.999854 },
+    { n_games: 143, input_order_runs: 589.654208, best_order_runs: 605.543081, runs_lost: 15.888873 },
+    { n_games: 162, input_order_runs: 667.999872, best_order_runs: 685.999854, runs_lost: 17.999982 },
   ],
   warnings: [],
 }
@@ -196,7 +197,12 @@ describe('打者の表示名', () => {
     await user.click(runButton())
 
     const result = await screen.findByRole('region', { name: '結果' })
-    expect(within(result).getByText(['Aaron Judge', ...NAMES.slice(1)].join(' → '))).toBeInTheDocument()
+    const inputColumn = within(result).getByRole('region', { name: '入力打順' })
+    // フルネームは title に入る (狭い画面では見た目だけ「A. Judge」に短くする)
+    expect([...inputColumn.querySelectorAll('.result-order-name')].map((el) => el.getAttribute('title'))).toEqual([
+      'Aaron Judge',
+      ...NAMES.slice(1),
+    ])
     const body = JSON.parse(String(evaluateCall(fetchMock)[1]?.body))
     expect(body.input_order).toEqual(SLOT_IDS) // 内部IDは変わらない
     expect(body.display_names.b1).toBe('Aaron Judge')
@@ -320,8 +326,12 @@ describe('計算の実行', () => {
     expect(within(result).getByText('4.235')).toBeInTheDocument()
     expect(within(result).getByText('2.62%')).toBeInTheDocument()
     // API は打順を内部IDで返す。画面には表示名で出す
-    expect(within(result).getByText(NAMES.join(' → '))).toBeInTheDocument()
-    expect(within(result).getByText([...NAMES].reverse().join(' → '))).toBeInTheDocument()
+    const namesIn = (title: string) =>
+      [...within(result).getByRole('region', { name: title }).querySelectorAll('.result-order-name')].map(
+        (el) => el.getAttribute('title'),
+      )
+    expect(namesIn('入力打順')).toEqual(NAMES)
+    expect(namesIn('推奨打順（近似探索）')).toEqual([...NAMES].reverse())
 
     const [url, init] = evaluateCall(fetchMock)
     expect(url).toBe('/api/lineup/evaluate')

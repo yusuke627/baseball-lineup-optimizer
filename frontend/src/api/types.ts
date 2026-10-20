@@ -177,6 +177,8 @@ export interface GamesTotal {
   n_games: number
   input_order_runs: number
   best_order_runs: number
+  /** 推奨打順に対する入力打順の損失点 (サーバーが best_order_runs - input_order_runs を計算) */
+  runs_lost: number
 }
 
 export interface MonteCarloSummary {
@@ -195,6 +197,8 @@ export interface LineupEvaluationResponse {
   best_order_runs_per_game: number
   best_order_runs_n_games: number
   inefficiency_percent: number
+  /** 1試合あたりの損失点 (サーバーが best_order_runs_per_game - input_order_runs_per_game を計算) */
+  runs_lost_per_game: number
   n_games: number
   monte_carlo: MonteCarloSummary | null
   totals_by_games: GamesTotal[]

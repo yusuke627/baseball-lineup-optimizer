@@ -1,6 +1,38 @@
 import { describe, expect, test } from 'vitest'
 
-import { formatRate, safeHttpsUrl, teamLabel } from './format'
+import { formatRate, safeHttpsUrl, shortDisplayName, teamLabel } from './format'
+
+describe('狭い画面の短い表示名', () => {
+  test.each([
+    ['Aaron Judge', 'A. Judge'],
+    ['Ronald Acuña Jr.', 'R. Acuña Jr.'], // 接尾辞つき
+    ['Ken Griffey II', 'K. Griffey II'],
+    ['Max Muncy (2)', 'M. Muncy (2)'], // 重複番号つき
+    ['Isiah Kiner-Falefa', 'I. Kiner-Falefa'], // ハイフンつきの姓
+    ['Michael A. Taylor', 'M. A. Taylor'], // ピリオド付きのミドルイニシャル
+    ['Ángel Martínez', 'Á. Martínez'], // 最初の単語がアクセントつき
+    ['Jean-Pierre Smith', 'J. Smith'], // ハイフンつきの名
+    ['  Aaron   Judge  ', 'A. Judge'], // 前後と途中の空白
+  ])('%s → %s', (name, expected) => {
+    expect(shortDisplayName(name)).toBe(expected)
+  })
+
+  test.each([
+    ['打者A', '1語'],
+    ['Ohtani', '1語の英字'],
+    ['大谷 翔平', '日本語'],
+    ['打者A (2)', '日本語で重複番号つき'],
+    ['Judge (2)', '1語に重複番号だけ'],
+    ['J.D. Martinez', '最初の単語が既にイニシャル'],
+    ['ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMN', '空白なしの長い名前'],
+  ])('%s（%s）は、そのまま', (name) => {
+    expect(shortDisplayName(name)).toBe(name)
+  })
+
+  test('そのまま返すときも前後の空白は除く', () => {
+    expect(shortDisplayName('  打者A ')).toBe('打者A')
+  })
+})
 
 describe('率の表示', () => {
   test('1未満は先頭の0を省いて小数3桁にする (桁をそろえるだけで、値は変えない)', () => {

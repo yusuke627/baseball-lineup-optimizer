@@ -13,6 +13,7 @@
   --color-border-subtle: #d3d9d5;
   --color-accent: #1f6b45;
   --color-on-accent: #ffffff;
+  --color-badge-bg: #e7f3ec;
   --color-error: #b3261e;
   --color-error-bg: #fdecea;
   --color-warning: #6b4a00;
@@ -44,6 +45,7 @@
     --color-border-subtle: #343b37;
     --color-accent: #6fcf97;
     --color-on-accent: #0c1a12;
+    --color-badge-bg: #17301f;
     --color-error: #ffb4ab;
     --color-error-bg: #3a1512;
     --color-warning: #ffd98a;
@@ -815,61 +817,328 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-/* 結果。期待得点と非効率% をいちばん大きく見せる */
-/*
- * 3つの数値は、広い画面では必ず同じ幅の3列に、狭い画面では必ず縦1列に並べる (2つと1つに分かれない)。
- * 見出しの行数が違っても数値の高さがそろうよう、各枠の中で数値を下端に寄せる
- * (枠の高さはグリッドでそろい、数値の文字の大きさは同じなので、数値のベースラインがそろう)。
- */
-.figures {
+/* 結果。入力打順と推奨打順を、画面の幅にかかわらず左右に並べる (入力打順が先) */
+.games-switch {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+}
+
+.games-switch legend {
+  padding: 0 var(--space-1);
+  font-weight: bold;
+}
+
+.games-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+}
+
+.games-options label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: bold;
+}
+
+.games-options input {
+  width: 1.1em;
+  height: 1.1em;
+  accent-color: var(--color-accent);
+}
+
+.games-switch .note {
+  margin: var(--space-1) 0 0;
+  font-size: 0.85rem;
+}
+
+/* 非効率% と損失点は、一覧より上に、いちばん大きく出す。
+   中の段 (ラベル・数字・損失点・説明) の間隔は gap でそろえ、各段の margin は 0 にする */
+.inefficiency {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.inefficiency p {
   margin: 0;
 }
 
-@media (min-width: 640px) {
-  .figures {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.inefficiency-label {
+  font-size: 0.85rem;
+  color: var(--color-muted);
 }
 
-.figure {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
+.inefficiency-value {
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.inefficiency-loss strong {
+  font-size: 1.15rem;
+}
+
+.inefficiency .note {
+  font-size: 0.85rem;
+}
+
+/* 2つの打順は、画面の幅にかかわらず左右に並べる */
+.result-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.result-column {
+  min-width: 0;
+  padding: 6px;
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
-.figure dt {
-  font-size: 0.85rem;
+.result-column h4 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+
+/* 期待得点は、各打順の一覧の上に出す (狭い列では縦に並べる) */
+.result-runs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+@media (min-width: 800px) {
+  .result-columns {
+    gap: var(--space-4);
+  }
+
+  .result-column {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .result-runs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.result-runs dt {
+  font-size: 0.8rem;
   color: var(--color-muted);
 }
 
-.figure dd {
+.result-runs dd {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   line-height: 1.3;
+}
+
+.result-order {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * 2つの打順で、同じ番号の行を同じ高さ・同じ位置にそろえる。
+ * 外側を12行 (見出し・期待得点・9人・シミュレーションの欄) のグリッドにし、各列と各一覧を subgrid にして行を共有する。
+ * 片側の行が (長い名前や印・指標の折り返しで) 高くなると、もう片側の同じ番号の行も同じ高さになる。
+ * HTML の構造 (section > h4・dl・ol > li) と順番は変えない。打者は API が必ず9人で返す。
+ * subgrid が使えないブラウザでは、この指定は無視され、各列が独立して縦に並ぶ (行の高さはそろわないが、崩れない)。
+ */
+@supports (grid-template-rows: subgrid) {
+  .result-columns {
+    grid-template-rows: repeat(12, auto);
+    row-gap: 0;
+  }
+
+  .result-column {
+    display: grid;
+    grid-row: span 12;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
+  .result-order {
+    display: grid;
+    grid-row: span 9;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+}
+
+/*
+ * 結果の各行は固定の構造にして、どの打者でも同じ高さになるようにする。
+ *   1行目: 番号・表示名・(狭い列の札「元9番」は名前のすぐ後ろ、広い列の札「9番→1番」は行の右端)。
+ *          折り返さず、札は縮めない (flex: none)。収まらないときは名前の側を「…」で省略する
+ *   2行目以降: 指標の固定の格子
+ * 切り替えは画面の幅ではなく列の幅で決める (container query)。各行 (li) を container にする
+ * (列の section を container にすると、レイアウトの封じ込めで subgrid が効かなくなるため。li の幅は列の内側の幅と同じ)。
+ * 切り替えの幅は Edge で実測して決めた (docs/DESIGN.md 4章「結果の画面」):
+ *   - 列の幅が 255px 以上: フルネームと「9番→1番」の札 (それ未満は短い名前と「元9番」の札)。「9番 Pete Crow-Armstrong 9番→1番」が 254.5px
+ *   - 列の幅が 200px 以上: 指標6つを3列×2段 (それ未満は OBP・SLG を外して4つを2列×2段)。最も広い指標 53.8px×3＋間隔 8px×2 = 177.4px に、OPS が1以上 (1桁多い) の分を足した
+ *   - 列の幅が 344px 以上: 指標6つを6列×1段。指標の幅の合計 335.4px (間隔を含む) に、同じ分を足した
+ * container query が使えないブラウザでは、狭い列の表示 (短い名前・「元9番」・指標4つ) になる。
+ */
+.result-order-row {
+  container: result-row / inline-size;
+  display: grid;
+  align-content: start;
+  row-gap: 2px;
+  padding: 3px 0;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.result-order-head {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.result-order-position {
+  flex: none;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-order-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: bold;
+}
+
+.result-name-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 狭い列は短い名前、広い列はフルネーム (どちらも見た目だけ。読み上げはフルネーム) */
+.result-name-full {
+  display: none;
+}
+
+/* 動いた打者の札。色だけに頼らず、文字と枠で伝える。1行目の高さを増やさないよう、上下の余白は付けない */
+.result-move {
+  flex: none;
+  padding: 0 4px;
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  background: var(--color-badge-bg);
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.result-move-wide {
+  display: none;
+  /* 札を行の右端にそろえ、名前の後ろの空白を目立たせない */
+  margin-left: auto;
+}
+
+@container result-row (min-width: 255px) {
+  .result-order-head {
+    gap: 6px;
+  }
+
+  .result-name-full {
+    display: block;
+  }
+
+  .result-name-short {
+    display: none;
+  }
+
+  .result-move-narrow {
+    display: none;
+  }
+
+  .result-move-wide {
+    display: inline-block;
+  }
+}
+
+.result-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-metrics li {
+  white-space: nowrap;
+}
+
+/* 狭い列では OBP・SLG を画面からも読み上げからも外し、AVG → OPS → HR → SB の2列×2段にする */
+.result-metrics .result-metric-optional {
+  display: none;
+}
+
+@container result-row (min-width: 200px) {
+  .result-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .result-metrics .result-metric-optional {
+    display: block;
+  }
+}
+
+@container result-row (min-width: 344px) {
+  .result-metrics {
+    grid-template-columns: repeat(6, max-content);
+    gap: 0 var(--space-3);
+  }
+}
+
+.result-metrics abbr {
+  margin-right: 0.2em;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+/* 入力打順の下の、たたんだシミュレーションの欄 */
+.simulation {
+  margin-top: var(--space-3);
+}
+
+.simulation-toggle {
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
   text-align: left;
 }
 
-.orders {
-  margin: var(--space-4) 0 0;
+.simulation-body {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: 0.9rem;
 }
 
-.orders dt {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--color-muted);
+.simulation-body[hidden] {
+  display: none;
 }
 
-.orders dd {
-  margin: 0 0 var(--space-3);
+.simulation-body p {
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
@@ -877,7 +1146,8 @@ button:disabled {
   color: var(--color-muted);
 }
 
-.result .note {
+/* 結果の欄の直下の注記だけに上の余白を付ける (枠の中の注記は、それぞれの枠の中で間隔を決める) */
+.result > .note {
   margin-top: var(--space-4);
 }
 

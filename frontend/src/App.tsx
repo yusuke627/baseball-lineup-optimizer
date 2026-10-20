@@ -33,6 +33,8 @@ export default function App() {
   const [lineup, dispatch] = useReducer(lineupReducer, undefined, createInitialLineup)
   const [showAllErrors, setShowAllErrors] = useState(false)
   const [run, setRun] = useState<RunState>({ status: 'idle' })
+  /** 結果の試合数の切替 (143試合・162試合)。計算し直しても選んだままにする */
+  const [games, setGames] = useState(143)
   const controllerRef = useRef<AbortController | null>(null)
 
   const isRunning = run.status === 'running'
@@ -160,7 +162,7 @@ export default function App() {
         <header className="page-header">
           <h1>打順の得点期待値</h1>
           <p>
-            9人の打者の成績から、入力した打順と推奨打順の期待得点を計算して比べます。
+            9人の打者の成績から、入力打順と推奨打順の期待得点を計算して比べます。
           </p>
         </header>
 
@@ -214,7 +216,7 @@ export default function App() {
           </div>
           {isRunning && (
             <p role="status" className="note">
-              計算中です。入力した打順の評価と、推奨打順の探索を行っています（数秒かかります）。
+              計算中です。入力打順の評価と、推奨打順の探索を行っています（数秒かかります）。
             </p>
           )}
           {run.status === 'idle' && run.cleared && (
@@ -224,7 +226,15 @@ export default function App() {
           )}
           {run.status === 'invalid' &&<ErrorSummary summaries={run.summaries} onJump={focusField} />}
           {run.status === 'error' && <ErrorBanner error={run.error} />}
-          {run.status === 'done' && <ResultSummary result={run.result} names={run.names} />}
+          {run.status === 'done' && (
+            <ResultSummary
+              result={run.result}
+              names={run.names}
+              metrics={metrics}
+              games={games}
+              onGamesChange={setGames}
+            />
+          )}
         </section>
       </main>
       <DataSources />

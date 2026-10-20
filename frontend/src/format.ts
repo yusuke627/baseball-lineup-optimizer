@@ -19,6 +19,27 @@ export function formatShare(value: number | null | undefined): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
+/**
+ * 狭い画面で使う、短くした表示名 (表示だけの整形で、表示名のデータは変えない)。
+ * 最初の単語をイニシャルにする (例: Aaron Judge → A. Judge、Ronald Acuña Jr. → R. Acuña Jr.、Max Muncy (2) → M. Muncy (2))。
+ * 短くするのは、空白で区切られた2語以上で、最初の単語がラテン文字 (アクセントつきを含む) で始まり、
+ * 残りに文字を含む単語がある名前だけ。1語の名前・日本語の名前・最初の単語が既にイニシャル (J.D. など) の名前は、
+ * 前後の空白を除いてそのまま返す。
+ */
+export function shortDisplayName(name: string): string {
+  const trimmed = name.trim()
+  const [first, ...rest] = trimmed.split(/\s+/)
+  if (
+    rest.length === 0 ||
+    !/^\p{Script=Latin}/u.test(first) ||
+    first.endsWith('.') ||
+    !rest.some((word) => /\p{L}/u.test(word))
+  ) {
+    return trimmed
+  }
+  return `${[...first][0]}. ${rest.join(' ')}`
+}
+
 /** 球団の表記「球団名 (コード)」(例: New York Yankees (NYY)) */
 export function teamLabel(team: Pick<TeamInfo, 'name' | 'code'> | TeamPlayed): string {
   return `${team.name} (${team.code})`

@@ -31,6 +31,9 @@ const PAIRS = [
   ['accent', 'bg', COMPONENT, 'フォーカスの枠（ページの地）'],
   ['accent', 'surface', COMPONENT, 'フォーカスの枠（カード）'],
   ['accent', 'bg', COMPONENT, 'ボタンの地（ページの地との区別）'],
+  ['accent', 'badge-bg', TEXT, '動いた打者の札の文字（札の地）'],
+  ['accent', 'badge-bg', COMPONENT, '動いた打者の札の枠線（札の地との区別）'],
+  ['accent', 'surface', COMPONENT, '動いた打者の札の枠線（結果の列の地との区別）'],
 ]
 
 function readVariables(block) {

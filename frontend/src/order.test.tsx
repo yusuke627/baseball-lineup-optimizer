@@ -48,6 +48,7 @@ const RESPONSE: LineupEvaluationResponse = {
   best_order_runs_per_game: 4.2,
   best_order_runs_n_games: 600.6,
   inefficiency_percent: 2.38,
+  runs_lost_per_game: 0.1,
   n_games: 143,
   monte_carlo: null,
   totals_by_games: [],
