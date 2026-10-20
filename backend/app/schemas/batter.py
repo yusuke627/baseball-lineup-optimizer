@@ -190,6 +190,8 @@ class GamesTotal(BaseModel):
     n_games: int
     input_order_runs: float
     best_order_runs: float
+    # 推奨打順に対する入力打順の損失点 (best_order_runs - input_order_runs)
+    runs_lost: float
 
 
 class LineupEvaluationResponse(BaseModel):
@@ -200,6 +202,8 @@ class LineupEvaluationResponse(BaseModel):
     best_order_runs_per_game: float
     best_order_runs_n_games: float
     inefficiency_percent: float
+    # 1試合あたりの損失点 (best_order_runs_per_game - input_order_runs_per_game)
+    runs_lost_per_game: float
     n_games: int
     monte_carlo: dict | None = None
     # 143試合・162試合に換算した値。画面側で試合数を切り替えても再計算が要らないよう常に返す

@@ -288,10 +288,16 @@ def evaluate(req: LineupEvaluationRequest):
         best_order_runs_per_game=best_runs,
         best_order_runs_n_games=best_runs * req.n_games,
         inefficiency_percent=inefficiency_percent(input_runs, best_runs),
+        runs_lost_per_game=best_runs - input_runs,
         n_games=req.n_games,
         monte_carlo=mc,
         totals_by_games=[
-            GamesTotal(n_games=n, input_order_runs=input_runs * n, best_order_runs=best_runs * n)
+            GamesTotal(
+                n_games=n,
+                input_order_runs=input_runs * n,
+                best_order_runs=best_runs * n,
+                runs_lost=best_runs * n - input_runs * n,
+            )
             for n in TOTALS_GAMES
         ],
         warnings=warnings,

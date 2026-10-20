@@ -113,6 +113,28 @@ def test_evaluate_returns_totals_for_143_and_162_games():
     assert data["best_order_runs_n_games"] == data["best_order_runs_per_game"] * 143
 
 
+def test_evaluate_returns_runs_lost_as_difference_from_best_order():
+    # 長打の多い打者を下位に置き、推奨打順との差が出るようにする
+    batters = {f"b{i}": dict(CASES_FILE["base"], HR=i * 5) for i in range(9)}
+    res = client.post("/lineup/evaluate", json=_lineup_body(batters))
+    assert res.status_code == 200
+    data = res.json()
+    assert data["runs_lost_per_game"] == data["best_order_runs_per_game"] - data["input_order_runs_per_game"]
+    assert data["runs_lost_per_game"] > 0
+    for total in data["totals_by_games"]:
+        assert total["runs_lost"] == total["best_order_runs"] - total["input_order_runs"]
+
+
+def test_evaluate_returns_zero_runs_lost_when_input_order_is_best():
+    # 9人とも同じ成績なら、どの打順も同じ値になり、推奨打順は入力打順のまま
+    res = client.post("/lineup/evaluate", json=_lineup_body(_nine(CASES_FILE["base"])))
+    assert res.status_code == 200
+    data = res.json()
+    assert data["best_order"] == data["input_order"]
+    assert data["runs_lost_per_game"] == 0
+    assert [t["runs_lost"] for t in data["totals_by_games"]] == [0, 0]
+
+
 def test_evaluate_returns_warning_when_pa_does_not_match_components():
     batters = _nine(CASES_FILE["base"])
     batters["b3"] = dict(CASES_FILE["base"], PA=610)  # 内訳の合計は600
