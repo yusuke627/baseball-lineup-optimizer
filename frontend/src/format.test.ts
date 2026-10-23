@@ -13,6 +13,12 @@ describe('狭い画面の短い表示名', () => {
     ['Ángel Martínez', 'Á. Martínez'], // 最初の単語がアクセントつき
     ['Jean-Pierre Smith', 'J. Smith'], // ハイフンつきの名
     ['  Aaron   Judge  ', 'A. Judge'], // 前後と途中の空白
+    // 接尾辞つき (data/overrides/display_names.json で足した表記の例)
+    ['Fernando Tatis Jr.', 'F. Tatis Jr.'],
+    ['Michael Harris II', 'M. Harris II'],
+    ['Robert Hassell III', 'R. Hassell III'],
+    ['Vladimir Guerrero Jr.', 'V. Guerrero Jr.'],
+    ['Ronald Acuña Jr.', 'R. Acuña Jr.'],
   ])('%s → %s', (name, expected) => {
     expect(shortDisplayName(name)).toBe(expected)
   })
@@ -24,6 +30,11 @@ describe('狭い画面の短い表示名', () => {
     ['打者A (2)', '日本語で重複番号つき'],
     ['Judge (2)', '1語に重複番号だけ'],
     ['J.D. Martinez', '最初の単語が既にイニシャル'],
+    ['Tatis Jr.', '残りが接尾辞だけ'],
+    ['Harris II', '残りが接尾辞だけ（II）'],
+    ['Hassell III', '残りが接尾辞だけ（III）'],
+    ['Smith Sr.', '残りが接尾辞だけ（Sr.）'],
+    ['Smith IV', '残りが接尾辞だけ（IV）'],
     ['ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMN', '空白なしの長い名前'],
   ])('%s（%s）は、そのまま', (name) => {
     expect(shortDisplayName(name)).toBe(name)
