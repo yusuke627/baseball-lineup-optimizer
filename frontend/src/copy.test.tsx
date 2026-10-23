@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { STAT_KEYS, type StatKey } from './api/types'
 import App from './App'
+import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
 const VALID: Record<StatKey, number> = {
@@ -221,6 +222,7 @@ describe('コピーと、ほかの操作との関係', () => {
     fillSlot('打者A')
     await user.click(toAllButton('打者A'))
 
+    showTab('計算と結果')
     await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
 
     const call = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([url]) => url === '/api/lineup/evaluate')

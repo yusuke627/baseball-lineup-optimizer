@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, StatKey } from './api/types'
 import App from './App'
+import { showTab } from './test/tabs'
 
 // 画面の CSS (列の幅による切り替えの規則を確かめる)。テストは frontend/ を起点に実行する
 const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
@@ -89,8 +90,10 @@ async function calculate(rename: Record<string, string> = {}) {
       })
     }
   }
-  // 指標の読み込みを待ってから計算する
+  // 指標の読み込みを待ってから計算する (打順の欄は「打順」、計算のボタンは「計算と結果」のタブにある)
+  showTab('打順')
   await within(screen.getByRole('region', { name: '2打順' })).findAllByRole('list', { name: '指標' })
+  showTab('計算と結果')
   await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
   const result = await screen.findByRole('region', { name: '結果' })
   return { user, result }

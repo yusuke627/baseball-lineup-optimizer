@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { Preset, PresetTeams, StatKey } from './api/types'
 import App from './App'
+import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
 // テスト用の合成のプリセット (実在の選手・球団・出典の記録ではない)
@@ -427,6 +428,7 @@ describe('カードへの読み込み', () => {
     const user = userEvent.setup()
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
+    showTab('打順')
     expect(screen.getByRole('region', { name: '2打順' })).toHaveTextContent('Test Alpha')
   })
 })

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import type { LineupEvaluationResponse, StatKey } from './api/types'
 import App from './App'
+import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
 const VALID: Record<StatKey, number> = {
@@ -71,7 +72,13 @@ function evaluateCall(mock: ReturnType<typeof vi.fn>): [string, RequestInit | un
   return call as [string, RequestInit | undefined]
 }
 
-const runButton = () => screen.getByRole('button', { name: '期待得点を計算する' })
+// 計算のボタンは「計算と結果」のタブにある
+const runButton = () => {
+  showTab('計算と結果')
+  return screen.getByRole('button', { name: '期待得点を計算する' })
+}
+// 結果の欄 (隠れたパネルの中にあっても見つける。「消えた」ことを確かめるため)
+const resultRegion = () => screen.queryByRole('region', { name: '結果', hidden: true })
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -86,9 +93,19 @@ describe('入力フォーム', () => {
 
   test('画面は「成績の入力 → 打順 → 計算と結果」の3つの段階に分かれている', () => {
     render(<App />)
+    // 3つの段階はタブで切り替える。最初は「成績の入力」
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1成績の入力', '2打順', '3計算と結果'])
+    expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
+    // 各パネルの見出し (隠れたパネルも含めて、この順)
+    const panels = screen.getAllByRole('tabpanel', { hidden: true })
+    expect(panels.map((panel) => within(panel).getAllByRole('heading', { level: 2, hidden: true })[0].textContent)).toEqual([
+      '1成績の入力',
+      '2打順',
+      '3計算と結果',
+    ])
+    // 見えている見出しは、選んだパネルの見出しと、ページの一番下の「データの出典」欄
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
-    // ページの一番下に「データの出典」欄がある
-    expect(headings).toEqual(['1成績の入力', '2打順', '3計算と結果', 'データの出典'])
+    expect(headings).toEqual(['1成績の入力', 'データの出典'])
   })
 
   test('打者ごとにカードがあり、項目はまとまりごとに分かれている', () => {
@@ -118,6 +135,7 @@ describe('入力フォーム', () => {
 
   test('打順の欄には、表示名が入力の順に並ぶ', () => {
     render(<App />)
+    showTab('打順')
     const order = screen.getByRole('region', { name: '2打順' })
     const names = () => [...order.querySelectorAll('.order-name')].map((item) => item.textContent)
     expect(names()).toEqual(NAMES)
@@ -229,8 +247,11 @@ describe('打者の表示名', () => {
     await user.click(runButton())
 
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
-    expect(screen.getByRole('alert')).toHaveTextContent('2件の入力エラーがあります（打者2人）')
+    // 入力の誤りがあると「成績の入力」のタブに移り、最初のエラーの欄にフォーカスする
     expect(nameInput('打者A')).toHaveFocus()
+    expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
+    showTab('計算と結果')
+    expect(screen.getByRole('alert')).toHaveTextContent('2件の入力エラーがあります（打者2人）')
   })
 
   test('41文字以上の表示名は入力エラーにする', () => {
@@ -252,7 +273,7 @@ describe('打者の表示名', () => {
 
     fireEvent.change(nameInput('打者A'), { target: { value: '一番' } })
 
-    expect(screen.queryByRole('region', { name: '結果' })).not.toBeInTheDocument()
+    expect(resultRegion()).not.toBeInTheDocument()
   })
 })
 
@@ -265,6 +286,7 @@ describe('計算の実行', () => {
     await user.click(runButton())
 
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
+    showTab('計算と結果')
     const alert = screen.getByRole('alert')
     expect(within(alert).getByText('入力エラー：')).toBeInTheDocument()
     // 実行後は、触っていない欄の未入力エラーも、打者ごとに1行にまとめて表示する
@@ -285,18 +307,22 @@ describe('計算の実行', () => {
     await user.click(runButton())
 
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/lineup/evaluate')).toBe(false)
+    // 最初のエラーの欄 (打者C の打数。項目の並び順で最初にエラーに関係する欄)。「成績の入力」のタブに移る
+    expect(input('打者C', 'AB')).toHaveFocus()
+    expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
+
+    showTab('計算と結果')
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('3件の入力エラーがあります（打者2人）')
     const items = within(alert).getAllByRole('listitem')
     expect(items).toHaveLength(2)
     expect(items[0]).toHaveTextContent('打者C（1件）：安打(H)が打数(AB)を超えています。')
     expect(items[1]).toHaveTextContent('打者E（2件）：未入力（本塁打(HR)、盗塁死(CS)）')
-    // 最初のエラーの欄 (打者C の打数。項目の並び順で最初にエラーに関係する欄)
-    expect(input('打者C', 'AB')).toHaveFocus()
 
-    // 要約の打者名を押すと、その打者の最初のエラーの欄に移る
+    // 要約の打者名を押すと、「成績の入力」のタブに移り、その打者の最初のエラーの欄にフォーカスする
     await user.click(within(alert).getByRole('button', { name: '打者E' }))
     expect(input('打者E', 'HR')).toHaveFocus()
+    expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
   })
 
   test('未入力が多いときは、要約では項目名を3つまでにして残りは件数で示す', async () => {
@@ -305,12 +331,13 @@ describe('計算の実行', () => {
 
     await user.click(runButton())
 
+    expect(input('打者A', 'PA')).toHaveFocus()
+    showTab('計算と結果')
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('117件の入力エラーがあります（打者9人）')
     expect(within(alert).getAllByRole('listitem')[0]).toHaveTextContent(
       '打者A（13件）：未入力 13項目（打席数(PA)、打数(AB)、安打(H) ほか10項目）',
     )
-    expect(input('打者A', 'PA')).toHaveFocus()
   })
 
   test('APIが返した値と打順を表示する', async () => {
@@ -404,7 +431,7 @@ describe('計算の実行', () => {
     await user.click(screen.getByRole('button', { name: 'キャンセル' }))
 
     expect(await screen.findByText('キャンセル：')).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: '結果' })).not.toBeInTheDocument()
+    expect(resultRegion()).not.toBeInTheDocument()
     expect(runButton()).toBeEnabled()
   })
 
@@ -418,6 +445,6 @@ describe('計算の実行', () => {
 
     fireEvent.change(input('打者A', 'HR'), { target: { value: '16' } })
 
-    expect(screen.queryByRole('region', { name: '結果' })).not.toBeInTheDocument()
+    expect(resultRegion()).not.toBeInTheDocument()
   })
 })

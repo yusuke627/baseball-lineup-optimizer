@@ -1,4 +1,5 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 import { ApiError, evaluateLineup } from './api/client'
 import type { BatterStats, LineupEvaluationResponse, Preset, StatKey } from './api/types'
@@ -9,6 +10,7 @@ import BatterWarnings from './components/BatterWarnings'
 import DataSources from './components/DataSources'
 import OrderList, { type OrderEntry } from './components/OrderList'
 import ResultSummary from './components/ResultSummary'
+import StepTabs, { focusTab } from './components/StepTabs'
 import { findNameIssues } from './names'
 import { createInitialLineup, displayName, isPresetEdited, lineupReducer } from './state/lineup'
 import { useBatterMetrics } from './useBatterMetrics'
@@ -23,6 +25,9 @@ type RunState =
   | { status: 'done'; result: LineupEvaluationResponse; names: Record<string, string> }
   | { status: 'error'; error: DisplayError }
 
+/** 手順のタブ (成績の入力・打順・計算と結果) */
+type Step = 'input' | 'order' | 'run'
+
 const UNEXPECTED_ERROR_MESSAGE = '予期しないエラーが発生しました。もう一度お試しください。'
 
 function focusField(fieldId: string) {
@@ -35,6 +40,8 @@ export default function App() {
   const [run, setRun] = useState<RunState>({ status: 'idle' })
   /** 結果の試合数の切替 (143試合・162試合)。計算し直しても選んだままにする */
   const [games, setGames] = useState(143)
+  /** 表示している手順のタブ */
+  const [step, setStep] = useState<Step>('input')
   const controllerRef = useRef<AbortController | null>(null)
 
   const isRunning = run.status === 'running'
@@ -118,7 +125,7 @@ export default function App() {
     const summaries = summarizeErrors(lineup.slots, nameIssues)
     if (summaries.length > 0) {
       setRun({ status: 'invalid', summaries })
-      focusField(summaries[0].firstFieldId)
+      jumpToField(summaries[0].firstFieldId)
       return
     }
 
@@ -156,6 +163,108 @@ export default function App() {
     controllerRef.current?.abort()
   }
 
+  /** 「次へ」のボタン: 次のタブに切り替え、そのタブにフォーカスを移す */
+  function goToStep(next: Step) {
+    setStep(next)
+    focusTab(next)
+  }
+
+  /**
+   * 入力欄へ移る (エラーの要約のボタンと、計算を押したときに入力の誤りがあった場合)。
+   * 入力欄は「成績の入力」のタブにあるので、先にそのタブを表示してからフォーカスする
+   * (隠れたパネルの中の要素にはフォーカスできないため、flushSync で表示を済ませる)
+   */
+  function jumpToField(fieldId: string) {
+    flushSync(() => setStep('input'))
+    focusField(fieldId)
+  }
+
+  const inputPanel = (
+    <>
+      <section aria-labelledby="input-heading" className="step">
+        <h2 id="input-heading">
+          <span className="step-number">1</span>成績の入力
+        </h2>
+        <p>
+          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
+        </p>
+        <BatterCards
+          slots={lineup.slots}
+          nameIssues={nameIssues}
+          showAllErrors={showAllErrors}
+          disabled={isRunning}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onNameChange={handleNameChange}
+          onNameBlur={handleNameBlur}
+          onCopy={handleCopy}
+          onLoadPreset={handleLoadPreset}
+          onRevertPreset={handleRevertPreset}
+        />
+      </section>
+      <NextStepButton label="次へ（打順を決める）" onClick={() => goToStep('order')} />
+    </>
+  )
+
+  const orderPanel = (
+    <>
+      <section aria-labelledby="order-heading" className="step">
+        <h2 id="order-heading">
+          <span className="step-number">2</span>打順
+        </h2>
+        <p>
+          上から1番〜9番の順で計算します。取っ手（⋮⋮）のドラッグ、「上へ」「下へ」、移動先の番号で並べ替えられます。各打者の指標はサーバーが計算した値です。
+        </p>
+        <OrderList entries={orderEntries} metrics={metrics} disabled={isRunning} onMove={handleMove} />
+      </section>
+      <NextStepButton label="次へ（計算と結果を見る）" onClick={() => goToStep('run')} />
+    </>
+  )
+
+  const runPanel = (
+    <>
+      {/* 打席数が少ない打者の一覧は、これまでどおり「計算と結果」のすぐ上に出す */}
+      <BatterWarnings entries={orderEntries} metrics={metrics} />
+
+      <section aria-labelledby="run-heading" className="step">
+        <h2 id="run-heading">
+          <span className="step-number">3</span>計算と結果
+        </h2>
+        <div className="run-controls">
+          <button type="button" onClick={handleRun} disabled={isRunning}>
+            期待得点を計算する
+          </button>
+          {isRunning && (
+            <button type="button" onClick={handleCancel}>
+              キャンセル
+            </button>
+          )}
+        </div>
+        {isRunning && (
+          <p role="status" className="note">
+            計算中です。入力打順の評価と、推奨打順の探索を行っています（数秒かかります）。
+          </p>
+        )}
+        {run.status === 'idle' && run.cleared && (
+          <p className="note result-cleared" role="status">
+            計算したあとに成績・表示名・打順が変わったため、前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。
+          </p>
+        )}
+        {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={jumpToField} />}
+        {run.status === 'error' && <ErrorBanner error={run.error} />}
+        {run.status === 'done' && (
+          <ResultSummary
+            result={run.result}
+            names={run.names}
+            metrics={metrics}
+            games={games}
+            onGamesChange={setGames}
+          />
+        )}
+      </section>
+    </>
+  )
+
   return (
     <>
       <main>
@@ -166,78 +275,29 @@ export default function App() {
           </p>
         </header>
 
-        <section aria-labelledby="input-heading" className="step">
-          <h2 id="input-heading">
-            <span className="step-number">1</span>成績の入力
-          </h2>
-          <p>
-            各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
-          </p>
-          <BatterCards
-            slots={lineup.slots}
-            nameIssues={nameIssues}
-            showAllErrors={showAllErrors}
-            disabled={isRunning}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onNameChange={handleNameChange}
-            onNameBlur={handleNameBlur}
-            onCopy={handleCopy}
-            onLoadPreset={handleLoadPreset}
-            onRevertPreset={handleRevertPreset}
-          />
-        </section>
-
-        <section aria-labelledby="order-heading" className="step">
-          <h2 id="order-heading">
-            <span className="step-number">2</span>打順
-          </h2>
-          <p>
-            上から1番〜9番の順で計算します。取っ手（⋮⋮）のドラッグ、「上へ」「下へ」、移動先の番号で並べ替えられます。各打者の指標はサーバーが計算した値です。
-          </p>
-          <OrderList entries={orderEntries} metrics={metrics} disabled={isRunning} onMove={handleMove} />
-        </section>
-
-        <BatterWarnings entries={orderEntries} metrics={metrics} />
-
-        <section aria-labelledby="run-heading" className="step">
-          <h2 id="run-heading">
-            <span className="step-number">3</span>計算と結果
-          </h2>
-          <div className="run-controls">
-            <button type="button" onClick={handleRun} disabled={isRunning}>
-              期待得点を計算する
-            </button>
-            {isRunning && (
-              <button type="button" onClick={handleCancel}>
-                キャンセル
-              </button>
-            )}
-          </div>
-          {isRunning && (
-            <p role="status" className="note">
-              計算中です。入力打順の評価と、推奨打順の探索を行っています（数秒かかります）。
-            </p>
-          )}
-          {run.status === 'idle' && run.cleared && (
-            <p className="note result-cleared" role="status">
-              計算したあとに成績・表示名・打順が変わったため、前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。
-            </p>
-          )}
-          {run.status === 'invalid' &&<ErrorSummary summaries={run.summaries} onJump={focusField} />}
-          {run.status === 'error' && <ErrorBanner error={run.error} />}
-          {run.status === 'done' && (
-            <ResultSummary
-              result={run.result}
-              names={run.names}
-              metrics={metrics}
-              games={games}
-              onGamesChange={setGames}
-            />
-          )}
-        </section>
+        <StepTabs
+          label="手順"
+          selected={step}
+          onSelect={setStep}
+          tabs={[
+            { id: 'input', label: '成績の入力', content: inputPanel },
+            { id: 'order', label: '打順', content: orderPanel },
+            { id: 'run', label: '計算と結果', content: runPanel },
+          ]}
+        />
       </main>
       <DataSources />
     </>
+  )
+}
+
+/** パネルの末尾の「次へ」のボタン。押すと次のタブに切り替え、そのタブにフォーカスを移す */
+function NextStepButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="step-next">
+      <button type="button" className="button-secondary" onClick={onClick}>
+        {label}
+      </button>
+    </div>
   )
 }

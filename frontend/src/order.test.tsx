@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, StatKey } from './api/types'
 import App from './App'
+import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
 const VALID: Record<StatKey, number> = {
@@ -92,7 +93,15 @@ function fillAll() {
   }
 }
 
-const orderRegion = () => screen.getByRole('region', { name: '2打順' })
+// 打順の欄は「打順」のタブ、計算のボタンは「計算と結果」のタブにある (選んでから探す)
+const orderRegion = () => {
+  showTab('打順')
+  return screen.getByRole('region', { name: '2打順' })
+}
+const runButton = () => {
+  showTab('計算と結果')
+  return screen.getByRole('button', { name: '期待得点を計算する' })
+}
 const orderNames = () => [...orderRegion().querySelectorAll('.order-name')].map((el) => el.textContent)
 const button = (name: string) => within(orderRegion()).getByRole('button', { name })
 // 並べ替えの結果を知らせる領域 (dnd-kit も別の読み上げ用の領域を持つので、クラスで区別する)
@@ -161,7 +170,7 @@ describe('並べ替えと計算', () => {
     render(<App />)
     fillAll()
     await user.click(button('打者Iを上へ（9番から8番へ）'))
-    await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
+    await user.click(runButton())
 
     await screen.findByRole('region', { name: '結果' })
     const call = fetchMock.mock.calls.find(([url]) => url === '/api/lineup/evaluate')
@@ -174,12 +183,14 @@ describe('並べ替えと計算', () => {
     const user = userEvent.setup()
     render(<App />)
     fillAll()
-    await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
+    await user.click(runButton())
     await screen.findByRole('region', { name: '結果' })
 
     await user.click(button('打者Bを上へ（2番から1番へ）'))
 
-    expect(screen.queryByRole('region', { name: '結果' })).not.toBeInTheDocument()
+    // 結果は、隠れたパネルの中にも残っていない
+    expect(screen.queryByRole('region', { name: '結果', hidden: true })).not.toBeInTheDocument()
+    showTab('計算と結果')
     expect(screen.getByText(/前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。/)).toBeInTheDocument()
   })
 })
@@ -239,6 +250,7 @@ describe('打者ごとの指標と注意', () => {
   test('計算と結果の上には、種類が LOW_PA の注意がある打者だけを「打席数が少ない打者」として出す', async () => {
     render(<App />)
     fillAll()
+    showTab('計算と結果')
     const summary = await screen.findByRole('region', { name: '打席数が少ない打者（1人）' })
     expect(within(summary).getByText(LOW_PA_WARNING)).toBeInTheDocument()
     // 打席数と内訳が合わない注意 (PA_SUM_MISMATCH) は、この一覧には出さない
