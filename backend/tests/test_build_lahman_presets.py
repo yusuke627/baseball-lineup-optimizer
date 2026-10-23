@@ -393,3 +393,164 @@ def test_main_refuses_to_run_without_dry_run(capsys):
 def test_main_reports_missing_raw_files(tmp_path, capsys):
     assert lahman.main(["--raw", str(tmp_path), "--dry-run"]) == 1
     assert "Batting.csv" in capsys.readouterr().err
+
+
+# ---- 表示名の上書き (接尾辞の追加) ----
+# 名前はテスト用の値で、実在の選手ではない
+
+
+@pytest.mark.parametrize(("name", "base"), [
+    ("Test One Jr.", "Test One"),
+    ("Test One Sr.", "Test One"),
+    ("Test One II", "Test One"),
+    ("Test One III", "Test One"),
+    ("Test One IV", "Test One"),
+    ("Tést Öne Jr.", "Tést Öne"),
+    ("Test One", None),
+    ("Test One Jr", None),       # ピリオドが無い
+    ("Test One Ⅱ", None),        # ローマ数字の1文字
+    ("Test Oneiii", None),       # 空白で区切られていない
+])
+def test_strip_name_suffix(name, base):
+    assert lahman.strip_name_suffix(name) == base
+
+
+def test_generate_applies_name_overrides(tmp_path):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    paths = lahman.generate(raw, 2025, 200, tmp_path / "out", "2026-01-02", {"aaa01": "Test One Jr."})
+    names = {p.name: json.loads(p.read_text(encoding="utf-8"))["name"] for p in paths}
+    assert names == {"aaa01_2025.json": "Test One Jr.", "bbb01_2025.json": "Test Two", "ccc01_2025.json": "Test Two"}
+
+
+def test_generate_ignores_overrides_for_players_not_in_people_csv(tmp_path):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    paths = lahman.generate(raw, 2025, 200, tmp_path / "out", "2026-01-02", {"zzz01": "Nobody Here Jr."})
+    assert len(paths) == 3
+
+
+@pytest.mark.parametrize("new", [
+    "Test Uno Jr.",     # 接尾辞以外が違う
+    "test one Jr.",     # 大文字・小文字が違う
+    "Test One",         # 接尾辞が無い
+    "Test One Junior",  # 対象外の接尾辞
+])
+def test_generate_refuses_overrides_that_change_more_than_the_suffix(tmp_path, new):
+    raw = tmp_path / "raw"
+    _write_raw(raw, SYNTHETIC_BATTING)
+    out = tmp_path / "out"
+    with pytest.raises(ValueError, match="aaa01"):
+        lahman.generate(raw, 2025, 200, out, "2026-01-02", {"aaa01": new})
+    assert not out.exists()
+
+
+def _generated(tmp_path: Path, name_overrides: dict[str, str] | None = None, folder: str = "out") -> Path:
+    raw = tmp_path / "raw"
+    if not raw.exists():
+        _write_raw(raw, SYNTHETIC_BATTING)
+    out = tmp_path / folder
+    lahman.generate(raw, 2025, 200, out, "2026-01-02", name_overrides)
+    return out
+
+
+def test_rename_presets_changes_only_the_name_line(tmp_path):
+    out = _generated(tmp_path)
+    before = {p.name: p.read_bytes() for p in out.iterdir()}
+
+    changes, warnings = lahman.rename_presets(out, 2025, {"aaa01": "Test One Jr.", "bbb01": "Test Two III"})
+
+    assert [(c.path.name, c.old, c.new) for c in changes] == [
+        ("aaa01_2025.json", "Test One", "Test One Jr."),
+        ("bbb01_2025.json", "Test Two", "Test Two III"),
+    ]
+    assert warnings == []
+    after = {p.name: p.read_bytes() for p in out.iterdir()}
+    assert sorted(after) == sorted(before)  # ファイル名は変わらない
+    assert after["ccc01_2025.json"] == before["ccc01_2025.json"]
+    for name, new in (("aaa01_2025.json", "Test One Jr."), ("bbb01_2025.json", "Test Two III")):
+        old_data, new_data = json.loads(before[name]), json.loads(after[name])
+        assert new_data["name"] == new
+        assert list(new_data) == list(old_data)  # キーの順番も同じ
+        assert {k: v for k, v in new_data.items() if k != "name"} == {k: v for k, v in old_data.items() if k != "name"}
+        old_name_line = f'  "name": "{old_data["name"]}",'.encode()
+        new_name_line = f'  "name": "{new}",'.encode()
+        assert after[name] == before[name].replace(old_name_line, new_name_line)
+
+
+def test_rename_presets_is_idempotent(tmp_path):
+    out = _generated(tmp_path)
+    overrides = {"aaa01": "Test One Jr."}
+    lahman.rename_presets(out, 2025, overrides)
+    first = {p.name: p.read_bytes() for p in out.iterdir()}
+    changes, _ = lahman.rename_presets(out, 2025, overrides)
+    assert changes == []
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == first
+
+
+def test_rename_presets_gives_the_same_files_as_generate_with_overrides(tmp_path):
+    overrides = {"aaa01": "Test One Jr.", "ccc01": "Test Two II"}
+    renamed = _generated(tmp_path, folder="renamed")
+    lahman.rename_presets(renamed, 2025, overrides)
+    generated = _generated(tmp_path, overrides, folder="generated")
+    assert {p.name: p.read_bytes() for p in renamed.iterdir()} == {p.name: p.read_bytes() for p in generated.iterdir()}
+
+
+def test_rename_presets_warns_about_players_without_a_preset(tmp_path):
+    out = _generated(tmp_path)
+    changes, warnings = lahman.rename_presets(out, 2025, {"zzz01": "Nobody Here Jr.", "judgeaa01": "Excluded Player Jr."})
+    assert changes == []
+    assert len(warnings) == 2
+    assert any("zzz01" in w and "zzz01_2025.json" in w for w in warnings)
+    assert any("judgeaa01" in w and "照合済み" in w for w in warnings)
+
+
+def test_rename_presets_writes_nothing_when_one_override_is_wrong(tmp_path):
+    out = _generated(tmp_path)
+    before = {p.name: p.read_bytes() for p in out.iterdir()}
+    with pytest.raises(ValueError, match="bbb01"):
+        lahman.rename_presets(out, 2025, {"aaa01": "Test One Jr.", "bbb01": "Test Deux Jr."})
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == before
+
+
+def test_rename_presets_refuses_files_not_in_the_generated_format(tmp_path):
+    out = _generated(tmp_path)
+    path = out / "aaa01_2025.json"
+    path.write_text(path.read_text(encoding="utf-8").replace("\n", "\n "), encoding="utf-8")  # 字下げが違う
+    with pytest.raises(ValueError, match="形式"):
+        lahman.rename_presets(out, 2025, {"aaa01": "Test One Jr."})
+
+
+def test_rename_presets_refuses_presets_not_generated_from_lahman(tmp_path):
+    out = _generated(tmp_path)
+    path = out / "aaa01_2025.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["source"]["provider"] = "テスト用の別の出典"
+    path.write_text(lahman.preset_json_text(data), encoding="utf-8")
+    with pytest.raises(ValueError, match="Lahman"):
+        lahman.rename_presets(out, 2025, {"aaa01": "Test One Jr."})
+
+
+def test_main_names_only_does_not_need_raw_files(tmp_path, capsys):
+    out = _generated(tmp_path)
+    overrides = tmp_path / "overrides.json"
+    overrides.write_text(json.dumps({
+        "aaa01": {"name": "Test One Jr.", "checked_at": "2026-01-01", "checked_source": "テスト用"},
+        "zzz01": {"name": "Nobody Here Jr.", "checked_at": "2026-01-01", "checked_source": "テスト用"},
+    }), encoding="utf-8")
+    argv = ["--raw", str(tmp_path / "nowhere"), "--names-only", "--output", str(out), "--overrides", str(overrides)]
+    assert lahman.main(argv) == 0
+    captured = capsys.readouterr()
+    assert "aaa01_2025.json: Test One → Test One Jr." in captured.out
+    assert "警告: zzz01" in captured.err
+    assert json.loads((out / "aaa01_2025.json").read_text(encoding="utf-8"))["name"] == "Test One Jr."
+
+
+def test_load_name_overrides_returns_empty_when_the_file_is_missing(tmp_path):
+    assert lahman.load_name_overrides(tmp_path / "missing.json") == {}
+
+
+def test_load_name_overrides_reads_the_real_file():
+    overrides = lahman.load_name_overrides(lahman.NAME_OVERRIDES_PATH)
+    assert overrides  # 空ではない
+    assert all(lahman.strip_name_suffix(name) is not None for name in overrides.values())

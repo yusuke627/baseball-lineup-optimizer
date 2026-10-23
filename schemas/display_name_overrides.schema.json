@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Lahman から生成したプリセットの表示名の上書き (接尾辞の追加)",
+  "description": "data/overrides/display_names.json の形式。キーは Lahman の playerID。People.csv には接尾辞 (Jr.・II など) の項目が無いため、確認した表記をここに書き、scripts/build_lahman_presets.py が生成時 (と --names-only) にプリセットの name へ反映する。許すのは、People.csv の名前の後ろに半角スペースと接尾辞を足すことだけ (元の名前と同じかどうかはスクリプトが確かめる)。",
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^[a-z][a-z.'-]*[0-9]{2}$",
+    "description": "Lahman の playerID (例: tatisfe02)"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "required": ["name", "checked_at", "checked_source"],
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 40,
+        "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f](?:[^\\u0000-\\u001f\\u007f-\\u009f]*[^\\s\\u0000-\\u001f\\u007f-\\u009f])? (?:Jr\\.|Sr\\.|II|III|IV)$",
+        "description": "表示名。1〜40文字 (アプリの表示名と同じ上限)、制御文字なし、前後に空白なし。末尾は半角スペースと、半角 ASCII の接尾辞「Jr.」「Sr.」「II」「III」「IV」のどれか (ローマ数字の1文字 Ⅱ・Ⅲ は使わない)。接尾辞より前は People.csv の表記のまま (アクセントつきの文字を含むことがある)"
+      },
+      "checked_at": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+        "description": "表記を確認した日 (YYYY-MM-DD)"
+      },
+      "checked_source": {
+        "type": "string",
+        "minLength": 1,
+        "description": "確認元の種類。確認元の詳細が記録されていない場合は、その旨を書く"
+      },
+      "note": { "type": "string", "description": "補足 (任意)" }
+    }
+  }
+}

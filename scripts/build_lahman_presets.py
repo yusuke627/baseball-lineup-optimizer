@@ -9,10 +9,14 @@ Lahman Baseball Database の CSV から、打者のプリセットを作る。
     # プリセットの JSON を作る (取得日は、元データをダウンロードした日)
     python scripts/build_lahman_presets.py --season 2025 --generate \\
         --output data/presets/mlb/2025 --retrieved-at YYYY-MM-DD
+    # 既存のプリセットの name だけを、表示名の上書き (data/overrides/display_names.json) に合わせる
+    python scripts/build_lahman_presets.py --season 2025 --names-only
 
 - 元データ (Batting.csv, People.csv, Teams.csv) は、利用者がダウンロードして data/raw/ に置く。
   このスクリプトはネットワークから取得しない。data/raw/ は .gitignore でリポジトリから除外している
 - 集計の方針は docs/DESIGN.md の「Lahman からの生成方針」を参照
+- People.csv には名前の接尾辞 (Jr.・II など) が無い。確認した表記を data/overrides/display_names.json に書くと、
+  生成時 (--generate) と --names-only で、名前の後ろに接尾辞を足す (それ以外の名前の変更は受け付けない)
 """
 from __future__ import annotations
 
@@ -42,6 +46,12 @@ DEFAULT_MIN_PA = 200
 
 # 別の出典 (Baseball Savant と Baseball-Reference) で照合済みのプリセットが既にある選手。生成しない
 EXCLUDED_PLAYER_IDS = frozenset({"judgeaa01", "arraelu01"})
+
+# 表示名の上書き (playerID → 接尾辞つきの名前)。形式は schemas/display_name_overrides.schema.json
+NAME_OVERRIDES_PATH = REPO_ROOT / "data" / "overrides" / "display_names.json"
+# 上書きで足してよい接尾辞 (半角 ASCII)。名前の最後に、半角スペース1つをはさんで付ける
+NAME_SUFFIXES = ("Jr.", "Sr.", "II", "III", "IV")
+_SUFFIX_PATTERN = re.compile(r" (?:" + "|".join(re.escape(s) for s in NAME_SUFFIXES) + r")$")
 
 # 生成するプリセットの出典の欄。URL は Lahman の readme に書かれた Web サイト
 SOURCE_PROVIDER = "Lahman Baseball Database (SABR)"
@@ -307,6 +317,91 @@ def player_names(rows: list[dict[str, str]]) -> dict[str, str]:
     }
 
 
+def strip_name_suffix(name: str) -> str | None:
+    """名前の末尾の接尾辞 (「 Jr.」など) を除いた名前。接尾辞が無ければ None"""
+    match = _SUFFIX_PATTERN.search(name)
+    return name[: match.start()] if match else None
+
+
+def load_name_overrides(path: Path) -> dict[str, str]:
+    """表示名の上書きのファイルから、playerID → 名前 を読む。ファイルが無ければ空"""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {player_id: entry["name"] for player_id, entry in data.items()}
+
+
+def check_name_override(player_id: str, current: str, new: str) -> None:
+    """上書きが「元の名前の後ろに接尾辞を足すだけ」であることを確かめる。違えば ValueError。
+    current が既に接尾辞つき (上書きを反映済み) でもよい"""
+    base = strip_name_suffix(new)
+    if base is None:
+        raise ValueError(f"{player_id}: 上書きの名前「{new}」の末尾に接尾辞 ({'・'.join(NAME_SUFFIXES)}) がありません")
+    current_base = strip_name_suffix(current) or current
+    if base != current_base:
+        raise ValueError(
+            f"{player_id}: 上書きの名前「{new}」から接尾辞を除いた「{base}」が、元の名前「{current_base}」と違います"
+            "（接尾辞の追加だけを受け付けます）"
+        )
+
+
+def apply_name_overrides(people: dict[str, str], overrides: dict[str, str]) -> dict[str, str]:
+    """People.csv の名前 (player_names の結果) に上書きを当てる。People.csv に無い playerID は無視する"""
+    result = dict(people)
+    for player_id, new in overrides.items():
+        if player_id in people:
+            check_name_override(player_id, people[player_id], new)
+            result[player_id] = new
+    return result
+
+
+@dataclass
+class NameChange:
+    path: Path
+    old: str
+    new: str
+
+
+def rename_presets(preset_dir: Path, season: int, overrides: dict[str, str]) -> tuple[list[NameChange], list[str]]:
+    """
+    既存のプリセット (<playerID>_<season>.json) の name だけを、上書きに合わせて書き換える (--names-only)。
+    戻り値は (書き換えたもの, 警告)。書き換えるのは name の行だけで、ほかのキーとファイル名は1バイトも変えない。
+    1件でも確かめに通らなければ、何も書かずに ValueError で止める。同じ上書きで2回実行しても結果は同じ。
+    照合済みの2件 (EXCLUDED_PLAYER_IDS) と、Lahman から生成したものでないプリセットは対象外。
+    """
+    warnings: list[str] = []
+    planned: list[tuple[NameChange, str]] = []
+    for player_id, new in sorted(overrides.items()):
+        path = preset_dir / f"{player_id}_{season}.json"
+        if player_id in EXCLUDED_PLAYER_IDS:
+            warnings.append(f"{player_id}: 照合済みのプリセットの選手なので、名前を変えません")
+            continue
+        if not path.exists():
+            warnings.append(f"{player_id}: 上書きにあるが、プリセット ({path.name}) がありません")
+            continue
+        original = path.read_text(encoding="utf-8")
+        preset = json.loads(original)
+        if preset.get("id") != f"{player_id}_{season}" or preset.get("source", {}).get("provider") != SOURCE_PROVIDER:
+            raise ValueError(f"{path.name}: Lahman から生成したプリセットではありません")
+        if preset_json_text(preset) != original:
+            raise ValueError(f"{path.name}: 生成スクリプトの書き出しと形式が違うため、name だけを書き換えられません")
+        check_name_override(player_id, preset["name"], new)
+        text = preset_json_text({**preset, "name": new})
+        # name の行以外が変わっていないことを確かめる (キーの順番・ほかの値・改行はそのまま)
+        old_lines, new_lines = original.split("\n"), text.split("\n")
+        if len(old_lines) != len(new_lines):
+            raise ValueError(f"{path.name}: name 以外の行が変わります")
+        changed = [i for i, (a, b) in enumerate(zip(old_lines, new_lines, strict=True)) if a != b]
+        if any(not old_lines[i].startswith('  "name": ') for i in changed) or len(changed) > 1:
+            raise ValueError(f"{path.name}: name 以外の行が変わります")
+        if text != original:
+            planned.append((NameChange(path, preset["name"], new), text))
+    for change, text in planned:
+        with open(change.path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    return [change for change, _ in planned], warnings
+
+
 def compare_with_preset(preset: dict, player: PlayerSeason, teams: dict[str, str]) -> list[dict]:
     """既存のプリセット1件と、Lahman から集計した値を全項目で比べる (差の原因は判断しない)"""
     stats = preset_stats(player)
@@ -412,10 +507,18 @@ def sample_table(raw_dir: Path, season: int, min_pa: int, size: int, seed: int) 
     return "\n".join(lines)
 
 
-def generate(raw_dir: Path, season: int, min_pa: int, output_dir: Path, retrieved_at: str) -> list[Path]:
-    """プリセットの JSON を output_dir に書く。1人でも入力検証に通らなければ、何も書かずに止める"""
+def generate(
+    raw_dir: Path,
+    season: int,
+    min_pa: int,
+    output_dir: Path,
+    retrieved_at: str,
+    name_overrides: dict[str, str] | None = None,
+) -> list[Path]:
+    """プリセットの JSON を output_dir に書く。1人でも入力検証に通らなければ、何も書かずに止める。
+    name_overrides (playerID → 接尾辞つきの名前) があれば、People.csv の名前に当てる"""
     players = aggregate_batting(read_csv(raw_dir / "Batting.csv"), season)
-    people = player_names(read_csv(raw_dir / "People.csv"))
+    people = apply_name_overrides(player_names(read_csv(raw_dir / "People.csv")), name_overrides or {})
     team_rows = read_csv(raw_dir / "Teams.csv")
     teams = team_names(team_rows, season)
     leagues = team_leagues(team_rows, season)
@@ -456,15 +559,33 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--dry-run", action="store_true", help="集計して報告するだけ (ファイルは作らない)")
     mode.add_argument("--sample", action="store_true", help="固定のシードで選んだ選手の成績を表にする (ファイルは作らない)")
     mode.add_argument("--generate", action="store_true", help="プリセットの JSON を --output に作る")
+    mode.add_argument("--names-only", action="store_true",
+                      help="既存のプリセットの name だけを、表示名の上書きに合わせて書き換える (元データは使わない)")
     parser.add_argument("--sample-size", type=int, default=DEFAULT_SAMPLE_SIZE)
     parser.add_argument("--seed", type=int, default=DEFAULT_SAMPLE_SEED, help="--sample のシード")
-    parser.add_argument("--output", type=Path, help="--generate の出力先のフォルダ")
+    parser.add_argument("--output", type=Path,
+                        help="--generate の出力先のフォルダ。--names-only では書き換えるフォルダ (既定: data/presets/mlb/<season>)")
     parser.add_argument("--retrieved-at", help="--generate で出典に書く取得日 (YYYY-MM-DD。元データをダウンロードした日)")
+    parser.add_argument("--overrides", type=Path, default=NAME_OVERRIDES_PATH,
+                        help="表示名の上書きのファイル (既定: data/overrides/display_names.json)")
     args = parser.parse_args(argv)
 
-    if not (args.dry_run or args.sample or args.generate):
-        print("--dry-run・--sample・--generate のどれかを付けて実行してください。", file=sys.stderr)
+    if not (args.dry_run or args.sample or args.generate or args.names_only):
+        print("--dry-run・--sample・--generate・--names-only のどれかを付けて実行してください。", file=sys.stderr)
         return 2
+    if args.names_only:
+        preset_dir = args.output or REPO_ROOT / "data" / "presets" / "mlb" / str(args.season)
+        try:
+            changes, warnings = rename_presets(preset_dir, args.season, load_name_overrides(args.overrides))
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            return 1
+        for warning in warnings:
+            print(f"警告: {warning}", file=sys.stderr)
+        for change in changes:
+            print(f"{change.path.name}: {change.old} → {change.new}")
+        print(f"{len(changes)} 件の name を書き換えました。")
+        return 0
     missing = [name for name in ("Batting.csv", "People.csv", "Teams.csv") if not (args.raw / name).exists()]
     if missing:
         print(f"{args.raw} に次のファイルがありません: {', '.join(missing)}", file=sys.stderr)
@@ -486,7 +607,8 @@ def main(argv: list[str] | None = None) -> int:
         print("--retrieved-at は YYYY-MM-DD の形で指定してください。", file=sys.stderr)
         return 2
     try:
-        paths = generate(args.raw, args.season, args.min_pa, args.output, args.retrieved_at)
+        paths = generate(args.raw, args.season, args.min_pa, args.output, args.retrieved_at,
+                         load_name_overrides(args.overrides))
     except ValueError as error:
         print(error, file=sys.stderr)
         return 1
