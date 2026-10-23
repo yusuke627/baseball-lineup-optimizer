@@ -555,3 +555,11 @@
 - コミット: 967592d
 - 戻し方: git revert 967592d
 - 注意点: README は変えていない。backend の ruff（. と ../scripts）・mypy・pytest 1342件、frontend の typecheck・lint・test 237件・build・contrast が通った
+
+## 2026-10-23 17:38 3つの手順を、上部のタブで切り替える形にする
+- 依頼内容: 成績の入力・打順・計算と結果の3つの手順を、上部のタブで切り替える形にする（段階9A）
+- 変更ファイル: frontend/src/components/StepTabs.tsx（新規）, frontend/src/App.tsx, frontend/src/index.css, frontend/scripts/contrast.mjs, frontend/src/tabs.test.tsx（新規）, frontend/src/test/tabs.ts（新規）, frontend/src/App.test.tsx, frontend/src/order.test.tsx, frontend/src/result.test.tsx, frontend/src/preset.test.tsx, frontend/src/copy.test.tsx, docs/DESIGN.md（0章に「画面の構成（手順のタブ）」）, docs/EDIT_LOG.md
+- 変更理由: 1ページを上から下まで見る作りでは、入力欄が長く、打順や結果まで遠かったため。WAI-ARIA のタブのパターン（←/→・Home/End、自動で有効化、roving tabindex）で、選んでいないパネルは hidden で隠すだけにし、状態を残す。各パネルの末尾に「次へ」のボタンを置いた。打席数が少ない打者の一覧は、これまでも「計算と結果」のすぐ上にあったので、そのタブの先頭に置いた。入力の誤りで計算できないときと、エラーの要約から欄へ移るときは、「成績の入力」のタブに切り替えてからフォーカスする（隠れたパネルの欄にはフォーカスできないため。flushSync で表示を済ませる）。タブの見た目は最小限で、選んでいるタブは太字と下線（3px）でも分かる。contrast.mjs にタブの組み合わせを4つ追加した
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 既存のテストは、隠れたパネルの要素を探す前に該当のタブを選ぶように直した（削ったテストはない）。結果が「消えた」ことを確かめるテストは、隠れたパネルの中も探すようにした（hidden: true。隠れているだけで残っていても見落とさないため）。入力の誤りで計算できないとき、エラーの要約は「計算と結果」のタブにあり、画面は「成績の入力」のタブに移るので、要約は「計算と結果」のタブに戻ると見える（各欄の誤りは入力欄の下にも出る）。Edge 155（ヘッドレス）で、幅 320・360・400・480・600・800・1200px のすべてで、3つのタブが1行に収まり、高さ 45px、文字の切れなし、横スクロールなしを実測した（最初は幅 320px で「成績の入力」「計算と結果」の文字が切れたため、タブの幅を文字に合わせて分け、幅 360px 未満では番号の丸を出さないようにした）。「次へ」を押すと、タブが画面の上端に来ること（最初は、タブへのフォーカスでブラウザが先頭までスクロールしていたため、preventScroll にした）、打順のタブの中でキーボードのドラッグ（スペース → ↓ → スペース）で並べ替えられること、プリセットのダイアログを Esc で閉じるとフォーカスが開いたボタンに戻ることを確かめた。test 244件・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1342件が通った（backend は変更なし）
