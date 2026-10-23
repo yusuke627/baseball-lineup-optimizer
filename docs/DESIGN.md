@@ -218,7 +218,7 @@ data/presets/mlb/2025/
 
 ### 2-4. Lahman からの生成方針
 
-プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV からプリセットを作るスクリプト `scripts/build_lahman_presets.py` を用意している。`--dry-run`（集計して報告するだけ）、`--sample`（固定のシードで選んだ選手の成績を表にするだけ）、`--generate`（プリセットの JSON を作る）の3つの使い方がある。
+プリセットを数百件の規模に増やすため、Lahman Baseball Database の CSV からプリセットを作るスクリプト `scripts/build_lahman_presets.py` を用意している。`--dry-run`（集計して報告するだけ）、`--sample`（固定のシードで選んだ選手の成績を表にするだけ）、`--generate`（プリセットの JSON を作る）、`--names-only`（既存のプリセットの `name` だけを、表示名の上書きに合わせて書き換える。下の「名前の接尾辞」）の4つの使い方がある。
 
 - 元データ（`Batting.csv`・`People.csv`・`Teams.csv`）は利用者がダウンロードして `data/raw/lahman/` に置く。スクリプトはネットワークから取得しない。`data/raw/` は `.gitignore` でリポジトリから除外している。使ったのは「The SABR Lahman Baseball Database 1871-2025」（readme の記載で Release Date: Dec 10, 2025）
 - ライセンス：readme には「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」「This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.」と書かれている（原文のまま）。コードのライセンス（MIT）とは分け、`data/` 配下のプリセットにだけ適用する方針とする（表示は `data/NOTICE`、README のライセンス欄、画面の「データの出典」欄）
@@ -229,7 +229,7 @@ data/presets/mlb/2025/
 - 対象：計算した PA が 200 以上の選手（投手の打席も記録に含まれるため、打席の少ない選手を除く）。PA 200 以上の選手に投手が含まれるかは**未確認**（今回使った3つの CSV には守備位置の情報がなく、判別できない。判別には `Appearances.csv`・`Pitching.csv` などが必要）
 - 所属球団：stint の番号が最も大きい行の `teamID` を最終所属とし、移籍した選手もシーズン合計を最終所属の球団に置く。在籍した球団の一覧（stint の順。続けて同じ球団が並ぶ場合は1つにまとめ、元の球団に戻った場合はもう一度並べる）も集計する。readme の BATTING TABLE には「stint          player's stint (order of appearances within a season)」と書かれている（原文のまま）
 - 球団コード：`teamID` は Lahman 独自のコードで、一般的な略号と異なるものがある（2025年の例：New York Yankees は `NYA`、San Diego Padres は `SDN`、Los Angeles Dodgers は `LAN`、Chicago White Sox は `CHA`。`Teams.csv` の `teamIDBR` 列では、それぞれ `NYY`・`SDP`・`LAD`・`CHW`）。2025年の `Teams.csv` には30球団がある
-- 名前は `People.csv` の `nameFirst`・`nameLast`、球団名は `Teams.csv` の `name` を使う
+- 名前は `People.csv` の `nameFirst`・`nameLast`、球団名は `Teams.csv` の `name` を使う（接尾辞は下の「名前の接尾辞」の上書きで足す）
 - API と同じ入力検証（2-1）を各選手に適用し、違反した選手を一覧にする
 
 **2025年の試験集計の結果**（2026-10-14 に `--dry-run` で測定）
@@ -268,6 +268,15 @@ data/presets/mlb/2025/
 - 同じ入力からは同じファイルになる（キーの順番、インデント2、改行は LF、末尾に改行1つ）。生成し直して346件すべてがバイト単位で同じになることを確認した
 - 生成したすべてのファイルが、API と同じ入力検証（2-1）と JSON Schema（`check_preset`）を通る（pytest で確認）
 - 目視での照合：固定シード2025で選んだ10人（`--sample` の出力）について、利用者が公式サイトの数値と見比べ、全員一致と報告を受けた（2026-10-14）。照合先の公式サイト名は未記録。残りの336人は照合していない。346件の `verified` は `false` のまま
+
+**名前の接尾辞（表示名の上書き）**（2026-10-23）
+
+- `People.csv` には名前の接尾辞（Jr.・II など）の項目がないため、生成したプリセットの `name` にも付いていなかった。接尾辞を付ける選手と表記は、`data/overrides/display_names.json`（形式は `schemas/display_name_overrides.schema.json`）に書く。キーは playerID で、各項目に表示名（`name`）・確認した日（`checked_at`）・確認元の種類（`checked_source`）・補足（`note`、任意）を入れる
+- 受け付けるのは、`People.csv` の名前の後ろに、半角スペースと半角 ASCII の接尾辞（`Jr.`・`Sr.`・`II`・`III`・`IV`）を足すことだけ。接尾辞より前の部分が元の名前と1文字でも違えば、スクリプトはエラーで止まる（アクセントつきの文字は元の表記のまま。例：Ronald Acuña Jr.）
+- 生成（`--generate`）では、`People.csv` から作った名前に上書きを当てる。`--names-only` は元データを使わず、既存のプリセットの `name` の行だけを書き換える。`name` 以外の行・キーの順番・ファイル名が変わる場合や、ファイルが生成スクリプトの書き出しの形でない場合は、何も書かずに止まる。2回続けて実行しても結果は同じ。上書きにあってプリセットにない playerID は警告として一覧に出す。照合済みの2件（`aaron_judge_2025`・`luis_arraez_2025`）は対象外
+- 2026-10-23 に、利用者が示した13人（全員がプリセットと一意に一致）の名前に接尾辞を足した（Jr. が10人、II が2人、III が1人）。`--names-only` で書き換えたあと、元データから `--generate` で一時フォルダに作り直したものと、346件すべてがバイト単位で同じになることを確認した。書き換える前に、上書きなしで作り直したものが、当時の346件とバイト単位で同じことも確認した
+- 13人の表記は、利用者が確認したものを手で入力した。`checked_source` は「ユーザー確認（確認元の詳細は記録なし）」で、確認元のサイト名などは記録していない
+- 同じ名前の別の選手を区別する画面の仕組み（打順に同じ表示名があるとき「 (2)」を付ける。`frontend/src/names.ts`）は、この上書きとは別のもので、そのまま働く。Max Muncy の2人（`muncyma01`・`muncyma02`）は上書きの対象ではない
 
 **件数が増えたときの検証と API の時間**（Windows 11・Python 3.13.14・jsonschema 4.26.0。この PC での測定）
 
@@ -343,7 +352,7 @@ wOBA・wRC+ は、API でもフロントエンドでも計算していない。�
   - 幅 800px 未満では、一覧の上の期待得点（1試合あたり・合計）を縦に並べ、枠の内側の余白と列の間隔を小さくする
   - 2つの一覧の同じ番号の行は、同じ高さ・同じ位置にそろえる。行の構造の固定で高さはそろうが、安全のため、外側を12行（見出し・期待得点・9人・シミュレーションの欄）の CSS グリッドにし、各列（`section`）と各一覧（`ol`）を `subgrid` にして行も共有する（見出しが片側だけ2行に折り返したときも、行の位置がそろう）。HTML の構造（`section > h4・dl・ol > li`）と順番（入力打順が先）、キーボードの移動順、読み上げの順番、aria の属性は変えない
   - `subgrid` が使えないブラウザでは、`@supports` の中の指定が無視され、各列が独立して縦に並ぶ。行の高さは同じままだが、狭い画面で「推奨打順（近似探索）」の見出しが2行になると、推奨打順の側が全体に1行分（実測 27px）下がる
-  - 狭い列（列の幅 255px 未満）では、表示名を短くする（表示だけの整形で、表示名のデータは変えない。`frontend/src/format.ts` の `shortDisplayName`）。最初の単語をイニシャルにする（例：Aaron Judge → A. Judge、Ronald Acuña Jr. → R. Acuña Jr.、Max Muncy (2) → M. Muncy (2)）。対象は、空白で区切られた2語以上で、最初の単語がラテン文字（アクセントつきを含む）で始まり、残りに文字を含む単語がある名前だけ。1語の名前、日本語の名前、最初の単語が既にイニシャル（J.D. など）の名前はそのまま。見た目の名前（フルネームと短い名前）は `aria-hidden` にし、フルネームを `title` と読み上げ用の文字で1回だけ伝える
+  - 狭い列（列の幅 255px 未満）では、表示名を短くする（表示だけの整形で、表示名のデータは変えない。`frontend/src/format.ts` の `shortDisplayName`）。最初の単語をイニシャルにする（例：Aaron Judge → A. Judge、Ronald Acuña Jr. → R. Acuña Jr.、Max Muncy (2) → M. Muncy (2)）。対象は、空白で区切られた2語以上で、最初の単語がラテン文字（アクセントつきを含む）で始まり、残りに接尾辞（Jr.・Sr.・II・III・IV）以外の文字を含む単語がある名前だけ（Fernando Tatis Jr. → F. Tatis Jr.、Michael Harris II → M. Harris II）。1語の名前、日本語の名前、最初の単語が既にイニシャル（J.D. など）の名前、残りが接尾辞だけの名前（Tatis Jr. など）はそのまま。見た目の名前（フルネームと短い名前）は `aria-hidden` にし、フルネームを `title` と読み上げ用の文字で1回だけ伝える
 - 試合数の切替は「143試合」「162試合」のラジオボタン（キーボードの矢印でも切り替わる）。近くに「試合数のみの切替で、確率はMLBデータ・文献値のままです」と注記する。選択肢は API の `totals_by_games` の `n_games` から作り、選んだ試合数の合計は `totals_by_games` の値をそのまま出す（フロントで掛け算をしない）。選んだ試合数は、計算し直しても保つ
 - 非効率% は、2つの一覧の下ではなく、上の目立つ位置に大きく出す（API の `inefficiency_percent`）。その下に「入力打順だと、推奨打順より、1試合あたり ○ 点・選んだ試合数で ○ 点少なくなります」と損失点を出す（`runs_lost_per_game` と、選んだ試合数の `totals_by_games[].runs_lost`。試合数の切替に連動する）。損失点が 0 のときは「入力打順と推奨打順の期待得点は同じです」と出す
 - 各打順の一覧の上に、1試合あたりの期待得点（`*_runs_per_game`）と、選んだ試合数の合計を出す
