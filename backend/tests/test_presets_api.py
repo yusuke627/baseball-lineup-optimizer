@@ -1,6 +1,7 @@
 """GET /presets の絞り込み・検索と、GET /presets/seasons・GET /presets/teams のテスト"""
 import copy
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -229,6 +230,35 @@ def test_real_data_search_finds_the_verified_presets():
     assert "aaron_judge_2025" in [p["id"] for p in judge["items"]]
     arraez = client.get("/presets", params={"team": "SD"}).json()
     assert "luis_arraez_2025" in [p["id"] for p in arraez["items"]]
+
+
+OVERRIDES_PATH = REPO_ROOT / "data" / "overrides" / "display_names.json"
+NAME_SUFFIX = re.compile(r" (?:Jr\.|Sr\.|II|III|IV)$")
+
+
+def test_real_data_name_overrides_are_reflected_in_the_presets():
+    """data/overrides/display_names.json の各名前が、対応するプリセットの name になっていること"""
+    overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+    for player_id, entry in overrides.items():
+        preset = json.loads((PRESET_DIR / f"{player_id}_2025.json").read_text(encoding="utf-8"))
+        assert preset["name"] == entry["name"]
+    # 上書きに無いプリセットの名前には、接尾辞が付いていない
+    for path in PRESET_DIR.glob("*.json"):
+        if path.name.removesuffix("_2025.json") not in overrides:
+            assert not NAME_SUFFIX.search(json.loads(path.read_text(encoding="utf-8"))["name"]), path.name
+
+
+@pytest.mark.parametrize(("q", "preset_id", "name"), [
+    ("tatis", "tatisfe02_2025", "Fernando Tatis Jr."),
+    ("Tatis Jr", "tatisfe02_2025", "Fernando Tatis Jr."),
+    ("harris ii", "harrimi04_2025", "Michael Harris II"),
+    ("hassell iii", "hassero02_2025", "Robert Hassell III"),
+    ("acuna jr.", "acunaro01_2025", "Ronald Acuña Jr."),  # アクセントと大文字・小文字は区別しない
+])
+def test_real_data_search_finds_names_with_suffixes(q, preset_id, name):
+    items = client.get("/presets", params={"season": 2025, "q": q}).json()["items"]
+    found = {p["id"]: p["name"] for p in items}
+    assert found.get(preset_id) == name
 
 
 def test_real_data_preset_files_are_unchanged_by_the_api():
