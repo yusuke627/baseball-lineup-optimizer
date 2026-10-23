@@ -528,30 +528,30 @@
 - 依頼内容: 名前の接尾辞（Jr. / II / III）をプリセットの表示名に反映するため、対応ファイル、スキーマ、生成スクリプトの変更、テストを用意する
 - 変更ファイル: data/overrides/display_names.json（新規）, schemas/display_name_overrides.schema.json（新規）, scripts/build_lahman_presets.py, backend/tests/test_display_name_overrides_schema.py（新規）, backend/tests/test_build_lahman_presets.py, .github/workflows/preset-validation.yml
 - 変更理由: People.csv には接尾辞の項目がないため。対応ファイルは playerID をキーに、name・checked_at・checked_source（・note）を持つ。利用者が示した13人を、接尾辞を除いた名前でプリセット348件と照合し（アクセントと大文字・小文字は区別しない）、全員が一意に一致したので13件を入れた。checked_at は 2026-10-23、checked_source は「ユーザー確認（確認元の詳細は記録なし）」。スクリプトは、生成（--generate）で People.csv の名前に上書きを当て、新しい --names-only で既存のプリセットの name の行だけを書き換える。どちらも「元の名前の後ろに半角スペースと接尾辞を足す」以外の変更を受け付けない。preset-validation.yml は、data/overrides/** の変更でも動き、新しいスキーマのテストも実行するようにした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: f1a0139
+- 戻し方: git revert f1a0139
 - 注意点: スキーマの name の「ASCII のみ」は、接尾辞の部分に適用した（接尾辞より前は People.csv の表記のままとする指示のため、Ronald Acuña Jr. の「ñ」を許す）。--names-only は、name 以外の行・キーの順番・ファイル名が変わる場合、生成スクリプトの書き出しの形でないファイルがある場合、1件でも確かめに通らない場合に、何も書かずに止まる。上書きにあってプリセットにない playerID と、照合済みの2件（judgeaa01・arraelu01）は警告として一覧に出す。テストの名前・playerID はテスト用のダミー
 
 ## 2026-10-23 16:46 名前の更新：13人のプリセットの表示名に接尾辞を足す
 - 依頼内容: 対応ファイルの13人のプリセットの name に、接尾辞（Jr. / II / III）を反映する
 - 変更ファイル: data/presets/mlb/2025/ の13件（acunaro01, alvarna01, chishja01, garcilu04, guerrvl02, gurrilo01, harrimi04, hassero02, roberlu01, scottvi01, tatisfe02, wadela01, wittbo02 の各 _2025.json）, data/NOTICE, backend/tests/test_presets_api.py
 - 変更理由: scripts/build_lahman_presets.py --season 2025 --names-only で書き換えた（Jr. が10人、II が2人、III が1人）。NOTICE の「元のデータからの改変」に、接尾辞を加えたこと（13人）と、成績・playerID・ファイル名は変えていないことを足した。テストには、対応ファイルの名前がプリセットに反映されていること、ほかのプリセットに接尾辞がないこと、検索（tatis・Tatis Jr・harris ii・hassell iii・acuna jr.）で見つかることを足した（検索の仕組みは変えていない）
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: b2426f5
+- 戻し方: git revert b2426f5
 - 注意点: 13件とも、変わったのは3行目の name の行だけ（書き換え前に元データから作り直したものと比べて確認）。2回目の --names-only では0件で、ファイルは変わらなかった。書き換え前に、上書きなしで元データから一時フォルダに作り直した346件が当時のファイルとバイト単位で同じこと、書き換え後に、上書きありで作り直した346件が書き換え後のファイルとバイト単位で同じことを確かめた（retrieved_at は既存のプリセットに記録された 2026-10-14）。baseline.py は、案A 16通りの差の最大 1.776e-15、案B（seed 固定）3件が完全一致、プリセットの確率の差 0。照合済みの2件は変えていない
 
 ## 2026-10-23 16:46 結果画面の短縮表示：残りが接尾辞だけの名前は短縮しない
 - 依頼内容: shortDisplayName に、最初の単語以外が接尾辞（Jr.・Sr.・II・III・IV）だけのときは短縮しない規則を足す
 - 変更ファイル: frontend/src/format.ts, frontend/src/format.test.ts
 - 変更理由: 「Tatis Jr.」が「T. Jr.」になるのを防ぐため。接尾辞の一覧は scripts/build_lahman_presets.py の NAME_SUFFIXES と同じ。「Fernando Tatis Jr.」→「F. Tatis Jr.」、「Michael Harris II」→「M. Harris II」、「Robert Hassell III」→「R. Hassell III」、「Vladimir Guerrero Jr.」→「V. Guerrero Jr.」、「Ronald Acuña Jr.」→「R. Acuña Jr.」と、「Tatis Jr.」などがそのままになることをテストした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 8b7767f
+- 戻し方: git revert 8b7767f
 - 注意点: 名前が「…」で省略されるとき、末尾の接尾辞から消える問題と、「CJ Abrams」が「C. Abrams」になる件は、指示により直していない（デザイン調整の段階で扱う）
 
 ## 2026-10-23 16:46 文書：表示名の上書きと --names-only を DESIGN に記録
 - 依頼内容: 対応ファイルと --names-only、確認元の記録がないことを文書に書く
 - 変更ファイル: docs/DESIGN.md（2-4 に「名前の接尾辞（表示名の上書き）」、使い方の数、名前の項、4章「結果の画面」の短縮の規則）, docs/EDIT_LOG.md
 - 変更理由: 生成方針（2-4）に、対応ファイルの形式、受け付ける変更の範囲、--generate と --names-only の動き、2026-10-23 の反映の結果を書いた。13人の表記は利用者が確認して手で入力したもので、checked_source が「ユーザー確認（確認元の詳細は記録なし）」であり、確認元のサイト名などは記録していないことを、事実として書いた
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: 967592d
+- 戻し方: git revert 967592d
 - 注意点: README は変えていない。backend の ruff（. と ../scripts）・mypy・pytest 1342件、frontend の typecheck・lint・test 237件・build・contrast が通った
