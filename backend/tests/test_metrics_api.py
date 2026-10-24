@@ -160,7 +160,7 @@ def test_low_pa_warning_message_names_batter_and_pa():
     message = m["warnings"][0]
     assert message.startswith("Luis Arraez: 打席数(PA)=150 は少なめです（目安：200未満）。")
     assert "標本が小さい" in message
-    assert "計算はそのまま行っています" in message
+    assert "計算はそのまま行います" in message
 
 
 def test_no_warning_items_for_normal_stats():
@@ -224,9 +224,21 @@ def test_evaluate_includes_low_pa_warning_without_stopping():
     assert data["warnings"] == [
         "選手5: 打席数(PA)=120 は少なめです（目安：200未満）。"
         "成績の標本が小さいため、確率の見積もりが実力からずれやすく、打順の結果も変わりやすくなります。"
-        "計算はそのまま行っています。"
+        "計算はそのまま行います。"
     ]
     assert data["input_order_runs_per_game"] > 0
+
+
+@pytest.mark.parametrize("stats", [_with_pa(150), dict(BASE, PA=610)], ids=["low_pa", "mismatch"])
+def test_warning_messages_do_not_read_as_already_calculated(stats):
+    # 注意の文は、計算の前 (POST /batters/metrics) にも後 (POST /lineup/evaluate) にも出るので、
+    # 「行っています」「計算しています」のような、計算が済んだかのような言い方をしない
+    m = _metrics({"b1": stats})["b1"]
+    for item in m["warning_items"]:
+        assert "ています" not in item["message"]
+    pa_mismatch = [item["message"] for item in m["warning_items"] if item["code"] == "PA_SUM_MISMATCH"]
+    for message in pa_mismatch:
+        assert message.endswith("入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算します。")
 
 
 def test_evaluate_and_metrics_return_the_same_warning_text():

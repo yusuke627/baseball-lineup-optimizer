@@ -105,14 +105,14 @@ def stats_warning_items(batter_id: str, stats: BatterCountStats) -> list[tuple[W
         items.append((
             "PA_SUM_MISMATCH",
             f"{batter_id}: 打席数(PA)={stats.PA} が、打数+四球+死球+犠飛+犠打の合計={component_sum} と一致しません。"
-            "入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算しています。",
+            "入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算します。",
         ))
     if stats.PA < LOW_PA_THRESHOLD:
         items.append((
             "LOW_PA",
             f"{batter_id}: 打席数(PA)={stats.PA} は少なめです（目安：{LOW_PA_THRESHOLD}未満）。"
             "成績の標本が小さいため、確率の見積もりが実力からずれやすく、打順の結果も変わりやすくなります。"
-            "計算はそのまま行っています。",
+            "計算はそのまま行います。",
         ))
     return items
 
