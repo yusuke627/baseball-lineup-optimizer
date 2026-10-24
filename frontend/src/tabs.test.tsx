@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
@@ -71,7 +71,7 @@ function fillAll() {
 
 describe('タブの役割と属性', () => {
   test('tablist の中に3つの tab があり、それぞれが tabpanel と相互に関連づけられている', () => {
-    render(<App />)
+    renderAppInManualEntry()
     const tablist = screen.getByRole('tablist', { name: '手順' })
     const tabs = within(tablist).getAllByRole('tab')
     expect(tabs.map((t) => t.textContent)).toEqual(['1成績の入力', '2打順', '3計算と結果'])
@@ -90,9 +90,11 @@ describe('タブの役割と属性', () => {
 
   test('Tab キーで止まるのは、選んでいるタブだけ（roving tabindex）', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     expect(screen.getAllByRole('tab').map((t) => t.tabIndex)).toEqual([0, -1, -1])
 
+    // 「手入力する」で表示名の欄に移ったフォーカスを外し、ページの先頭から Tab で進む
+    ;(document.activeElement as HTMLElement).blur()
     await user.tab()
     expect(tab('成績の入力')).toHaveFocus()
     // 次の Tab では、ほかのタブではなく、パネルの中の部品へ進む
@@ -108,7 +110,7 @@ describe('タブの役割と属性', () => {
 describe('タブのキー操作（矢印で移動したら、すぐに切り替える）', () => {
   test('→ で次、← で前のタブへ。端では反対側へ回る', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     tab('成績の入力').focus()
 
     await user.keyboard('{ArrowRight}')
@@ -131,7 +133,7 @@ describe('タブのキー操作（矢印で移動したら、すぐに切り替�
 
   test('Home で最初、End で最後のタブへ', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     tab('成績の入力').focus()
 
     await user.keyboard('{End}')
@@ -144,7 +146,7 @@ describe('タブのキー操作（矢印で移動したら、すぐに切り替�
 
   test('↑・↓ など、ほかのキーでは切り替えない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     tab('成績の入力').focus()
     await user.keyboard('{ArrowDown}{ArrowUp}a')
     expect(selectedTab()).toHaveAccessibleName('成績の入力')
@@ -154,7 +156,7 @@ describe('タブのキー操作（矢印で移動したら、すぐに切り替�
 describe('「次へ」のボタン', () => {
   test('押すと次のタブに切り替わり、そのタブにフォーカスが移る。最後のパネルには無い', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
 
     await user.click(screen.getByRole('button', { name: '次へ（打順を決める）' }))
     expect(selectedTab()).toHaveAccessibleName('打順')
@@ -171,7 +173,7 @@ describe('「次へ」のボタン', () => {
 describe('切り替えても状態が残る', () => {
   test('入力・打順・計算結果・試合数の選択・開いた欄は、タブを行き来しても消えない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     fireEvent.change(screen.getByLabelText('打者Aの表示名'), { target: { value: 'Test Name' } })
     fireEvent.blur(screen.getByLabelText('打者Aの表示名'))
@@ -206,7 +208,7 @@ describe('切り替えても状態が残る', () => {
 
   test('「説明」のボタンの開閉も、タブを行き来しても残る', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     const howToInput = screen.getByRole('button', { name: '入力のしかたの説明' })
     await user.click(howToInput)
     showTab('打順')

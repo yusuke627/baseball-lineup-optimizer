@@ -199,7 +199,7 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
     >
       <div className="preset-dialog-header">
         <div>
-          <h2 id={titleId}>選手データから読み込む</h2>
+          <h2 id={titleId}>選手を選ぶ</h2>
           <p className="note">読み込み先：{targetName}</p>
         </div>
         <button type="button" className="button-secondary" onClick={onClose}>

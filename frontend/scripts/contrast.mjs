@@ -43,6 +43,12 @@ const PAIRS = [
   ['muted', 'surface', TEXT, '「説明」のボタンの文字（結果の欄・バナーの地）'],
   ['muted', 'warning-bg', TEXT, '「説明」のボタンの文字（注意の地）'],
   ['accent', 'warning-bg', COMPONENT, 'フォーカスの枠（注意の地。「説明」のボタンなど）'],
+  // カードの操作のボタン (主: 選手を選ぶ・編集する、副: 手入力する・選び直す・選択を外す・編集を閉じる)
+  ['on-accent', 'accent', TEXT, 'カードの主のボタンの文字（選手を選ぶ・編集する）'],
+  ['accent', 'surface', COMPONENT, 'カードの主のボタンの地（カードの地との区別）'],
+  ['accent', 'surface', TEXT, 'カードの副のボタンの文字（手入力する・選び直す など）'],
+  ['text', 'surface', TEXT, 'カードの見出し（打者の表示名）'],
+  ['muted', 'surface', TEXT, 'カードの要約の指標の略号'],
 ]
 
 function readVariables(block) {

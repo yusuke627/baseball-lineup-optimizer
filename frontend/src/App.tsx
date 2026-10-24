@@ -121,6 +121,25 @@ export default function App() {
     clearRun()
   }
 
+  // 「手入力する」「編集する」「編集を閉じる」は、成績も表示名も変えないので、結果は消さない
+  function handleStartManual(slotId: string) {
+    dispatch({ type: 'startManual', slotId })
+  }
+
+  function handleSetEditing(slotId: string, editing: boolean) {
+    dispatch({ type: 'setEditing', slotId, editing })
+  }
+
+  function handleTouchAll(slotId: string) {
+    dispatch({ type: 'touchAll', slotId })
+  }
+
+  // 「選択を外す」は成績と表示名を初期に戻すので、前の結果は消す
+  function handleClearSelection(slotId: string) {
+    dispatch({ type: 'clearSelection', slotId })
+    clearRun()
+  }
+
   async function handleRun() {
     setShowAllErrors(true)
 
@@ -191,12 +210,13 @@ export default function App() {
         <Disclosure name="入力のしかたの説明">
           <p>成績は、率ではなく回数（カウント）で入力します。</p>
           <p>
-            犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「選手データから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
+            犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「選手を選ぶ」で入れられます。入力した成績は、ほかの打者にコピーできます。選手データを選んだ打者には、コピーされません。
           </p>
         </Disclosure>
         <BatterCards
           slots={lineup.slots}
           nameIssues={nameIssues}
+          metrics={metrics}
           showAllErrors={showAllErrors}
           disabled={isRunning}
           onChange={handleChange}
@@ -206,6 +226,10 @@ export default function App() {
           onCopy={handleCopy}
           onLoadPreset={handleLoadPreset}
           onRevertPreset={handleRevertPreset}
+          onStartManual={handleStartManual}
+          onSetEditing={handleSetEditing}
+          onClearSelection={handleClearSelection}
+          onTouchAll={handleTouchAll}
         />
       </section>
       <NextStepButton label="次へ（打順を決める）" onClick={() => goToStep('order')} />

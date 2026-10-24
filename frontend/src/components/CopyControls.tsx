@@ -5,16 +5,13 @@ export type PendingCopy =
   | { kind: 'from'; fromName: string }
   | { kind: 'toAll'; overwrittenNames: string[] }
 
-/** プリセットを読み込むボタンの要素ID */
-export function presetButtonId(slotId: string): string {
-  return `preset-button-${slotId}`
-}
-
 interface CopyControlsProps {
   /** このカードの打者の内部ID (要素IDに使う) */
   slotId: string
   /** このカードの打者の表示名 */
   name: string
+  /** コピーの操作を出すか (入力欄を出しているカードだけ)。false でも、通知の領域は置く */
+  showControls: boolean
   /** コピー元に選べる、ほかの打者 */
   others: { id: string; name: string }[]
   /** このカードで確認待ちのコピー (無ければ undefined) */
@@ -35,6 +32,7 @@ interface CopyControlsProps {
 export default function CopyControls({
   slotId,
   name,
+  showControls,
   others,
   pending,
   notice,
@@ -85,8 +83,8 @@ export default function CopyControls({
   const sourceFieldId = `copy-source-${slotId}`
 
   return (
-    <div className="copy-controls">
-      {pending ? (
+    <div className={showControls ? 'copy-controls' : 'copy-controls copy-controls-notice-only'}>
+      {!showControls ? null : pending ? (
         <div className="copy-confirm">
           <p id={confirmId}>
             {pending.kind === 'from' &&
@@ -138,11 +136,11 @@ export default function CopyControls({
             type="button"
             ref={toAllRef}
             className="button-secondary"
-            aria-label={`${name}：この打者の成績を、ほかの全員にコピー`}
+            aria-label={`${name}：この打者の成績を、ほかの打者にコピー`}
             disabled={disabled}
             onClick={handleCopyToAll}
           >
-            この打者の成績を、ほかの全員にコピー
+            この打者の成績を、ほかの打者にコピー
           </button>
         </>
       )}

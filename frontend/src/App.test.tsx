@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import type { LineupEvaluationResponse, StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
@@ -86,13 +86,13 @@ afterEach(() => {
 
 describe('入力フォーム', () => {
   test('9人分の表示名と14項目の入力欄がある', () => {
-    render(<App />)
+    renderAppInManualEntry()
     expect(screen.getByRole('heading', { level: 1, name: '打順の得点期待値' })).toBeInTheDocument()
     expect(screen.getAllByRole('textbox')).toHaveLength(9 * (1 + 14))
   })
 
   test('画面は「成績の入力 → 打順 → 計算と結果」の3つの段階に分かれている', () => {
-    render(<App />)
+    renderAppInManualEntry()
     // 3つの段階はタブで切り替える。最初は「成績の入力」
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1成績の入力', '2打順', '3計算と結果'])
     expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
@@ -109,7 +109,7 @@ describe('入力フォーム', () => {
   })
 
   test('打者ごとにカードがあり、項目はまとまりごとに分かれている', () => {
-    render(<App />)
+    renderAppInManualEntry()
     const card = screen.getByRole('region', { name: '打者A' })
     expect(within(card).getAllByRole('textbox')).toHaveLength(1 + 14)
     const groups = within(card).getAllByRole('group').map((group) => within(group).getAllByRole('textbox').length)
@@ -118,7 +118,7 @@ describe('入力フォーム', () => {
   })
 
   test('犠打の「空欄可」は項目名に入れず、入力欄の補足として関連づける', () => {
-    render(<App />)
+    renderAppInManualEntry()
     const card = screen.getByRole('region', { name: '打者A' })
     // 項目名はどの項目も「日本語名 + 記号」だけにする (補足を入れると折り返して、その欄だけ下にずれる)
     const labels = [...card.querySelectorAll('.stat-group label')].map((label) => label.textContent)
@@ -134,7 +134,7 @@ describe('入力フォーム', () => {
   })
 
   test('打順の欄には、表示名が入力の順に並ぶ', () => {
-    render(<App />)
+    renderAppInManualEntry()
     showTab('打順')
     const order = screen.getByRole('region', { name: '2打順' })
     const names = () => [...order.querySelectorAll('.order-name')].map((item) => item.textContent)
@@ -145,7 +145,7 @@ describe('入力フォーム', () => {
   })
 
   test('矛盾した成績は、入力した時点でエラーを表示する', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A', { ...VALID, H: 541, SO: 0, GIDP: 0 })
 
     expect(screen.getByText(/打者Aの安打\(H\)が打数\(AB\)を超えています。/)).toBeInTheDocument()
@@ -156,7 +156,7 @@ describe('入力フォーム', () => {
 
   test('未入力のエラーは、その欄から離れた後に表示する', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     expect(screen.queryByText(/未入力の項目/)).not.toBeInTheDocument()
 
     await user.click(input('打者A', 'PA'))
@@ -166,7 +166,7 @@ describe('入力フォーム', () => {
   })
 
   test('打席数と内訳の合計が合わないときは、エラーではなく注意を表示する', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者B', { ...VALID, PA: 610 })
 
     const message = screen.getByText(/打者Bの打席数\(PA\)が、打数・四球・死球・犠飛・犠打の合計と一致しません/)
@@ -175,7 +175,7 @@ describe('入力フォーム', () => {
   })
 
   test('ほかの欄が空欄でも、打数と安打だけで矛盾のエラーを表示する', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A', { AB: 100, H: 101 })
 
     expect(screen.getByText(/打者Aの安打\(H\)が打数\(AB\)を超えています。/)).toBeInTheDocument()
@@ -186,7 +186,7 @@ describe('入力フォーム', () => {
 
   test('犠打の欄に触れるまでは、打席数と内訳の不一致の注意を出さない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     // 犠打を入れれば合計が合う成績 (540+40+10+5+5=600) を、犠打だけ空欄にして入力する
     fillSlot('打者A', { PA: 600, AB: 540, BB: 40, HBP: 10, SF: 5 })
     expect(screen.queryByText(/合計と一致しません/)).not.toBeInTheDocument()
@@ -204,7 +204,7 @@ describe('打者の表示名', () => {
   test('表示名を変えると、入力欄のラベル・エラーの文・APIに送る表示名・結果の打順に反映される', async () => {
     const fetchMock = stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     fireEvent.change(nameInput('打者A'), { target: { value: ' Aaron Judge ' } })
@@ -227,7 +227,7 @@ describe('打者の表示名', () => {
   })
 
   test('空欄のまま欄を離れると、既定の名前に戻す', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fireEvent.change(nameInput('打者B'), { target: { value: '   ' } })
     fireEvent.blur(nameInput('打者B'))
     expect(nameInput('打者B')).toHaveValue('打者B')
@@ -236,7 +236,7 @@ describe('打者の表示名', () => {
   test('表示名が重複していると、入力エラーにしてAPIを呼ばない', async () => {
     const fetchMock = stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     fireEvent.change(nameInput('打者B'), { target: { value: '打者A' } })
@@ -255,7 +255,7 @@ describe('打者の表示名', () => {
   })
 
   test('41文字以上の表示名は入力エラーにする', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fireEvent.change(nameInput('打者A'), { target: { value: 'あ'.repeat(41) } })
     expect(screen.getByText(/表示名は40文字以内で入力してください。/)).toBeInTheDocument()
 
@@ -266,7 +266,7 @@ describe('打者の表示名', () => {
   test('表示名を変えると、前の結果は消える', async () => {
     stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await user.click(runButton())
     await screen.findByRole('region', { name: '結果' })
@@ -281,7 +281,7 @@ describe('計算の実行', () => {
   test('入力に誤りがあると、APIを呼ばずに入力エラーを表示する', async () => {
     const fetchMock = stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
 
     await user.click(runButton())
 
@@ -296,7 +296,7 @@ describe('計算の実行', () => {
   test('入力エラーは打者ごとに要約し、最初のエラーの欄にフォーカスを移す', async () => {
     const fetchMock = stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     NAMES.filter((name) => name !== '打者C' && name !== '打者E').forEach((name) => fillSlot(name))
     fillSlot('打者C', { ...VALID, H: 541, SO: 0, GIDP: 0 })
     const withoutHrAndCs: Partial<Record<StatKey, number>> = { ...VALID }
@@ -327,7 +327,7 @@ describe('計算の実行', () => {
 
   test('未入力が多いときは、要約では項目名を3つまでにして残りは件数で示す', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
 
     await user.click(runButton())
 
@@ -343,7 +343,7 @@ describe('計算の実行', () => {
   test('APIが返した値と打順を表示する', async () => {
     const fetchMock = stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     await user.click(runButton())
@@ -372,7 +372,7 @@ describe('計算の実行', () => {
     const warning = '打者C: 打席数(PA)=610 が、打数+四球+死球+犠飛+犠打の合計=600 と一致しません。'
     stubFetch(async () => jsonResponse({ ...RESPONSE, warnings: [warning] }))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     await user.click(runButton())
@@ -384,7 +384,7 @@ describe('計算の実行', () => {
   test('APIの422は、日本語の入力エラーに置き換えて表示する', async () => {
     stubFetch(async () => jsonResponse({ detail: [{ msg: 'Value error, ...' }] }, 422))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     await user.click(runButton())
@@ -397,7 +397,7 @@ describe('計算の実行', () => {
 
   test('APIの500はサーバーのエラー、接続失敗は通信エラーとして区別する', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     stubFetch(async () => new Response('', { status: 500 }))
@@ -421,7 +421,7 @@ describe('計算の実行', () => {
         }),
     )
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
 
     await user.click(runButton())
@@ -438,7 +438,7 @@ describe('計算の実行', () => {
   test('入力を変えると、前の結果は消える', async () => {
     stubFetch(async () => jsonResponse(RESPONSE))
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await user.click(runButton())
     await screen.findByRole('region', { name: '結果' })

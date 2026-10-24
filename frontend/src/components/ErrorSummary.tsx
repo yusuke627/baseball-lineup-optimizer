@@ -1,6 +1,14 @@
 import { STAT_KEYS, type StatKey } from '../api/types'
 import type { NameIssue } from '../names'
-import { displayName, nameFieldId, statFieldId, type BatterSlot } from '../state/lineup'
+import {
+  displayName,
+  editButtonId,
+  nameFieldId,
+  presetButtonId,
+  showsFields,
+  statFieldId,
+  type BatterSlot,
+} from '../state/lineup'
 import { parseAndValidate, STAT_LABELS } from '../validation'
 
 /** 打者1人分の入力エラーの要約 */
@@ -27,6 +35,9 @@ function missingMessage(keys: StatKey[]): string {
   return rest > 0 ? `未入力 ${keys.length}項目（${shown} ほか${rest}項目）` : `未入力（${shown}）`
 }
 
+/** 未選択のカードの入力エラーの文 (カードとエラーの要約に出す) */
+export const UNSELECTED_MESSAGE = '選手を選ぶか、手入力してください。'
+
 /** 入力エラーのある打者だけを、表の順に要約する */
 export function summarizeErrors(
   slots: BatterSlot[],
@@ -34,6 +45,17 @@ export function summarizeErrors(
 ): BatterErrorSummary[] {
   const summaries: BatterErrorSummary[] = []
   for (const slot of slots) {
+    // 未選択のカードは、成績の検証の代わりに「選ぶか手入力するか」の誤りを1件だけ出し、「選手を選ぶ」ボタンへ移す
+    if (slot.mode === 'unselected') {
+      summaries.push({
+        slotId: slot.id,
+        name: displayName(slot),
+        count: 1,
+        messages: [UNSELECTED_MESSAGE],
+        firstFieldId: presetButtonId(slot.id),
+      })
+      continue
+    }
     const nameIssue = nameIssues[slot.id]
     const { errors } = parseAndValidate(slot.raw).result
     if (nameIssue === undefined && errors.length === 0) {
@@ -53,8 +75,12 @@ export function summarizeErrors(
         ...(missing.length > 0 ? [missingMessage(missing)] : []),
         ...others.map((issue) => issue.message),
       ],
-      firstFieldId:
-        nameIssue || firstKey === undefined ? nameFieldId(slot.id) : statFieldId(slot.id, firstKey),
+      // 入力欄を出していない (選手データの要約の) カードでは、名前を直せる「編集する」ボタンへ移す
+      firstFieldId: !showsFields(slot)
+        ? editButtonId(slot.id)
+        : nameIssue || firstKey === undefined
+          ? nameFieldId(slot.id)
+          : statFieldId(slot.id, firstKey),
     })
   }
   return summaries

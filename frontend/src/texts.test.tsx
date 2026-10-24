@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, Preset, StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import PresetInfo from './components/PresetInfo'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
@@ -91,25 +91,25 @@ async function openDisclosure(user: ReturnType<typeof userEvent.setup>, containe
 
 describe('ページ上部と、成績の入力・打順の案内', () => {
   test('ページ上部の文は「打順の期待得点を比べます。」', () => {
-    render(<App />)
+    renderAppInManualEntry()
     expect(document.querySelector('.page-header p')).toHaveTextContent(/^打順の期待得点を比べます。$/)
   })
 
   test('成績の入力：「選手の成績を入力してください。」を表示し、残りは「入力のしかたの説明」の中（先頭に、回数で入力することの1文）', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     const section = screen.getByRole('region', { name: '1成績の入力' })
     expect(within(section).getByText('選手の成績を入力してください。')).toBeVisible()
     const body = await openDisclosure(user, section, '入力のしかたの説明')
     expect([...body.querySelectorAll('p')].map((p) => p.textContent?.trim())).toEqual([
       '成績は、率ではなく回数（カウント）で入力します。',
-      '犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「選手データから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。',
+      '犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「選手を選ぶ」で入れられます。入力した成績は、ほかの打者にコピーできます。選手データを選んだ打者には、コピーされません。',
     ])
   })
 
   test('打順：「選んだ選手を、打順に並べ替えてください。」を表示し、もとの文は「並べ替えのしかたの説明」の中', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     showTab('打順')
     const section = screen.getByRole('region', { name: '2打順' })
     expect(within(section).getByText('選んだ選手を、打順に並べ替えてください。')).toBeVisible()
@@ -121,7 +121,7 @@ describe('ページ上部と、成績の入力・打順の案内', () => {
 
   test('入力欄の注意（打席数と内訳の不一致）は、最初の1文を表示し、残りは「（打者名）の注意の説明」の中', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     for (const [key, value] of Object.entries({ ...VALID, PA: 610 }) as [StatKey, number][]) {
       fireEvent.change(screen.getByLabelText(`打者A ${STAT_LABELS[key]}(${key})`), { target: { value: String(value) } })
     }
@@ -136,7 +136,7 @@ describe('ページ上部と、成績の入力・打順の案内', () => {
 describe('計算と結果', () => {
   async function calculate() {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     showTab('打順')
     await within(screen.getByRole('region', { name: '2打順' })).findAllByRole('list', { name: '指標' })
@@ -204,7 +204,7 @@ describe('計算と結果', () => {
       ),
     )
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     showTab('計算と結果')
     await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))

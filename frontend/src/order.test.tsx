@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
@@ -113,7 +113,7 @@ const message = () => orderRegion().querySelector('.order-message') as HTMLEleme
 describe('ボタンでの並べ替え', () => {
   test('「上へ」「下へ」で1つずつ動き、読み上げ用の文で知らせる。フォーカスは動かした打者に残る', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
 
     await user.click(button('打者Cを上へ（3番から2番へ）'))
     expect(orderNames()).toEqual(['打者A', '打者C', '打者B', ...NAMES.slice(3)])
@@ -128,7 +128,7 @@ describe('ボタンでの並べ替え', () => {
 
   test('先頭の「上へ」と末尾の「下へ」は押せず、その理由が読み上げで分かる', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     const up = button('打者Aを上へ（1番から0番へ）')
     const down = button('打者Iを下へ（9番から10番へ）')
     expect(up).toHaveAttribute('aria-disabled', 'true')
@@ -146,7 +146,7 @@ describe('ボタンでの並べ替え', () => {
 
   test('「移動先」で番号を選んで「移動」を押すと、その番号へ動く（キーボードだけで操作できる）', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     const select = within(orderRegion()).getByRole('combobox', { name: '打者Gの移動先' })
     await user.selectOptions(select, '2')
     button('打者Gを2番へ移動').focus()
@@ -160,7 +160,7 @@ describe('ボタンでの並べ替え', () => {
   })
 
   test('取っ手は、ドラッグの説明が関連づけられたボタン（ドラッグそのものはブラウザで確認する）', () => {
-    render(<App />)
+    renderAppInManualEntry()
     const handle = within(orderRegion()).getByRole('button', { name: '打者Aをドラッグして並べ替える（いまは1番）' })
     expect(handle).toHaveAttribute('aria-roledescription')
     expect(handle).toHaveAccessibleDescription(/スペースキーかエンターキーで持ち上げ/)
@@ -170,7 +170,7 @@ describe('ボタンでの並べ替え', () => {
 describe('並べ替えと計算', () => {
   test('並べ替えた打順が、計算の input_order にそのまま入る', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await user.click(button('打者Iを上へ（9番から8番へ）'))
     await user.click(runButton())
@@ -184,7 +184,7 @@ describe('並べ替えと計算', () => {
 
   test('計算したあとに並べ替えると、前の結果を消して、そのことを知らせる', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await user.click(runButton())
     await screen.findByRole('region', { name: '結果' })
@@ -209,7 +209,7 @@ describe('打者ごとの指標と注意', () => {
   }
 
   test('指標を決まった順番と表記で、API の値のまま表示する（K%・BB% は小数点以下1桁のパーセント）', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     const lists = await metricLists()
     const items = within(lists[0]).getAllByRole('listitem')
@@ -231,7 +231,7 @@ describe('打者ごとの指標と注意', () => {
   })
 
   test('安打（H）は API が返した値を表示する。計算できない指標（null）は「—」', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     const lists = await metricLists()
     // 打者C の入力の安打は 150 だが、API (テスト用) は 40 を返す。画面には API の値が出る
@@ -242,7 +242,7 @@ describe('打者ごとの指標と注意', () => {
 
   test('各打者の行には、すべての注意を出す（最初の1文を表示し、残りは原文のまま「説明」のボタンの中）', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await metricLists()
     const rows = [...orderRegion().querySelectorAll('.order-row')] as HTMLElement[]
@@ -264,7 +264,7 @@ describe('打者ごとの指標と注意', () => {
 
   test('計算と結果の上には、種類が LOW_PA の注意がある打者だけを「打席数が少ない打者」として出す', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     showTab('計算と結果')
     const summary = await screen.findByRole('region', { name: '打席数が少ない打者（1人）' })
@@ -281,7 +281,7 @@ describe('打者ごとの指標と注意', () => {
   })
 
   test('成績がそろうまでは API を呼ばず、その旨を打順の一覧の上に1回だけ出す（各行には出さない）', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     // 一覧の領域には、並べ替えの通知など、ほかの role="status" もあるので、クラスで探す
     const status = orderRegion().querySelector('.order-status') as HTMLElement
     expect(status).toHaveAttribute('role', 'status')
@@ -297,14 +297,14 @@ describe('打者ごとの指標と注意', () => {
   })
 
   test('表示名が重複している間は、注意の文に正しい名前を出せないので、API を呼ばない（一覧の上に同じ案内を出す）', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     fireEvent.change(screen.getByLabelText('打者Bの表示名'), { target: { value: '打者A' } })
     expect(orderRegion().querySelector('.order-status')).toHaveTextContent('成績の入力が終わると、指標を表示します。')
   })
 
   test('指標がそろうと状態の文は消える。読み込み中は画面には出さず、読み上げ用の文だけを置く', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     const status = orderRegion().querySelector('.order-status') as HTMLElement
     expect(status).toHaveAttribute('role', 'status')
@@ -315,7 +315,7 @@ describe('打者ごとの指標と注意', () => {
   })
 
   test('指標が出る前の行にも、見えない仮の一覧を置く（指標が出る前後で行の高さを変えないため）', async () => {
-    render(<App />)
+    renderAppInManualEntry()
     const placeholders = orderRegion().querySelectorAll('.order-metrics-placeholder')
     expect(placeholders).toHaveLength(9)
     for (const placeholder of placeholders) {
@@ -330,7 +330,7 @@ describe('打者ごとの指標と注意', () => {
     fetchMock.mockImplementation(async (url: string) =>
       url === '/api/batters/metrics' ? new Response('', { status: 500 }) : json({}, 404),
     )
-    render(<App />)
+    renderAppInManualEntry()
     fillAll()
     await waitFor(() =>
       expect(orderRegion().querySelector('.order-status')).toHaveTextContent('指標を読み込めませんでした。'),

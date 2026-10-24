@@ -206,6 +206,56 @@ p {
   background: var(--color-surface);
 }
 
+/* カードの見出し (打者の表示名) */
+.batter-card-title {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * カードの操作のボタン (選手を選ぶ・手入力する・編集する・選び直す・選択を外す・編集を閉じる)。
+ * 押せる高さは 44px 以上。狭い画面では折り返す (横スクロールしない)
+ */
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.card-actions button {
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+}
+
+.batter-card .preset-info {
+  margin-bottom: var(--space-2);
+  font-size: 0.9rem;
+}
+
+/* 選手データの要約の指標 (POST /batters/metrics の値) */
+.card-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-summary li {
+  white-space: nowrap;
+}
+
+.card-summary abbr {
+  margin-right: 0.25em;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
 /* 画面には見せず、読み上げだけに使う文 (リンクが新しいタブで開くことなど) */
 .visually-hidden {
   position: absolute;
@@ -235,6 +285,7 @@ a {
 
 .preset-area > .button-secondary,
 .preset-info .button-secondary {
+  min-height: 44px;
   padding: var(--space-1) var(--space-3);
 }
 
@@ -546,6 +597,13 @@ a {
 /* 通知が無いときは、空の行の分の高さを取らない (読み上げのために要素は残す) */
 .copy-notice:empty {
   display: none;
+}
+
+/* コピーの操作を出さないカード (未選択・要約) では、通知の領域だけを置き、区切り線と余白は付けない */
+.copy-controls-notice-only {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .field {

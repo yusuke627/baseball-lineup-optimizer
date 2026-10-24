@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { STAT_KEYS, type StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
 
@@ -35,7 +35,7 @@ const card = (name: string) => screen.getByRole('region', { name })
 const sourceSelect = (name: string) => screen.getByLabelText(`${name}：他の打者からコピー`)
 const copyButton = (name: string) => screen.getByRole('button', { name: `${name}：コピーする` })
 const toAllButton = (name: string) =>
-  screen.getByRole('button', { name: `${name}：この打者の成績を、ほかの全員にコピー` })
+  screen.getByRole('button', { name: `${name}：この打者の成績を、ほかの打者にコピー` })
 const notice = (name: string) => within(card(name)).getByRole('status')
 
 afterEach(() => {
@@ -45,7 +45,7 @@ afterEach(() => {
 describe('他の打者からコピー', () => {
   test('コピー元の成績が、このカードに入る。表示名は変わらない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
 
     await user.selectOptions(sourceSelect('打者B'), '打者A')
@@ -62,7 +62,7 @@ describe('他の打者からコピー', () => {
   })
 
   test('コピー元には、自分以外の8人を表示名で出す', () => {
-    render(<App />)
+    renderAppInManualEntry()
     fireEvent.change(screen.getByLabelText('打者Aの表示名'), { target: { value: 'Aaron Judge' } })
 
     const options = within(sourceSelect('打者B')).getAllByRole('option').map((option) => option.textContent)
@@ -71,7 +71,7 @@ describe('他の打者からコピー', () => {
 
   test('コピー元を選ばずに押すと、何も変えずに知らせる', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者B', { PA: 100 })
 
     await user.click(copyButton('打者B'))
@@ -84,7 +84,7 @@ describe('他の打者からコピー', () => {
     const user = userEvent.setup()
     const confirmSpy = vi.fn(() => true)
     vi.stubGlobal('confirm', confirmSpy)
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
     fillSlot('打者B', { PA: 100 }) // 1項目だけでも入力済みとして扱う
 
@@ -109,7 +109,7 @@ describe('他の打者からコピー', () => {
 
   test('確認で「やめる」を選ぶと、コピー先は変わらない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
     fillSlot('打者B', { PA: 100, AB: 90 })
 
@@ -124,7 +124,7 @@ describe('他の打者からコピー', () => {
 
   test('一部が未入力の打者をコピー元にすると、空欄は空欄としてコピーする', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     const partial = { PA: 600, AB: 540, H: 150 }
     fillSlot('打者A', partial)
     fillSlot('打者B') // 全項目が入力済み
@@ -141,7 +141,7 @@ describe('他の打者からコピー', () => {
 
   test('キーボードだけで操作できる', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
     fillSlot('打者B', { PA: 100 })
 
@@ -159,10 +159,10 @@ describe('他の打者からコピー', () => {
   })
 })
 
-describe('この打者の成績を、ほかの全員にコピー', () => {
+describe('この打者の成績を、ほかの打者にコピー', () => {
   test('ほかの8人に同じ成績が入る。表示名は変わらない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者C')
 
     await user.click(toAllButton('打者C'))
@@ -176,7 +176,7 @@ describe('この打者の成績を、ほかの全員にコピー', () => {
 
   test('入力済みの打者がいると、その打者の名前を挙げて確認する。やめると誰も変わらない', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者C')
     fillSlot('打者A', { PA: 100 })
     fillSlot('打者G', { HR: 7 })
@@ -200,7 +200,7 @@ describe('この打者の成績を、ほかの全員にコピー', () => {
 
   test('確認で「上書きする」を選ぶと、全員に入る', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者C')
     fillSlot('打者A', { PA: 100 })
 
@@ -218,7 +218,7 @@ describe('コピーと、ほかの操作との関係', () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({}), { status: 500 }))
     vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
     await user.click(toAllButton('打者A'))
 
@@ -233,7 +233,7 @@ describe('コピーと、ほかの操作との関係', () => {
 
   test('入力を変えると、コピーの通知と確認は消える', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    renderAppInManualEntry()
     fillSlot('打者A')
     await user.selectOptions(sourceSelect('打者B'), '打者A')
     await user.click(copyButton('打者B'))

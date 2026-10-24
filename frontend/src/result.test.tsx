@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { BatterMetrics, LineupEvaluationResponse, StatKey } from './api/types'
-import App from './App'
+import { renderAppInManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 
 // 画面の CSS (列の幅による切り替えの規則を確かめる)。テストは frontend/ を起点に実行する
@@ -78,7 +78,7 @@ afterEach(() => {
 /** 9人に成績を入れて計算する。rename で、既定の名前 → 新しい表示名 に変えてから計算できる */
 async function calculate(rename: Record<string, string> = {}) {
   const user = userEvent.setup()
-  render(<App />)
+  renderAppInManualEntry()
   for (const [from, to] of Object.entries(rename)) {
     fireEvent.change(screen.getByLabelText(`${from}の表示名`), { target: { value: to } })
     fireEvent.blur(screen.getByLabelText(`${from}の表示名`))
