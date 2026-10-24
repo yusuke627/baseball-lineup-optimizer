@@ -568,30 +568,46 @@
 - 依頼内容: 補足を「説明」のボタン（その場で開閉する）の中へ移し、文を短くし、画面から「プリセット」という言葉を無くす（段階9B）
 - 変更ファイル: frontend/src/components/Disclosure.tsx（新規）, frontend/src/components/WarningText.tsx（新規）, frontend/src/messages.ts（新規）, frontend/src/App.tsx, frontend/src/components/BatterCards.tsx, frontend/src/components/BatterWarnings.tsx, frontend/src/components/OrderList.tsx, frontend/src/components/ResultSummary.tsx, frontend/src/components/ErrorBanner.tsx, frontend/src/components/PresetInfo.tsx, frontend/src/components/PresetDialog.tsx, frontend/src/components/DataSources.tsx, frontend/src/api/client.ts, frontend/src/index.css, frontend/scripts/contrast.mjs, frontend/src/components/Disclosure.test.tsx（新規）, frontend/src/messages.test.ts（新規）, frontend/src/texts.test.tsx（新規）, frontend/src/order.test.tsx, frontend/src/result.test.tsx, frontend/src/preset.test.tsx, frontend/src/tabs.test.tsx, frontend/src/components/DataSources.test.tsx, README.md, docs/DESIGN.md（0章に用語と「画面の文章と『説明』のボタン」、4章「結果の画面」）, docs/EDIT_LOG.md
 - 変更理由: 画面の説明が多すぎたため。共通の部品 Disclosure（「説明」＋▸/▾、aria-expanded・aria-controls、中身はボタンの直後、初期は閉じる、高さ 44px 以上）を作り、結果の「参考：シミュレーション」もこの部品にした。移した文は原文のまま（成績の入力の案内の先頭にだけ「成績は、率ではなく回数（カウント）で入力します。」を足した）。警告は最初の「。」までを表示し、残りを「（打者名）の注意の説明」の中に入れる（API の文は書き換えない）。結果の「計算時の注意」では、同じタブの「打席数が少ない打者」と同じ文（LOW_PA）を重ねて出さない。指標の状態の文は、各行ではなく打順の一覧の上に1回だけ出し、指標が出る前の行には見えない仮の一覧を置いて行の高さを保つ。出典の欄は、Lahman / SABR とライセンス名と、照合に使ったサイトと取得日の1文を常に表示し、詳しい内容は「出典の説明」の中に置いた。画面の「プリセット」は「選手データ」に置き換えた（コードの名前・API のパス・ファイル名・スキーマ名は変えていない）。試合数の切替の注記は、利用者の判断で、常に表示する形から「試合数の切替についての説明」の中に移した。contrast.mjs に「説明」のボタンの組み合わせを4つ足した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: f8f1e9e、e2f5e6c、94dd660（目的別に3つに分けてコミット。f8f1e9e はフロントのコード・テスト、e2f5e6c は README、94dd660 は DESIGN と EDIT_LOG）
+- 戻し方: git revert 94dd660 e2f5e6c f8f1e9e
 - 注意点: 近似探索の注意（40番）は、「最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。」が1つの文で、途中で切ると文を書き換えることになるため、分けずにそのまま表示している（利用者の指示待ち）。キャンセルの通知は、client.ts の文を「計算をキャンセルしました。結果は表示しません。」にし、括弧の中の補足を ABORTED_DETAIL として「キャンセルについての説明」の中に原文のまま（括弧ごと）出す。指標の状態の文で、もとの「表示名を直すと、指標を表示します。」（表示名に誤りがあるとき）は、指示どおり「成績の入力が終わると、指標を表示します。」にまとめた。各行の読み上げの文（取っ手の名前など）には、指標の状態は含まれていなかった（各行の状態の文は画面の文だけだったので、削除した）。README は、画面と使い方の説明の4か所だけ「選手データ」に直し、API・ファイル・開発者向けの説明の「プリセット」は変えていない。参考文献の節は触っていない。Edge 156（ヘッドレス）で、幅 320・360・400・480・600・800・1200px のすべてで、横スクロールなし、「説明」のボタン13個の高さ 44px 以上（幅 400px 以下では、ボタンの文言が折り返して最大 61px になるものがある）・切れなし・はみ出しなし、結果の左右の行の上端と高さの差 0（説明をすべて開いたときも 0）、注意のない打順の行の高さが指標の出る前後で同じ（差 0）であることを実測した（注意のある行は、注意の文が加わる分だけ高くなる）。test 272件・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1342件が通った（backend は変更なし）
 
 ## 2026-10-24 19:06 段階9Bの追加修正：近似探索の注意（一覧の40番）を短い1文にし、元の文を「説明」のボタンの中へ
 - 依頼内容: 結果画面の末尾の近似探索の注意を「推奨打順は近似探索で求めたもので、最も期待得点が高いとは限りません。」にし、元の文を1文字も変えずに「推奨打順の探索についての説明」のボタンの中へ入れる
 - 変更ファイル: frontend/src/components/ResultSummary.tsx, frontend/src/texts.test.tsx, docs/DESIGN.md（0章「画面の文章と『説明』のボタン」に追記）, docs/EDIT_LOG.md
 - 変更理由: 段階9Bの記録（直前の記録）では、文の途中で分けると書き換えになるため分けずに指示を待っていた。利用者が表示する1文を決めたので、その文を表示し、元の文（「推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。」）は原文のままボタンの中に置いた。ボタンは表示する文の直後で、結果の左右の打順の欄の外
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: f8f1e9e、94dd660（2つに分けてコミット。f8f1e9e はフロントのコード・テスト、94dd660 は DESIGN と EDIT_LOG）
+- 戻し方: git revert 94dd660 f8f1e9e
 - 注意点: Edge 156（ヘッドレス）で、幅 320・400・800・1200px のすべてで、結果の左右の行の上端と高さの差が 0（説明をすべて開いたときも 0）、横スクロールなし、説明のボタン（このボタンを含めて14個）の切れ・はみ出しなしを実測した。test 272件・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1342件が通った（backend は変更なし）
 
 ## 2026-10-24 19:48 注意の文の時制を、計算の前にも後にも使える言い方にする
 - 依頼内容: 警告・注意の文で、計算が済んだかのような言い方（「行っています」など）を探し、計算の前にも後にも使える言い方に直す（段階9Bの追加修正2の作業2）
 - 変更ファイル: backend/app/schemas/batter.py, backend/tests/test_metrics_api.py, frontend/src/messages.test.ts, frontend/src/order.test.tsx, frontend/src/texts.test.tsx
 - 変更理由: 注意の文は stats_warning_items の1か所で作り、POST /batters/metrics（計算の前。warnings・warning_items）と POST /lineup/evaluate（計算の後。warnings）の両方で同じ文を返している（既存のテスト test_evaluate_and_metrics_return_the_same_warning_text で確認済み）。計算の前にも出るので、LOW_PA の「計算はそのまま行っています。」を「計算はそのまま行います。」に、PA_SUM_MISMATCH の「…正規化して計算しています。」を「…正規化して計算します。」にした（意味は同じ）。探した範囲（backend、frontend/src、schemas、docs、README、data/NOTICE）で、該当は この2つの文と、それを期待値に持つテストだけだった。schemas/batter_stats_validation_cases.json と docs には該当なし。フロントの画面の検証の文（「このままでも計算できますが…」）は、計算の前にも後にも使える言い方なので変えていない。データの出典の「打席数は…で計算しています」と NOTICE の「計算しました」は、選手データを作ったときの処理の説明で、注意の文ではないので対象外。注意の文に「ています」が無いことを確かめるテストを足した
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: git revert <ハッシュ>
+- コミット: c89d7fd、f8f1e9e（2つに分けてコミット。c89d7fd はバックエンドの文とそのテスト、f8f1e9e はフロントのテストの期待値）
+- 戻し方: git revert c89d7fd f8f1e9e
 - 注意点: 数値の計算は変えていない。baseline.py で、案A 16通りの差の最大 1.776e-15、案B（seed 固定）3件が完全一致、プリセットの確率の差 0 を確かめた。ruff（. と ../scripts）・mypy・pytest 1344件が通った。uvicorn を再起動し、POST /batters/metrics が新しい文を返すことを確かめた
 
 ## 2026-10-24 19:48 段階9Bの追加修正2：「説明」のボタンの見た目を小さくする
 - 依頼内容: 「説明」のボタンを、枠と地の無い、下線付きの小さな控えめの文字にする。押せる範囲は 44px 以上のまま
 - 変更ファイル: frontend/src/components/Disclosure.tsx, frontend/src/index.css, frontend/scripts/contrast.mjs, docs/DESIGN.md（0章「画面の文章と『説明』のボタン」に追記）, docs/EDIT_LOG.md
 - 変更理由: ボタンが目立ちすぎたため。文字は 0.85rem、色は --color-muted、下線は文言だけに付けた（▸ / ▾ はそのまま、下線なし）。押せる範囲は、ボタンそのものの高さ（min-height 44px）で確保し、文字を上下の中央に置いた（見えない余白。ボタンの外に広げる疑似要素は使っていないので、隣の部品と重ならない）。フォーカスの枠は、ほかの部品と同じ 3px の枠。contrast.mjs の「説明」のボタンの組み合わせを、新しい色（ページの地・結果の欄とバナーの地・注意の地の上の muted の文字）とフォーカスの枠（注意の地）に置き換えた
+- コミット: f8f1e9e、94dd660（2つに分けてコミット。f8f1e9e はフロントのコード、94dd660 は DESIGN と EDIT_LOG）
+- 戻し方: git revert 94dd660 f8f1e9e
+- 注意点: Edge 156（ヘッドレス）で、幅 320・400・800・1200px のすべてで、14個のボタンの押せる高さが 44px、見た目の高さ（文字の高さ）が 22px（1行）、切れ・はみ出しなし、ほかのボタン・入力欄との重なりなし、結果の左右の行の上端と高さの差 0（説明をすべて開いたときも 0）、横スクロールなしを実測した。「参考：シミュレーション」は、幅 400px 以下で 61px だった件は解消した（押せる高さ 44px）。ただし幅 320px では、狭い列の中で文言が2行に折り返す（見た目の高さ 44px、押せる高さ 44px）。キーボードで移ったとき、フォーカスの枠（3px）が見えることを、幅 400px の撮影で確かめた。test 272件・typecheck・lint・build・contrast が通った
+
+## 2026-10-24 20:29 成績の入力を、選手データを既定にする形に作り直す（カードの状態：未選択・選手データの要約／編集中・手入力）
+- 依頼内容: 各打者のカードを、初めは未選択（「選手を選ぶ」「手入力する」だけ）にし、選手データを読み込んだら要約、「編集する」で入力欄、「手入力する」で入力欄を出す形にする（段階9D）
+- 変更ファイル: frontend/src/state/lineup.ts, frontend/src/components/BatterCards.tsx, frontend/src/components/CopyControls.tsx, frontend/src/components/ErrorSummary.tsx, frontend/src/App.tsx, frontend/src/index.css, frontend/scripts/contrast.mjs, frontend/src/test/cards.tsx（新規）, frontend/src/cards.test.tsx（新規）, frontend/src/state/lineup.test.ts, frontend/src/App.test.tsx, frontend/src/copy.test.tsx, frontend/src/order.test.tsx, frontend/src/result.test.tsx, frontend/src/texts.test.tsx, frontend/src/tabs.test.tsx, frontend/src/preset.test.tsx, README.md（使い方の流れ、フロントエンドの説明）, docs/DESIGN.md（0章に「成績の入力のカード」）, docs/EDIT_LOG.md
+- 変更理由: 選手データから選ぶことを既定にし、入力欄が9人分並ぶ長い画面をやめるため。打者の枠（BatterSlot）に、カードの状態 mode（unselected・preset・manual）と editing（選手データの編集中か）を足した。API に送る値（成績の入力値と表示名）は、これまでと同じものから作る。要約の数値は POST /batters/metrics の値（今の成績に対する値）を使い、まだ無いときは、編集していなければ GET /presets の summary を使う（どちらも API の値）。未選択のまま計算したときは入力エラー（「選手を選ぶか、手入力してください。」）にし、最初のエラーのカードの「選手を選ぶ」へフォーカスを移す。コピーの操作と、コピー元・コピー先は、入力欄を出しているカード（手入力・編集中）と未選択のカードに限り、要約のカードは上書きしない。上書きの確認は、利用者が入力した値（手入力の値、選手データを編集した値）が消える場合だけ出す。カードの操作のボタンは 44px 以上で、読み上げ名に打者名を入れた。contrast.mjs にカードのボタン・見出し・要約の組み合わせを足した
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: git revert <ハッシュ>
-- 注意点: Edge 156（ヘッドレス）で、幅 320・400・800・1200px のすべてで、14個のボタンの押せる高さが 44px、見た目の高さ（文字の高さ）が 22px（1行）、切れ・はみ出しなし、ほかのボタン・入力欄との重なりなし、結果の左右の行の上端と高さの差 0（説明をすべて開いたときも 0）、横スクロールなしを実測した。「参考：シミュレーション」は、幅 400px 以下で 61px だった件は解消した（押せる高さ 44px）。ただし幅 320px では、狭い列の中で文言が2行に折り返す（見た目の高さ 44px、押せる高さ 44px）。キーボードで移ったとき、フォーカスの枠（3px）が見えることを、幅 400px の撮影で確かめた。test 272件・typecheck・lint・build・contrast が通った
+- 注意点: 初めの状態は、もともと9人とも空（サンプルの値は無かった）。既存のテストは、入力欄を使う前に「手入力する」を押す補助（src/test/cards.tsx）を使うように直し、選手データのテストは「編集する」を押してから入力欄を見るように直した（削ったテストはない）。「成績の入力」の「入力のしかたの説明」の中の文「MLB の選手の成績は「選手データから読み込む」で入れられます。」は、ボタンの文言が「選手を選ぶ」に変わったため、ボタンの名前と合わなくなっている（文章は変えないルールのため、変えていない。利用者に報告済み）。「この打者の成績を、ほかの全員にコピー」の文言も変えていないが、要約のカードはコピー先から除く。Edge 156（ヘッドレス）で、幅 320・360・400・480・600・800・1200px のすべてで、未選択9人・要約9人・手入力9人のいずれでも横スクロールなし、ボタンの切れなし、ボタンの高さ 44px を実測した。成績の入力のタブの高さは、未選択9人で 1418〜604px、要約9人で 3251〜1054px、手入力9人で 7613〜2600px（幅 320px〜1200px）。読み込んだあとフォーカスが「編集する」へ移ることも確かめた。test 293件・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1344件が通った（backend は変更なし）
+
+## 2026-10-24 20:38 段階9Dの追加修正：選手を選ぶダイアログの見出しと、コピーの文言
+- 依頼内容: 「入力のしかたの説明」のボタン名を「選手を選ぶ」に直し、ダイアログの見出しを「選手を選ぶ」に、コピーのボタンを「この打者の成績を、ほかの打者にコピー」にし、説明に「選手データを選んだ打者には、コピーされません。」を足す
+- 変更ファイル: frontend/src/App.tsx, frontend/src/components/PresetDialog.tsx, frontend/src/components/CopyControls.tsx, frontend/src/components/BatterCards.tsx（コメントのみ）, frontend/src/copy.test.tsx, frontend/src/preset.test.tsx, frontend/src/texts.test.tsx, README.md（フロントエンドの説明のコピーの部分）, docs/DESIGN.md（0章「成績の入力のカード」）, docs/EDIT_LOG.md
+- 変更理由: 段階9Dでボタンの文言が「選手を選ぶ」に変わり、説明の文とダイアログの見出しが合わなくなったため。ダイアログの名前は見出し（aria-labelledby）から付くので、見出しを変えるだけで読み上げ名も「選手を選ぶ」になる。開くボタンの見える文言「選手を選ぶ」・読み上げ名「打者Aの選手を選ぶ」と合う。コピーは要約のカードを除くため、ボタンの文言を「ほかの打者にコピー」にし、説明のコピーの文の直後に「選手データを選んだ打者には、コピーされません。」を足した。コピー後の通知（実際の人数）は変えていない
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: git revert <ハッシュ>
+- 注意点: 「選手データから読み込む」は、画面（文・aria-label・title）には残っていない（新しいテストで確認）。frontend/src に残るのは、そのことを確かめるテストの名前と期待値だけ。test 294件・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1344件が通った（backend は変更なし）
