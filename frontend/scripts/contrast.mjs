@@ -38,6 +38,11 @@ const PAIRS = [
   ['accent', 'bg', TEXT, '選んでいるタブの文字（ページの地）'],
   ['accent', 'bg', COMPONENT, '選んでいるタブの下線（ページの地との区別）'],
   ['border', 'bg', COMPONENT, 'タブの並びの下の線（ページの地との区別）'],
+  // 「説明」のボタンは、枠も地も無い、下線付きの控えめな色 (muted) の文字。置く場所の地の上に直接出る
+  ['muted', 'bg', TEXT, '「説明」のボタンの文字（ページの地）'],
+  ['muted', 'surface', TEXT, '「説明」のボタンの文字（結果の欄・バナーの地）'],
+  ['muted', 'warning-bg', TEXT, '「説明」のボタンの文字（注意の地）'],
+  ['accent', 'warning-bg', COMPONENT, 'フォーカスの枠（注意の地。「説明」のボタンなど）'],
 ]
 
 function readVariables(block) {

@@ -30,7 +30,7 @@ export default function PresetInfo({ preset, edited, disabled, onRevert }: Prese
   return (
     <div className="preset-info">
       <p className="preset-info-title">
-        <span className="preset-info-label">プリセット：</span>
+        <span className="preset-info-label">選手データ：</span>
         <strong>
           {preset.name}
           {edited && '（編集済み）'}
@@ -41,10 +41,7 @@ export default function PresetInfo({ preset, edited, disabled, onRevert }: Prese
         <p className="preset-info-moved">年間合計（複数球団）／{teamsPlayedLabel(preset.teams_played)}</p>
       )}
       {edited && (
-        <p className="preset-info-edited">
-          成績を編集したため、プリセットの値とは異なります
-          {reference && '（参考値は表示していません）'}。
-        </p>
+        <p className="preset-info-edited">成績を編集したため、選手データの値とは異なります。</p>
       )}
       {reference && !edited && (
         <p className="preset-info-reference">
@@ -59,7 +56,7 @@ export default function PresetInfo({ preset, edited, disabled, onRevert }: Prese
       )}
       {edited && (
         <button type="button" className="button-secondary" disabled={disabled} onClick={onRevert}>
-          プリセットの値に戻す
+          選手データの値に戻す
         </button>
       )}
     </div>

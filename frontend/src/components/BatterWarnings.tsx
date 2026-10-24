@@ -1,4 +1,6 @@
+import { warningButtonName } from '../messages'
 import type { MetricsState } from '../useBatterMetrics'
+import WarningText from './WarningText'
 
 interface BatterWarningsProps {
   /** 打順の順に並べた打者 (内部ID と表示名) */
@@ -32,8 +34,11 @@ export default function BatterWarnings({ entries, metrics }: BatterWarningsProps
       <ul>
         {lowPa.map((entry) => (
           <li key={entry.id}>
-            {entry.messages.map((message) => (
-              <p key={message}>{message}</p>
+            {entry.messages.map((message, index) => (
+              <div key={message} className="batter-warning">
+                {/* API の文の最初の1文を表示し、残りは「説明」のボタンの中へ (文は書き換えない) */}
+                <WarningText message={message} name={warningButtonName(entry.name, index, entry.messages.length)} />
+              </div>
             ))}
           </li>
         ))}

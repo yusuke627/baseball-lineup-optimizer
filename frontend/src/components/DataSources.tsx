@@ -1,3 +1,4 @@
+import Disclosure from './Disclosure'
 import { SourceLink } from './PresetInfo'
 
 /**
@@ -28,29 +29,51 @@ export const LAHMAN_SOURCE = {
   license: 'CC BY-SA 3.0',
 } as const
 
+/** 照合に使ったサイトの名前 (provider の末尾の括弧の補足を除いたもの。表示を短くするだけで、値は provider のまま) */
+function siteName(provider: string): string {
+  return provider.replace(/\s*\([^)]*\)$/, '')
+}
+
+const unique = (values: readonly string[]) => [...new Set(values)]
+
 /**
- * ページの一番下に常に出す「データの出典」欄。プリセットの成績の出典をまとめて示す
+ * ページの一番下に常に出す「データの出典」欄。選手データの成績の出典をまとめて示す
  * (カードごとには出さない)。参考値 (reference_metrics) の出典は、カードの参考値の横に出す。
+ * Lahman / SABR とライセンス名は常に表示し、詳しい内容 (照合済みの選手の名前・確認の内容・年・改変の説明) は、
+ * もとの文のまま「出典の説明」のボタンの中に出す。
  */
 export default function DataSources() {
+  const sites = unique(VERIFIED_SOURCES.map((source) => siteName(source.provider)))
+  const dates = unique(VERIFIED_SOURCES.map((source) => source.retrievedAt))
   return (
     <footer className="page-footer">
       <section aria-labelledby="data-sources-heading">
         <h2 id="data-sources-heading">データの出典</h2>
         <ul className="data-sources">
           <li>
-            プリセットの打撃成績（照合済みの2人を除く）：
+            選手データの打撃成績：
             <SourceLink url={LAHMAN_SOURCE.url}>{LAHMAN_SOURCE.provider}</SourceLink> / {LAHMAN_SOURCE.license}
-            。同じシーズンに複数の球団に在籍した選手は成績を合計し、打席数は AB+BB+HBP+SF+SH で計算しています。
-            第二出典との照合は一部のみ（未確認）。
           </li>
-          {VERIFIED_SOURCES.map((source) => (
-            <li key={source.player}>
-              {source.player}（{source.season}年）の打撃成績：
-              <SourceLink url={source.url}>{source.provider}</SourceLink>（取得日 {source.retrievedAt}）
-            </li>
-          ))}
+          <li>
+            一部の選手の打撃成績は、{sites.join('、')} で確認した値です（取得日 {dates.join('、')}）。
+          </li>
         </ul>
+        <Disclosure name="出典の説明">
+          <ul className="data-sources">
+            <li>
+              選手データの打撃成績（照合済みの2人を除く）：
+              <SourceLink url={LAHMAN_SOURCE.url}>{LAHMAN_SOURCE.provider}</SourceLink> / {LAHMAN_SOURCE.license}
+              。同じシーズンに複数の球団に在籍した選手は成績を合計し、打席数は AB+BB+HBP+SF+SH で計算しています。
+              第二出典との照合は一部のみ（未確認）。
+            </li>
+            {VERIFIED_SOURCES.map((source) => (
+              <li key={source.player}>
+                {source.player}（{source.season}年）の打撃成績：
+                <SourceLink url={source.url}>{source.provider}</SourceLink>（取得日 {source.retrievedAt}）
+              </li>
+            ))}
+          </ul>
+        </Disclosure>
       </section>
     </footer>
   )

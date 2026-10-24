@@ -19,11 +19,14 @@ const METRICS: BatterMetrics = {
   PA: 600, H: 150, HR: 15, SB: 10, CS: 3, AVG: 0.278, OBP: 0.336, SLG: 0.426, OPS: 0.762,
   BB_pct: 0.0667, SO_pct: 0.215, warnings: [], warning_items: [],
 }
-// 打席数が少ない打者の注意 (文は API が作る。ここではテスト用に同じ形の文を用意する)
-const LOW_PA_WARNING =
-  '打者C: 打席数(PA)=150 は少なめです（目安：200未満）。成績の標本が小さいため、確率の見積もりが実力からずれやすく、打順の結果も変わりやすくなります。計算はそのまま行っています。'
+// 打席数が少ない打者の注意 (文は API が作る。backend/app/schemas/batter.py の stats_warning_items と同じ文を用意する)
+const LOW_PA_FIRST = '打者C: 打席数(PA)=150 は少なめです（目安：200未満）。'
+const LOW_PA_REST = '成績の標本が小さいため、確率の見積もりが実力からずれやすく、打順の結果も変わりやすくなります。計算はそのまま行います。'
+const LOW_PA_WARNING = LOW_PA_FIRST + LOW_PA_REST
 // 打席数と内訳が合わない打者の注意 (「打席数が少ない打者」の一覧には出さない)
-const MISMATCH_WARNING = '打者E: 打席数(PA)=610 が、打数+四球+死球+犠飛+犠打の合計=600 と一致しません。'
+const MISMATCH_FIRST = '打者E: 打席数(PA)=610 が、打数+四球+死球+犠飛+犠打の合計=600 と一致しません。'
+const MISMATCH_REST = '入力値はそのまま使い、イベント確率は合計が1になるよう正規化して計算します。'
+const MISMATCH_WARNING = MISMATCH_FIRST + MISMATCH_REST
 
 function metricsFor(id: string): BatterMetrics {
   if (id === 'b3') {
@@ -237,41 +240,101 @@ describe('打者ごとの指標と注意', () => {
     expect(lists[2]).toHaveTextContent('OPSOPS —')
   })
 
-  test('各打者の行には、すべての注意を出す', async () => {
+  test('各打者の行には、すべての注意を出す（最初の1文を表示し、残りは原文のまま「説明」のボタンの中）', async () => {
+    const user = userEvent.setup()
     render(<App />)
     fillAll()
     await metricLists()
     const rows = [...orderRegion().querySelectorAll('.order-row')] as HTMLElement[]
-    expect(within(rows[2]).getByText(LOW_PA_WARNING)).toBeInTheDocument()
-    expect(within(rows[4]).getByText(MISMATCH_WARNING)).toBeInTheDocument()
+    for (const [row, batter, first, rest] of [
+      [rows[2], '打者C', LOW_PA_FIRST, LOW_PA_REST],
+      [rows[4], '打者E', MISMATCH_FIRST, MISMATCH_REST],
+    ] as const) {
+      const item = row.querySelector('.order-warnings li') as HTMLElement
+      expect(item).toHaveTextContent(`注意：${first}`)
+      const toggle = within(row).getByRole('button', { name: `${batter}の注意の説明` })
+      const body = document.getElementById(toggle.getAttribute('aria-controls') as string) as HTMLElement
+      expect(body).not.toBeVisible()
+      await user.click(toggle)
+      expect(body).toBeVisible()
+      expect(body).toHaveTextContent(rest)
+    }
     expect(within(rows[0]).queryByText(/注意：/)).not.toBeInTheDocument()
   })
 
   test('計算と結果の上には、種類が LOW_PA の注意がある打者だけを「打席数が少ない打者」として出す', async () => {
+    const user = userEvent.setup()
     render(<App />)
     fillAll()
     showTab('計算と結果')
     const summary = await screen.findByRole('region', { name: '打席数が少ない打者（1人）' })
-    expect(within(summary).getByText(LOW_PA_WARNING)).toBeInTheDocument()
+    expect(summary).toHaveTextContent(LOW_PA_FIRST)
+    const toggle = within(summary).getByRole('button', { name: '打者Cの注意の説明' })
+    await user.click(toggle)
+    expect(document.getElementById(toggle.getAttribute('aria-controls') as string)).toHaveTextContent(LOW_PA_REST)
     // 打席数と内訳が合わない注意 (PA_SUM_MISMATCH) は、この一覧には出さない
-    expect(within(summary).queryByText(MISMATCH_WARNING)).not.toBeInTheDocument()
+    expect(summary).not.toHaveTextContent(MISMATCH_FIRST)
 
     // 一覧は「計算と結果」の見出しより前にある
     const resultHeading = screen.getByRole('heading', { name: '3計算と結果' })
     expect(summary.compareDocumentPosition(resultHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  test('成績がそろうまでは API を呼ばず、その旨を出す', async () => {
+  test('成績がそろうまでは API を呼ばず、その旨を打順の一覧の上に1回だけ出す（各行には出さない）', async () => {
     render(<App />)
-    expect(within(orderRegion()).getAllByText('成績の入力がそろい、誤りがなくなると、指標を表示します。')).toHaveLength(9)
+    // 一覧の領域には、並べ替えの通知など、ほかの role="status" もあるので、クラスで探す
+    const status = orderRegion().querySelector('.order-status') as HTMLElement
+    expect(status).toHaveAttribute('role', 'status')
+    expect(within(orderRegion()).getAllByText('成績の入力が終わると、指標を表示します。')).toHaveLength(1)
+    expect(status).toHaveTextContent('成績の入力が終わると、指標を表示します。')
+    // 一覧の上 (ol より前) にある
+    expect(status.compareDocumentPosition(orderRegion().querySelector('ol') as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    for (const row of orderRegion().querySelectorAll('.order-row')) {
+      expect(row).not.toHaveTextContent('指標を表示します')
+    }
     await new Promise((resolve) => setTimeout(resolve, 400))
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/batters/metrics')).toBe(false)
   })
 
-  test('表示名が重複している間は、注意の文に正しい名前を出せないので、API を呼ばない', async () => {
+  test('表示名が重複している間は、注意の文に正しい名前を出せないので、API を呼ばない（一覧の上に同じ案内を出す）', async () => {
     render(<App />)
     fillAll()
     fireEvent.change(screen.getByLabelText('打者Bの表示名'), { target: { value: '打者A' } })
-    expect(within(orderRegion()).getAllByText('表示名を直すと、指標を表示します。').length).toBeGreaterThan(0)
+    expect(orderRegion().querySelector('.order-status')).toHaveTextContent('成績の入力が終わると、指標を表示します。')
+  })
+
+  test('指標がそろうと状態の文は消える。読み込み中は画面には出さず、読み上げ用の文だけを置く', async () => {
+    render(<App />)
+    fillAll()
+    const status = orderRegion().querySelector('.order-status') as HTMLElement
+    expect(status).toHaveAttribute('role', 'status')
+    // 読み込み中 (入力から API の応答まで)
+    expect(status.querySelector('.visually-hidden')).toHaveTextContent('指標を読み込んでいます…')
+    await metricLists()
+    expect(status).toBeEmptyDOMElement()
+  })
+
+  test('指標が出る前の行にも、見えない仮の一覧を置く（指標が出る前後で行の高さを変えないため）', async () => {
+    render(<App />)
+    const placeholders = orderRegion().querySelectorAll('.order-metrics-placeholder')
+    expect(placeholders).toHaveLength(9)
+    for (const placeholder of placeholders) {
+      expect(placeholder).toHaveAttribute('aria-hidden', 'true')
+      expect(placeholder.querySelectorAll('li')).toHaveLength(10)
+    }
+    // 読み上げの対象になる「指標」の一覧は、まだ無い
+    expect(within(orderRegion()).queryAllByRole('list', { name: '指標' })).toHaveLength(0)
+  })
+
+  test('指標を読み込めなかったときは、一覧の上に1回だけ知らせる', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url === '/api/batters/metrics' ? new Response('', { status: 500 }) : json({}, 404),
+    )
+    render(<App />)
+    fillAll()
+    await waitFor(() =>
+      expect(orderRegion().querySelector('.order-status')).toHaveTextContent('指標を読み込めませんでした。'),
+    )
+    expect(within(orderRegion()).getAllByText('指標を読み込めませんでした。')).toHaveLength(1)
   })
 })

@@ -16,7 +16,7 @@ interface PresetDialogProps {
 
 type Load<T> = { status: 'idle' } | { status: 'loading' } | { status: 'done'; data: T } | { status: 'error'; message: string }
 
-const FALLBACK_ERROR = 'プリセットを読み込めませんでした。時間をおいて、もう一度お試しください。'
+const FALLBACK_ERROR = '選手データを読み込めませんでした。時間をおいて、もう一度お試しください。'
 const DIVISIONS: Division[] = ['E', 'C', 'W']
 
 function errorMessage(error: unknown): string | null {
@@ -199,7 +199,7 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
     >
       <div className="preset-dialog-header">
         <div>
-          <h2 id={titleId}>プリセットから読み込む</h2>
+          <h2 id={titleId}>選手データから読み込む</h2>
           <p className="note">読み込み先：{targetName}</p>
         </div>
         <button type="button" className="button-secondary" onClick={onClose}>

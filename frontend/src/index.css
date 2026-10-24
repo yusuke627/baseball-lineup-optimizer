@@ -743,6 +743,20 @@ ul.order-metrics abbr {
   text-decoration: none;
 }
 
+/* 指標がまだ無い行の、見えない仮の一覧 (指標が出る前後で行の高さを変えないため) */
+.order-metrics-placeholder {
+  visibility: hidden;
+}
+
+/* 指標の状態の文 (打順の一覧の上に1回だけ出す) */
+.order-status {
+  margin: 0 0 var(--space-2);
+}
+
+.order-status:empty {
+  margin: 0;
+}
+
 .order-reference {
   font-size: 0.8rem;
   color: var(--color-muted);
@@ -810,6 +824,15 @@ ul.order-metrics abbr {
 
 .batter-warnings p {
   margin: 0 0 var(--space-1);
+}
+
+.batter-warning {
+  margin-bottom: var(--space-2);
+}
+
+/* 非効率% の欄の下の「説明」のボタン (欄との間を詰め、下の打順の一覧との間を空ける) */
+.inefficiency-disclosure {
+  margin: calc(var(--space-3) * -1) 0 var(--space-2);
 }
 
 .run-controls {
@@ -1186,31 +1209,62 @@ button:disabled {
   text-decoration: none;
 }
 
-/* 入力打順の下の、たたんだシミュレーションの欄 */
-.simulation {
-  margin-top: var(--space-3);
+/*
+ * その場で開閉する「説明」のボタン (Disclosure)。中身はボタンの直後に広がる。
+ * 見た目は、枠も地も無い、下線付きの小さな控えめの文字 (リンクのような見た目)。
+ * 押せる範囲は、ボタンそのものの高さ (44px 以上) で確保し、文字は上下の中央に置く
+ * (見えない余白。ボタンの外には広げないので、隣の部品と重ならない)。
+ * 結果の左右の打順の行 (行をそろえている仕組み) の中には置かない
+ */
+.disclosure {
+  margin: 0;
 }
 
-.simulation-toggle {
+.disclosure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   max-width: 100%;
-  padding: var(--space-1) var(--space-2);
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: normal;
   text-align: left;
 }
 
-.simulation-body {
+/* 下線は文言だけに付ける (▸ / ▾ には付けない) */
+.disclosure-label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.disclosure-toggle:hover {
+  color: var(--color-text);
+}
+
+.disclosure-body {
   display: grid;
   gap: var(--space-1);
-  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
   font-size: 0.9rem;
 }
 
-.simulation-body[hidden] {
+.disclosure-body[hidden] {
   display: none;
 }
 
-.simulation-body p {
+.disclosure-body p {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+/* 入力打順の下の、たたんだシミュレーションの欄 */
+.simulation {
+  margin-top: var(--space-3);
 }
 
 .note {

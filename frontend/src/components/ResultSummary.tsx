@@ -1,8 +1,11 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
 import type { BatterMetrics, LineupEvaluationResponse, MonteCarloSummary } from '../api/types'
 import { formatRate, shortDisplayName } from '../format'
+import { warningButtonName } from '../messages'
 import type { MetricsState } from '../useBatterMetrics'
+import Disclosure from './Disclosure'
+import WarningText from './WarningText'
 
 // 表示する数値はすべて API が返した値。ここでは桁をそろえるだけで、計算はしない。
 function formatRuns(value: number): string {
@@ -39,16 +42,29 @@ interface ResultSummaryProps {
   /** 選んでいる試合数 (totals_by_games の n_games のどれか) */
   games: number
   onGamesChange: (games: number) => void
+  /** 同じタブにすでに出ている注意の文 (「打席数が少ない打者」の一覧)。「計算時の注意」には重ねて出さない */
+  shownWarnings: string[]
 }
 
 /**
  * 計算の結果。入力打順と推奨打順を、画面の幅にかかわらず左右に並べる (HTML の順番でも入力打順が先)。
  * 期待得点・試合数ごとの合計・非効率%・損失点は API の値をそのまま出す (フロントでは掛け算・引き算などの計算をしない)。
  */
-export default function ResultSummary({ result, names, metrics, games, onGamesChange }: ResultSummaryProps) {
+export default function ResultSummary({ result, names, metrics, games, onGamesChange, shownWarnings }: ResultSummaryProps) {
   const gamesName = useId()
   const total = result.totals_by_games.find((entry) => entry.n_games === games)
   const metricsById = metrics.status === 'done' ? metrics.batters : {}
+  // 同じタブの「打席数が少ない打者」に、すでに同じ文が出ていれば、ここでは重ねて出さない
+  const warnings = result.warnings.filter((warning) => !shownWarnings.includes(warning))
+  // API の注意の文は「(打者名): …」で始まる。説明のボタンの名前に打者名を入れる (分からなければ番号で区別する)
+  const warningName = (warning: string, index: number) => {
+    const batter = Object.values(names).find((name) => warning.startsWith(`${name}: `))
+    if (batter === undefined) {
+      return `計算時の注意の説明（${index + 1}件目）`
+    }
+    const sameBatter = warnings.filter((other) => other.startsWith(`${batter}: `))
+    return warningButtonName(batter, sameBatter.indexOf(warning), sameBatter.length)
+  }
 
   return (
     <section aria-labelledby="result-heading" className="result">
@@ -70,7 +86,9 @@ export default function ResultSummary({ result, names, metrics, games, onGamesCh
             </label>
           ))}
         </div>
-        <p className="note">試合数のみの切替で、確率はMLBデータ・文献値のままです（合計は、サーバーが1試合あたりの期待得点に試合数を掛けた値です）。</p>
+        <Disclosure name="試合数の切替についての説明">
+          <p className="note">試合数のみの切替で、確率はMLBデータ・文献値のままです（合計は、サーバーが1試合あたりの期待得点に試合数を掛けた値です）。</p>
+        </Disclosure>
       </fieldset>
 
       {/* 非効率% と損失点は、2つの打順の期待得点の近く (一覧より上) に目立たせて出す */}
@@ -88,8 +106,10 @@ export default function ResultSummary({ result, names, metrics, games, onGamesCh
             </>
           )}
         </p>
-        <p className="note">推奨打順の1試合あたりの期待得点に対して、入力打順の期待得点が少ない割合です。</p>
       </div>
+      <Disclosure name="非効率%の説明" className="inefficiency-disclosure">
+        <p className="note">推奨打順の1試合あたりの期待得点に対して、入力打順の期待得点が少ない割合です。</p>
+      </Disclosure>
 
       <div className="result-columns">
         <OrderColumn
@@ -115,20 +135,27 @@ export default function ResultSummary({ result, names, metrics, games, onGamesCh
         />
       </div>
 
-      {result.warnings.length > 0 && (
+      {warnings.length > 0 && (
         <div className="banner banner-warning" role="status">
-          <strong>計算時の注意（サーバーからのメッセージ）</strong>
+          <strong>計算時の注意</strong>
           <ul>
-            {result.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+            {warnings.map((warning, index) => (
+              <li key={warning}>
+                {/* API の文の最初の1文を表示し、残りは「説明」のボタンの中へ (文は書き換えない) */}
+                <WarningText message={warning} name={warningName(warning, index)} />
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      <p className="note">
-        推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。
-      </p>
+      <p className="note">推奨打順は近似探索で求めたもので、最も期待得点が高いとは限りません。</p>
+      {/* 元の文は、1文字も変えずにボタンの中へ (結果の行の外、表示する文の直後) */}
+      <Disclosure name="推奨打順の探索についての説明">
+        <p className="note">
+          推奨打順は、期待得点が高くなる打順を近似探索で求めたものです。最も期待得点が高い打順とは限らず、実行のたびに変わることがあります。
+        </p>
+      </Disclosure>
     </section>
   )
 }
@@ -242,31 +269,18 @@ function ResultName({ name }: { name: string }) {
   )
 }
 
-/** 入力打順を案B (モンテカルロ法) で評価した参考値。初期は閉じておき、平均と標準偏差だけを出す */
+/** 入力打順を案B (モンテカルロ法) で評価した参考値。初期は閉じておき、平均と標準偏差だけを出す (開閉は共通の Disclosure) */
 function SimulationPanel({ summary }: { summary: MonteCarloSummary }) {
-  const [open, setOpen] = useState(false)
-  const bodyId = useId()
   return (
-    <div className="simulation">
-      <button
-        type="button"
-        className="button-secondary simulation-toggle"
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span aria-hidden="true">{open ? '▾' : '▸'}</span> 参考：シミュレーション
-      </button>
-      <div id={bodyId} className="simulation-body" hidden={!open}>
-        <p>この欄は入力打順だけの値です（推奨打順のシミュレーションは行っていません）。</p>
-        <p className="simulation-value">
-          {summary.n_trials}試合の1試合あたりの得点：平均 <span className="number">{formatRuns(summary.mean)}</span>、標準偏差{' '}
-          <span className="number">{formatRuns(summary.std)}</span>
-        </p>
-        <p className="note">
-          乱数を使うため、計算のたびに少し変わります。上の期待得点（厳密な計算）とほぼ一致するかを確かめる参考値です。
-        </p>
-      </div>
-    </div>
+    <Disclosure label="参考：シミュレーション" className="simulation">
+      <p>この欄は入力打順だけの値です（推奨打順のシミュレーションは行っていません）。</p>
+      <p className="simulation-value">
+        {summary.n_trials}試合の1試合あたりの得点：平均 <span className="number">{formatRuns(summary.mean)}</span>、標準偏差{' '}
+        <span className="number">{formatRuns(summary.std)}</span>
+      </p>
+      <p className="note">
+        乱数を使うため、計算のたびに少し変わります。上の期待得点（厳密な計算）とほぼ一致するかを確かめる参考値です。
+      </p>
+    </Disclosure>
   )
 }

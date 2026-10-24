@@ -203,4 +203,22 @@ describe('切り替えても状態が残る', () => {
     expect(within(result).getByRole('radio', { name: '162試合' })).toBeChecked()
     expect(within(result).getByRole('button', { name: '参考：シミュレーション' })).toHaveAttribute('aria-expanded', 'true')
   })
+
+  test('「説明」のボタンの開閉も、タブを行き来しても残る', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const howToInput = screen.getByRole('button', { name: '入力のしかたの説明' })
+    await user.click(howToInput)
+    showTab('打順')
+    const howToOrder = screen.getByRole('button', { name: '並べ替えのしかたの説明' })
+    expect(howToOrder).toHaveAttribute('aria-expanded', 'false')
+    await user.click(howToOrder)
+
+    showTab('計算と結果')
+    showTab('成績の入力')
+    expect(howToInput).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById(howToInput.getAttribute('aria-controls') as string)).toBeVisible()
+    showTab('打順')
+    expect(howToOrder).toHaveAttribute('aria-expanded', 'true')
+  })
 })

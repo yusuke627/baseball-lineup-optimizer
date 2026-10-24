@@ -117,8 +117,8 @@ function input(name: string, key: StatKey): HTMLInputElement {
   return screen.getByLabelText(`${name} ${STAT_LABELS[key]}(${key})`)
 }
 const card = (name: string) => screen.getByRole('region', { name })
-const openButton = (name: string) => screen.getByRole('button', { name: `${name}：プリセットから読み込む` })
-const dialog = () => screen.getByRole('dialog', { name: 'プリセットから読み込む' })
+const openButton = (name: string) => screen.getByRole('button', { name: `${name}：選手データから読み込む` })
+const dialog = () => screen.getByRole('dialog', { name: '選手データから読み込む' })
 const teamButton = (team: string) =>
   within(dialog()).findByRole('button', { name: new RegExp(`^${team} \\([A-Z]+\\)\\d+人$`) })
 
@@ -348,14 +348,14 @@ describe('カードへの読み込み', () => {
       expect(input('Test Alpha', key)).toHaveValue(String(value))
     }
     const c = card('Test Alpha')
-    expect(within(c).getByText(/プリセット：/).closest('p')).toHaveTextContent(
-      'プリセット：Test Alpha（2025年、Test Team A (XAA)）',
+    expect(within(c).getByText(/選手データ：/).closest('p')).toHaveTextContent(
+      '選手データ：Test Alpha（2025年、Test Team A (XAA)）',
     )
     // 成績の出典はカードごとには出さず、ページの一番下の「データの出典」欄にまとめる
     expect(within(c).queryByText(/出典/)).not.toBeInTheDocument()
     expect(within(c).queryByText(/照合は一部のみ/)).not.toBeInTheDocument()
     expect(within(c).queryByRole('link')).not.toBeInTheDocument()
-    expect(within(c).getByRole('status')).toHaveTextContent('プリセット「Test Alpha」を読み込みました。')
+    expect(within(c).getByRole('status')).toHaveTextContent('選手データ「Test Alpha」を読み込みました。')
   })
 
   test('「データの出典」欄は、プリセットを読み込む前からページの一番下に常にある', async () => {
@@ -380,7 +380,7 @@ describe('カードへの読み込み', () => {
     expect(screen.queryByText(/表示名がほかの打者と重複しています/)).not.toBeInTheDocument()
   })
 
-  test('編集すると「（編集済み）」を出して参考値を隠し、「プリセットの値に戻す」で元に戻る', async () => {
+  test('編集すると「（編集済み）」を出して参考値を隠し、「選手データの値に戻す」で元に戻る', async () => {
     const user = userEvent.setup()
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team B', 'Test Verified')
@@ -391,11 +391,11 @@ describe('カードへの読み込み', () => {
     expect(within(c()).queryByText(/編集済み/)).not.toBeInTheDocument()
 
     fireEvent.change(input('Test Verified', 'HR'), { target: { value: '16' } })
-    expect(within(c()).getByText(/プリセット：/).closest('p')).toHaveTextContent('Test Verified（編集済み）')
+    expect(within(c()).getByText(/選手データ：/).closest('p')).toHaveTextContent('Test Verified（編集済み）')
     expect(within(c()).queryByText(/参考値（モデルの計算には使っていません）/)).not.toBeInTheDocument()
     expect(screen.getByLabelText('打者Aの表示名')).toHaveValue('Test Verified') // 表示名は書き換えない
 
-    await user.click(within(c()).getByRole('button', { name: 'プリセットの値に戻す' }))
+    await user.click(within(c()).getByRole('button', { name: '選手データの値に戻す' }))
     expect(input('Test Verified', 'HR')).toHaveValue('15')
     expect(within(c()).queryByText(/編集済み/)).not.toBeInTheDocument()
     expect(within(c()).getByText(/参考値（モデルの計算には使っていません）/)).toBeInTheDocument()
@@ -419,9 +419,37 @@ describe('カードへの読み込み', () => {
     await user.click(screen.getByRole('button', { name: '打者B：コピーする' }))
 
     expect(input('打者B', 'HR')).toHaveValue('15')
-    expect(within(card('打者B')).queryByText(/プリセット：/)).not.toBeInTheDocument()
+    expect(within(card('打者B')).queryByText(/選手データ：/)).not.toBeInTheDocument()
     expect(within(card('打者B')).queryByText(/出典：/)).not.toBeInTheDocument()
     expect(within(card('打者B')).queryByText(/参考値/)).not.toBeInTheDocument()
+  })
+
+  test('画面とダイアログには「プリセット」という言葉を出さない（「選手データ」と呼ぶ）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    /** 画面の文と、読み上げに使う属性 (aria-label・title) に「プリセット」が無いか。隠れたタブのパネルも含めて調べる */
+    const wordsOnScreen = () =>
+      [
+        document.body.textContent ?? '',
+        ...[...document.querySelectorAll('[aria-label], [title]')].flatMap((el) => [
+          el.getAttribute('aria-label') ?? '',
+          el.getAttribute('title') ?? '',
+        ]),
+      ].join('\n')
+    expect(wordsOnScreen()).not.toMatch(/プリセット/)
+
+    // ダイアログを開き、球団の選手を出したところ
+    await openAndChooseTeam(user, '打者A', 'Test Team B')
+    await loadButton('Test Verified', '打者A')
+    expect(within(dialog()).getByRole('heading', { name: '選手データから読み込む' })).toBeInTheDocument()
+    expect(wordsOnScreen()).not.toMatch(/プリセット/)
+
+    // 読み込んだあと (カードの上の情報・通知) と、編集したあと
+    await user.click(await loadButton('Test Verified', '打者A'))
+    expect(card('Test Verified')).toHaveTextContent('選手データ：Test Verified')
+    fireEvent.change(input('Test Verified', 'HR'), { target: { value: '16' } })
+    expect(card('Test Verified')).toHaveTextContent('選手データの値とは異なります')
+    expect(wordsOnScreen()).not.toMatch(/プリセット/)
   })
 
   test('読み込んだ選手の名前が、打順の欄の表示名になる', async () => {

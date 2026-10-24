@@ -1,6 +1,7 @@
 import { memo, useCallback, useState } from 'react'
 
 import type { Preset, StatKey } from '../api/types'
+import { warningButtonName } from '../messages'
 import { uniqueDisplayName, type NameIssue } from '../names'
 import {
   displayName,
@@ -14,6 +15,7 @@ import { parseAndValidate, STAT_LABELS, type ValidationIssue } from '../validati
 import CopyControls, { presetButtonId, type PendingCopy } from './CopyControls'
 import PresetDialog from './PresetDialog'
 import PresetInfo from './PresetInfo'
+import WarningText from './WarningText'
 
 /**
  * コピーの操作の状態。確認と通知は、操作したカード (cardId) の中に出す。
@@ -143,7 +145,7 @@ export default function BatterCards({
     const others = slots.filter((slot) => slot.id !== slotId).map(displayName)
     const name = uniqueDisplayName(preset.name, others)
     onLoadPreset(slotId, preset, name)
-    setCopy({ notice: { cardId: slotId, text: `プリセット「${preset.name}」を読み込みました。` } })
+    setCopy({ notice: { cardId: slotId, text: `選手データ「${preset.name}」を読み込みました。` } })
   }
 
   /** ダイアログで選んだプリセットを読み込む (上書きの確認は、ダイアログの中で済んでいる) */
@@ -173,7 +175,7 @@ export default function BatterCards({
 
   function revertPreset(slotId: string) {
     onRevertPreset(slotId)
-    setCopy({ notice: { cardId: slotId, text: 'プリセットの値に戻しました。' } })
+    setCopy({ notice: { cardId: slotId, text: '選手データの値に戻しました。' } })
   }
 
   function pendingFor(slotId: string): PendingCopy | undefined {
@@ -198,12 +200,12 @@ export default function BatterCards({
               type="button"
               id={presetButtonId(slot.id)}
               className="button-secondary"
-              aria-label={`${displayName(slot)}：プリセットから読み込む`}
+              aria-label={`${displayName(slot)}：選手データから読み込む`}
               aria-haspopup="dialog"
               disabled={disabled}
               onClick={() => setPresetTarget(slot.id)}
             >
-              プリセットから読み込む
+              選手データから読み込む
             </button>
             {slot.preset && (
               <PresetInfo
@@ -368,10 +370,11 @@ const BatterFields = memo(function BatterFields({
               {name}の{issue.message}
             </li>
           ))}
-          {warnings.map((issue) => (
+          {warnings.map((issue, index) => (
             <li key={issue.rule} className="message-warning">
               <span className="message-kind">注意：</span>
-              {name}の{issue.message}
+              {/* 最初の1文を表示し、残りは「説明」のボタンの中へ */}
+              <WarningText message={`${name}の${issue.message}`} name={warningButtonName(name, index, warnings.length)} />
             </li>
           ))}
         </ul>

@@ -8,9 +8,11 @@ import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './compon
 import BatterCards from './components/BatterCards'
 import BatterWarnings from './components/BatterWarnings'
 import DataSources from './components/DataSources'
+import Disclosure from './components/Disclosure'
 import OrderList, { type OrderEntry } from './components/OrderList'
 import ResultSummary from './components/ResultSummary'
 import StepTabs, { focusTab } from './components/StepTabs'
+import { lowPaMessages } from './messages'
 import { findNameIssues } from './names'
 import { createInitialLineup, displayName, isPresetEdited, lineupReducer } from './state/lineup'
 import { useBatterMetrics } from './useBatterMetrics'
@@ -185,9 +187,13 @@ export default function App() {
         <h2 id="input-heading">
           <span className="step-number">1</span>成績の入力
         </h2>
-        <p>
-          各打者のシーズン成績（カウント）を入力してください。犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「プリセットから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
-        </p>
+        <p>選手の成績を入力してください。</p>
+        <Disclosure name="入力のしかたの説明">
+          <p>成績は、率ではなく回数（カウント）で入力します。</p>
+          <p>
+            犠打だけは空欄にできます（0として扱います）。打者の表示名は変えられます（40文字まで）。MLB の選手の成績は「選手データから読み込む」で入れられます。入力した成績は、ほかの打者にコピーできます。
+          </p>
+        </Disclosure>
         <BatterCards
           slots={lineup.slots}
           nameIssues={nameIssues}
@@ -212,9 +218,12 @@ export default function App() {
         <h2 id="order-heading">
           <span className="step-number">2</span>打順
         </h2>
-        <p>
-          上から1番〜9番の順で計算します。取っ手（⋮⋮）のドラッグ、「上へ」「下へ」、移動先の番号で並べ替えられます。各打者の指標はサーバーが計算した値です。
-        </p>
+        <p>選んだ選手を、打順に並べ替えてください。</p>
+        <Disclosure name="並べ替えのしかたの説明">
+          <p>
+            上から1番〜9番の順で計算します。取っ手（⋮⋮）のドラッグ、「上へ」「下へ」、移動先の番号で並べ替えられます。各打者の指標はサーバーが計算した値です。
+          </p>
+        </Disclosure>
         <OrderList entries={orderEntries} metrics={metrics} disabled={isRunning} onMove={handleMove} />
       </section>
       <NextStepButton label="次へ（計算と結果を見る）" onClick={() => goToStep('run')} />
@@ -242,12 +251,12 @@ export default function App() {
         </div>
         {isRunning && (
           <p role="status" className="note">
-            計算中です。入力打順の評価と、推奨打順の探索を行っています（数秒かかります）。
+            計算中です（数秒かかります）。
           </p>
         )}
         {run.status === 'idle' && run.cleared && (
           <p className="note result-cleared" role="status">
-            計算したあとに成績・表示名・打順が変わったため、前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。
+            成績・表示名・打順が変わったため、前の計算結果は消しました。もう一度「期待得点を計算する」を押してください。
           </p>
         )}
         {run.status === 'invalid' && <ErrorSummary summaries={run.summaries} onJump={jumpToField} />}
@@ -259,6 +268,7 @@ export default function App() {
             metrics={metrics}
             games={games}
             onGamesChange={setGames}
+            shownWarnings={lowPaMessages(orderEntries, metrics)}
           />
         )}
       </section>
@@ -271,7 +281,7 @@ export default function App() {
         <header className="page-header">
           <h1>打順の得点期待値</h1>
           <p>
-            9人の打者の成績から、入力打順と推奨打順の期待得点を計算して比べます。
+            打順の期待得点を比べます。
           </p>
         </header>
 

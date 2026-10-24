@@ -1,4 +1,5 @@
-import type { ApiErrorKind } from '../api/client'
+import { ABORTED_DETAIL, type ApiErrorKind } from '../api/client'
+import Disclosure from './Disclosure'
 
 export interface DisplayError {
   kind: ApiErrorKind
@@ -22,6 +23,11 @@ export default function ErrorBanner({ error }: { error: DisplayError }) {
     >
       <strong>{TITLES[error.kind]}：</strong>
       {error.message}
+      {isCancel && (
+        <Disclosure name="キャンセルについての説明">
+          <p>{ABORTED_DETAIL}</p>
+        </Disclosure>
+      )}
     </div>
   )
 }

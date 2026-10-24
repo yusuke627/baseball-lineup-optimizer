@@ -19,7 +19,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { BatterMetrics, Preset } from '../api/types'
 import { formatRate, formatShare } from '../format'
+import { warningButtonName } from '../messages'
 import type { MetricsState } from '../useBatterMetrics'
+import WarningText from './WarningText'
 
 export interface OrderEntry {
   id: string
@@ -106,6 +108,7 @@ export default function OrderList({ entries, metrics, disabled, onMove }: OrderL
 
   return (
     <>
+      <MetricsStatus metrics={metrics} entries={entries} />
       {/* 取っ手の操作の説明は、dnd-kit が読み上げ用の要素に出し、取っ手の aria-describedby で関連づける */}
       <DndContext
         sensors={sensors}
@@ -122,7 +125,6 @@ export default function OrderList({ entries, metrics, disabled, onMove }: OrderL
                 index={index}
                 count={entries.length}
                 metrics={metrics.status === 'done' ? metrics.batters[entry.id] : undefined}
-                metricsStatus={metrics.status}
                 disabled={disabled}
                 onMove={move}
               />
@@ -143,12 +145,11 @@ interface OrderRowProps {
   index: number
   count: number
   metrics: BatterMetrics | undefined
-  metricsStatus: MetricsState['status']
   disabled: boolean
   onMove: (from: number, to: number, control: FocusTarget['control']) => void
 }
 
-function OrderRow({ entry, index, count, metrics, metricsStatus, disabled, onMove }: OrderRowProps) {
+function OrderRow({ entry, index, count, metrics, disabled, onMove }: OrderRowProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
     disabled,
@@ -187,7 +188,7 @@ function OrderRow({ entry, index, count, metrics, metricsStatus, disabled, onMov
       </div>
 
       <div className="order-row-details">
-        <MetricsLine metrics={metrics} status={metricsStatus} />
+        <MetricsLine metrics={metrics} />
         {reference && (
           <p className="order-reference">
             参考値（モデルの計算には使っていません）：
@@ -198,10 +199,14 @@ function OrderRow({ entry, index, count, metrics, metricsStatus, disabled, onMov
         )}
         {metrics && metrics.warnings.length > 0 && (
           <ul className="order-warnings">
-            {metrics.warnings.map((warning) => (
+            {metrics.warnings.map((warning, warningIndex) => (
               <li key={warning} className="message-warning">
                 <span className="message-kind">注意：</span>
-                {warning}
+                {/* API の文の最初の1文を表示し、残りは「説明」のボタンの中へ (文は書き換えない) */}
+                <WarningText
+                  message={warning}
+                  name={warningButtonName(entry.name, warningIndex, metrics.warnings.length)}
+                />
               </li>
             ))}
           </ul>
@@ -283,7 +288,15 @@ const METRIC_COLUMNS: { label: string; spoken: string; value: (m: BatterMetrics)
   { label: 'SB', spoken: '盗塁', value: (m) => String(m.SB) },
 ]
 
-function MetricsLine({ metrics, status }: { metrics: BatterMetrics | undefined; status: MetricsState['status'] }) {
+/**
+ * 指標がまだ無い行に置く、見えない仮の値。指標が出る前後で行の高さが変わらないよう、
+ * 同じ形の一覧を、ふつうの桁数の値で置いておく (visibility: hidden で見えず、aria-hidden で読み上げない)
+ */
+const PLACEHOLDER_VALUES: Record<string, string> = {
+  AVG: '.000', PA: '000', H: '000', HR: '00', OBP: '.000', SLG: '.000', OPS: '.000', 'K%': '00.0%', 'BB%': '0.0%', SB: '00',
+}
+
+function MetricsLine({ metrics }: { metrics: BatterMetrics | undefined }) {
   if (metrics) {
     return (
       <ul className="order-metrics" aria-label="指標">
@@ -299,13 +312,31 @@ function MetricsLine({ metrics, status }: { metrics: BatterMetrics | undefined; 
       </ul>
     )
   }
-  const text =
-    status === 'loading'
-      ? '指標を読み込んでいます…'
-      : status === 'blocked'
-        ? '表示名を直すと、指標を表示します。'
-        : status === 'error'
-          ? '指標を読み込めませんでした。'
-          : '成績の入力がそろい、誤りがなくなると、指標を表示します。'
-  return <p className="order-metrics note">{text}</p>
+  return (
+    <ul className="order-metrics order-metrics-placeholder" aria-hidden="true">
+      {METRIC_COLUMNS.map((column) => (
+        <li key={column.label}>
+          <abbr>{column.label}</abbr> {PLACEHOLDER_VALUES[column.label]}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * 指標の状態の文。各行には出さず、打順の一覧の上に1回だけ出す。
+ * 状態が変わったら読み上げる (role="status")。読み込み中は、画面には出さず、読み上げ用の文だけを置く
+ */
+function MetricsStatus({ metrics, entries }: { metrics: MetricsState; entries: OrderEntry[] }) {
+  const waiting =
+    metrics.status === 'idle' ||
+    metrics.status === 'blocked' ||
+    (metrics.status === 'done' && entries.some((entry) => metrics.batters[entry.id] === undefined))
+  return (
+    <p className="order-status note" role="status" aria-live="polite">
+      {waiting && '成績の入力が終わると、指標を表示します。'}
+      {metrics.status === 'error' && '指標を読み込めませんでした。'}
+      {metrics.status === 'loading' && <span className="visually-hidden">指標を読み込んでいます…</span>}
+    </p>
+  )
 }

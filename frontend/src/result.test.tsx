@@ -176,9 +176,13 @@ describe('結果の左右の表示', () => {
     }
   })
 
-  test('キーボードの移動順：試合数のラジオボタンの次は、入力打順の下のシミュレーションの開閉ボタン', async () => {
+  test('キーボードの移動順：試合数のラジオボタン → 試合数の切替の説明 → 非効率%の説明 → 入力打順の下のシミュレーションの開閉ボタン', async () => {
     const { user, result } = await calculate()
     within(result).getByRole('radio', { name: '143試合' }).focus()
+    await user.tab()
+    expect(within(result).getByRole('button', { name: '試合数の切替についての説明' })).toHaveFocus()
+    await user.tab()
+    expect(within(result).getByRole('button', { name: '非効率%の説明' })).toHaveFocus()
     await user.tab()
     expect(within(column(result, '入力打順')).getByRole('button', { name: '参考：シミュレーション' })).toHaveFocus()
   })
