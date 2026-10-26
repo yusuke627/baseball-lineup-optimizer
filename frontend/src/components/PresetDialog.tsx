@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type SyntheticEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type SyntheticEvent } from 'react'
 
 import { ApiError, fetchPresetSeasons, fetchPresetTeams, searchPresets } from '../api/client'
 import type { Division, Preset, PresetSearchResult, PresetTeam, PresetTeams } from '../api/types'
@@ -10,8 +10,18 @@ interface PresetDialogProps {
   targetName: string
   /** 読み込み先の打者に、入力済みの成績があるか (あれば読み込む前に上書きを確認する) */
   targetHasValues: boolean
+  /** 読み込み先の打者が、すでに選手データを読み込んでいるか (入れ替え。読み込み先の行に「（入れ替え）」を付ける) */
+  targetReplacing: boolean
+  /**
+   * 「続けて次の打者を選ぶ」を使えるか。未選択のカードから開いたときだけ true。
+   * false (「選び直す」や手入力のカードから開いたとき) は、スイッチを出さず、1人読み込んだら閉じる
+   */
+  continuable: boolean
+  /** 直前に読み込んだ選手と打者の知らせ (「続けて次の打者を選ぶ」がオンのとき)。無ければ空文字 */
+  announcement: string
   onClose: () => void
-  onChoose: (preset: Preset) => void
+  /** 選手を選んだ。continueToNext は「続けて次の打者を選ぶ」がオンか (オンなら、ダイアログを閉じずに次の打者へ移す) */
+  onChoose: (preset: Preset, continueToNext: boolean) => void
 }
 
 type Load<T> = { status: 'idle' } | { status: 'loading' } | { status: 'done'; data: T } | { status: 'error'; message: string }
@@ -71,11 +81,38 @@ function loadButtonId(preset: Preset): string {
  * こうすると、キーボードでは球団のボタンの次に選手へ進める (ほかの球団のボタンを通らない)。
  * 広い画面では、CSS で見た目だけ右側に出す (読み上げとキーボードの順番は変わらない)。
  */
-export default function PresetDialog({ open, targetName, targetHasValues, onClose, onChoose }: PresetDialogProps) {
+export default function PresetDialog({
+  open,
+  targetName,
+  targetHasValues,
+  targetReplacing,
+  continuable,
+  announcement,
+  onClose,
+  onChoose,
+}: PresetDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const searchId = useId()
   const seasonId = useId()
+  /**
+   * 「続けて次の打者を選ぶ」。初期はオン。この部品はダイアログを閉じてもアンマウントしないので、
+   * ページを開いている間は覚えている (ブラウザの保存は使わない)。スイッチを出さないとき (continuable が false) も値は保つ
+   */
+  const [continueToNext, setContinueToNext] = useState(true)
+  /**
+   * このダイアログを開いてから読み込んだ選手と、行の下に出す文 (選手のID → 「打者Aに読み込みました」など)。
+   * 球団や検索を切り替えても残し、ダイアログを開き直したら消す
+   */
+  const [loadedTo, setLoadedTo] = useState<Record<string, string>>({})
+  // 開いたときに、前に開いていたときの「読み込みました」を消す (描画中に前の開閉の状態と比べる)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setLoadedTo({})
+    }
+  }
   const [season, setSeason] = useState<number | null>(null)
   const [team, setTeam] = useState<string | null>(null)
   const [queryText, setQueryText] = useState('')
@@ -135,11 +172,41 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
     setTeam(null)
   }
 
+  /**
+   * 読み込んだ選手の「読み込む」ボタンと、読み込む前の画面上の位置。
+   * 読み込むと、上の知らせや行の下の表示で高さが変わるので、描画の直後にダイアログのスクロールを
+   * その分だけずらし、押した行を画面の同じ位置に保つ (ダイアログが一番上にあるときは、ブラウザが自動では保たないため)
+   */
+  const keepInPlaceRef = useRef<{ id: string; top: number } | null>(null)
+  useLayoutEffect(() => {
+    const kept = keepInPlaceRef.current
+    keepInPlaceRef.current = null
+    const dialog = dialogRef.current
+    const button = kept && document.getElementById(kept.id)
+    if (kept && button && dialog?.open) {
+      dialog.scrollTop += button.getBoundingClientRect().top - kept.top
+    }
+  })
+
+  /**
+   * 選手を読み込む。同じ選手をほかの打者に読み込み直したときは、行の下の文を新しいほうにする。
+   * 行の下の文が見えるのは、続けて選ぶとき (読み込み先は未選択の打者) だけ。入れ替えや手入力の打者では
+   * 1人で閉じるので、読み込めたことはカードの知らせ (ダイアログの外) で伝える
+   */
+  function choose(preset: Preset) {
+    const button = document.getElementById(loadButtonId(preset))
+    if (button !== null) {
+      keepInPlaceRef.current = { id: button.id, top: button.getBoundingClientRect().top }
+    }
+    setLoadedTo((current) => ({ ...current, [preset.id]: `${targetName}に読み込みました` }))
+    onChoose(preset, continuable && continueToNext)
+  }
+
   function pick(preset: Preset) {
     if (targetHasValues) {
       setConfirming(preset)
     } else {
-      onChoose(preset)
+      choose(preset)
     }
   }
 
@@ -184,6 +251,7 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
     <PlayerList
       players={players}
       targetName={targetName}
+      loadedTo={loadedTo}
       onPick={pick}
     />
   )
@@ -200,12 +268,34 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
       <div className="preset-dialog-header">
         <div>
           <h2 id={titleId}>選手を選ぶ</h2>
-          <p className="note">読み込み先：{targetName}</p>
+          <p className="note">
+            読み込み先：{targetName}
+            {targetReplacing && '（入れ替え）'}
+          </p>
         </div>
         <button type="button" className="button-secondary" onClick={onClose}>
           閉じる
         </button>
       </div>
+
+      {/* 続けて選ぶのは、未選択のカードから開いたときだけ。それ以外はスイッチを出さず、閉じることだけを示す */}
+      {continuable ? (
+        <label className="preset-continue">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={continueToNext}
+            onChange={(event) => setContinueToNext(event.target.checked)}
+          />
+          続けて次の打者を選ぶ
+        </label>
+      ) : (
+        <p className="note preset-single">1人を読み込むと、この画面を閉じます。</p>
+      )}
+      {/* 続けて選ぶときの、読み込めたことと次の読み込み先の知らせ (画面にも出す) */}
+      <p className="preset-announcement" role="status" aria-live="polite">
+        {announcement}
+      </p>
 
       {seasons.status === 'error' && <p className="message-error">{seasons.message}</p>}
 
@@ -318,7 +408,7 @@ export default function PresetDialog({ open, targetName, targetHasValues, onClos
           const preset = confirming
           setConfirming(null)
           if (preset !== null) {
-            onChoose(preset)
+            choose(preset)
           }
         }}
         onCancel={cancelConfirm}
@@ -340,10 +430,12 @@ function divisionGroups(teams: PresetTeam[]): { division: Division | null; teams
 function PlayerList({
   players,
   targetName,
+  loadedTo,
   onPick,
 }: {
   players: Load<PresetSearchResult>
   targetName: string
+  loadedTo: Record<string, string>
   onPick: (preset: Preset) => void
 }) {
   return (
@@ -359,7 +451,13 @@ function PlayerList({
       {players.status === 'done' && (
         <ul className="preset-player-list">
           {players.data.items.map((preset) => (
-            <PlayerRow key={preset.id} preset={preset} targetName={targetName} onPick={onPick} />
+            <PlayerRow
+              key={preset.id}
+              preset={preset}
+              targetName={targetName}
+              loadedTo={loadedTo[preset.id] ?? null}
+              onPick={onPick}
+            />
           ))}
         </ul>
       )}
@@ -370,13 +468,17 @@ function PlayerList({
 function PlayerRow({
   preset,
   targetName,
+  loadedTo,
   onPick,
 }: {
   preset: Preset
   targetName: string
+  /** このダイアログで、この選手を読み込んだことの文 (「打者Aに読み込みました」など。読み込んでいなければ null) */
+  loadedTo: string | null
   onPick: (preset: Preset) => void
 }) {
   const detailId = useId()
+  const loadedId = useId()
   const team = preset.team_info ? teamLabel(preset.team_info) : preset.team ?? '球団の情報なし'
   const moved = preset.teams_played && preset.teams_played.length > 1 ? preset.teams_played : null
   const { summary } = preset
@@ -396,11 +498,18 @@ function PlayerRow({
         type="button"
         id={loadButtonId(preset)}
         aria-label={`${preset.name}（${team}）を${targetName}に読み込む`}
-        aria-describedby={detailId}
+        aria-describedby={loadedTo !== null ? `${detailId} ${loadedId}` : detailId}
         onClick={() => onPick(preset)}
       >
         読み込む
       </button>
+      {/* 読み込めたことの表示。知らせの領域 (aria-live) ではなく、ボタンの説明として読み上げる (二重に知らせないため) */}
+      {loadedTo !== null && (
+        <p id={loadedId} className="preset-player-loaded">
+          <span aria-hidden="true">✓ </span>
+          {loadedTo}
+        </p>
+      )}
     </li>
   )
 }

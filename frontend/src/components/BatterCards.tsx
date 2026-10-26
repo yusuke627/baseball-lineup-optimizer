@@ -134,6 +134,10 @@ export default function BatterCards({
   const [presetTarget, setPresetTarget] = useState<string | null>(null)
   /** 次の描画のあとでフォーカスを移す要素のID (カードの状態が変わると、ボタンや入力欄が入れ替わるため) */
   const focusRef = useRef<string | null>(null)
+  /** ダイアログを開いてから最後に選手を読み込んだ打者 (ダイアログを閉じたとき、その「編集する」へフォーカスを移す) */
+  const lastLoadedRef = useRef<string | null>(null)
+  /** ダイアログの中の知らせ (続けて選ぶときの、読み込めたことと次の読み込み先) */
+  const [dialogNotice, setDialogNotice] = useState('')
 
   // カードの状態が変わったあとに、決めた要素へフォーカスを移す。
   // 選手データを選んだときは、ダイアログ (子の部品) が閉じたあとで動く (親の effect は子のあとに動く)
@@ -186,22 +190,69 @@ export default function BatterCards({
     setCopy({ pending: { cardId, fromId, toIds, overwrittenNames: overwritten.map(displayName) } })
   }
 
-  function runLoadPreset(slotId: string, preset: Preset) {
+  /** 読み込んで、カードの知らせ (ダイアログの外。閉じたあとも読まれる) に notice を出す */
+  function runLoadPreset(slotId: string, preset: Preset, notice = `選手データ「${preset.name}」を読み込みました。`) {
     // 同じ名前の打者がほかにいれば「 (2)」などを付ける (表示名は重複できないため)
     const others = slots.filter((slot) => slot.id !== slotId).map(displayName)
     const name = uniqueDisplayName(preset.name, others)
     onLoadPreset(slotId, preset, name)
-    setCopy({ notice: { cardId: slotId, text: `選手データ「${preset.name}」を読み込みました。` } })
-    // 読み込んだら、要約の「編集する」ボタンへ
-    focusRef.current = editButtonId(slotId)
+    setCopy({ notice: { cardId: slotId, text: notice } })
+    lastLoadedRef.current = slotId
+  }
+
+  /**
+   * 「続けて次の打者を選ぶ」の次の読み込み先。カードの並び (打者A〜I) で、今の読み込み先より後ろの
+   * 最初の未選択の打者。後ろにいなければ、先頭から探す。いなければ null
+   */
+  function nextUnselected(slotId: string): BatterSlot | null {
+    const index = slots.findIndex((slot) => slot.id === slotId)
+    const ordered = [...slots.slice(index + 1), ...slots.slice(0, index)]
+    return ordered.find((slot) => slot.mode === 'unselected') ?? null
   }
 
   /** ダイアログで選んだプリセットを読み込む (上書きの確認は、ダイアログの中で済んでいる) */
-  function choosePreset(preset: Preset) {
+  function choosePreset(preset: Preset, continueToNext: boolean) {
     const slotId = presetTarget
-    setPresetTarget(null)
-    if (slotId !== null) {
+    if (slotId === null) {
+      return
+    }
+    const target = slots.find((slot) => slot.id === slotId)
+    const next = continueToNext ? nextUnselected(slotId) : null
+    if (next !== null) {
+      // ダイアログを閉じずに、読み込み先を次の未選択の打者へ移す (選んだ球団・検索・選手の一覧はそのまま)
       runLoadPreset(slotId, preset)
+      setPresetTarget(next.id)
+      setDialogNotice(
+        `${target ? displayName(target) : ''}に ${preset.name} を読み込みました。読み込み先は${displayName(next)}です。`,
+      )
+      return
+    }
+    // ダイアログを閉じ、読み込んだ打者の「編集する」ボタンへ。カードの知らせは、入れ替え (選手データの打者) と
+    // 手入力の打者では、前の名前 (読み込む前の表示名) を入れた文にする。未選択の打者は今までの文で、
+    // 続けて選んでいて全員そろったときは、そのことも知らせる
+    if (target?.mode === 'preset') {
+      runLoadPreset(slotId, preset, `${displayName(target)} を ${preset.name} に入れ替えました。`)
+    } else if (target?.mode === 'manual') {
+      runLoadPreset(slotId, preset, `${displayName(target)}に ${preset.name} を読み込みました。`)
+    } else {
+      const allChosen = continueToNext ? `${slots.length}人の選手がそろいました。` : ''
+      runLoadPreset(slotId, preset, `選手データ「${preset.name}」を読み込みました。${allChosen}`)
+    }
+    setPresetTarget(null)
+    focusRef.current = editButtonId(slotId)
+  }
+
+  function openDialog(slotId: string) {
+    lastLoadedRef.current = null
+    setDialogNotice('')
+    setPresetTarget(slotId)
+  }
+
+  /** ダイアログを閉じた (閉じるボタン・Esc)。このダイアログで読み込んだ打者がいれば、最後の打者の「編集する」へ */
+  function closeDialog() {
+    setPresetTarget(null)
+    if (lastLoadedRef.current !== null) {
+      focusRef.current = editButtonId(lastLoadedRef.current)
     }
   }
 
@@ -284,7 +335,7 @@ export default function BatterCards({
         const name = displayName(slot)
         const fields = showsFields(slot)
         const headingId = `card-heading-${slot.id}`
-        const openDialog = () => setPresetTarget(slot.id)
+        const openDialogForSlot = () => openDialog(slot.id)
         return (
           <section className="batter-card" aria-labelledby={headingId} key={slot.id}>
             <h3 id={headingId} className="batter-card-title">
@@ -300,7 +351,7 @@ export default function BatterCards({
                     aria-label={`${name}の選手を選ぶ`}
                     aria-haspopup="dialog"
                     disabled={disabled}
-                    onClick={openDialog}
+                    onClick={openDialogForSlot}
                   >
                     選手を選ぶ
                   </button>
@@ -334,7 +385,7 @@ export default function BatterCards({
                   aria-label={`${name}の選手を選ぶ`}
                   aria-haspopup="dialog"
                   disabled={disabled}
-                  onClick={openDialog}
+                  onClick={openDialogForSlot}
                 >
                   選手を選ぶ
                 </button>
@@ -375,7 +426,7 @@ export default function BatterCards({
                     aria-label={`${name}の選手を選び直す`}
                     aria-haspopup="dialog"
                     disabled={disabled}
-                    onClick={openDialog}
+                    onClick={openDialogForSlot}
                   >
                     選び直す
                   </button>
@@ -452,7 +503,11 @@ export default function BatterCards({
         open={targetSlot !== undefined}
         targetName={targetSlot ? displayName(targetSlot) : ''}
         targetHasValues={targetHasValues}
-        onClose={() => setPresetTarget(null)}
+        targetReplacing={targetSlot?.mode === 'preset'}
+        // 続けて選ぶのは、未選択のカードから開いたときだけ (続けて移る先も、いつも未選択の打者)
+        continuable={targetSlot?.mode === 'unselected'}
+        announcement={dialogNotice}
+        onClose={closeDialog}
         onChoose={choosePreset}
       />
     </div>

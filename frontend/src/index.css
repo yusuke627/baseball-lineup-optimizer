@@ -395,6 +395,36 @@ a {
   margin-bottom: var(--space-3);
 }
 
+/* 「続けて次の打者を選ぶ」のスイッチ (チェックボックス)。押せる高さは 44px 以上で、文字を押しても切り替わる */
+.preset-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  max-width: 100%;
+  margin-bottom: var(--space-1);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.preset-continue input {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+/* 続けて選ぶときの知らせ (直前に読み込んだ選手と、次の読み込み先) */
+.preset-announcement {
+  margin: 0 0 var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.preset-announcement:empty {
+  margin: 0;
+}
+
 .preset-dialog-controls {
   display: flex;
   flex-wrap: wrap;
@@ -420,8 +450,18 @@ a {
   gap: var(--space-2);
 }
 
+/*
+ * 検索の入力欄は 16em。幅 320px でもダイアログからはみ出さないよう、ダイアログの幅より広くしない。
+ * 入力欄を包む .field は中身の幅で決まるため、そのままでは 100% が項目名の幅になる。
+ * そこで .field の幅を 16em から縮められるようにし、入力欄はその幅に合わせる (見た目が変わるのは入力欄の幅だけ)
+ */
+.preset-search .field {
+  flex: 0 1 16em;
+  min-width: 0;
+}
+
 .preset-search input {
-  width: 16em;
+  width: min(16em, 100%);
   max-width: 100%;
 }
 
@@ -514,6 +554,22 @@ a {
   gap: var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-border-subtle);
+  /* 「打者Aに読み込みました」を、行の下に行の幅で出すため折り返す */
+  flex-wrap: wrap;
+}
+
+/* 選手の情報は残りの幅いっぱい (折り返しても「読み込む」ボタンは同じ行のまま) */
+.preset-player-detail {
+  flex: 1 1 0;
+}
+
+/* 読み込めたことの表示。小さめで控えめな色 (読める濃さ。npm run contrast で確かめる) */
+.preset-player-loaded {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
 }
 
 .preset-player-detail p {

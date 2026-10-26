@@ -1,9 +1,13 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import type { Preset, PresetTeams, StatKey } from './api/types'
 import App from './App'
+import PresetDialog from './components/PresetDialog'
 import { startManualEntry } from './test/cards'
 import { showTab } from './test/tabs'
 import { STAT_LABELS } from './validation'
@@ -138,10 +142,20 @@ async function openAndChooseTeam(user: ReturnType<typeof userEvent.setup>, cardN
 const loadButton = (player: string, cardName: string) =>
   within(dialog()).findByRole('button', { name: new RegExp(`^${player}（.*を${cardName}に読み込む$`) })
 
+/**
+ * 1人の打者に選手を読み込んで、ダイアログを閉じる。「続けて次の打者を選ぶ」は初期オンなので、
+ * ほかに未選択の打者がいるとダイアログは開いたまま (次の打者へ移る)。そのときは「閉じる」で閉じる
+ */
 async function loadPlayer(user: ReturnType<typeof userEvent.setup>, cardName: string, team: string, player: string) {
   await openAndChooseTeam(user, cardName, team)
   await user.click(await loadButton(player, cardName))
+  const stillOpen = screen.queryByRole('dialog', { name: '選手を選ぶ' })
+  if (stillOpen !== null) {
+    await user.click(within(stillOpen).getByRole('button', { name: '閉じる' }))
+  }
 }
+
+const continueSwitch = () => within(dialog()).getByRole('switch', { name: '続けて次の打者を選ぶ' })
 
 describe('プリセットの選択ダイアログ', () => {
   test('シーズン（新しい年が既定）と、リーグ → 地区（東・中・西）ごとの球団・選手数を表示する', async () => {
@@ -230,6 +244,9 @@ describe('プリセットの選択ダイアログ', () => {
     await user.tab()
     await user.keyboard('{Enter}')
 
+    // 「続けて次の打者を選ぶ」は初期オンなので、読み込み先が次の打者へ移る。Esc で閉じる
+    expect(within(dialog()).getByText('読み込み先：打者B')).toBeInTheDocument()
+    await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     // 読み込むと、カードは要約になり、フォーカスは「編集する」へ移る
     const editButton = screen.getByRole('button', { name: 'Test Alphaを編集する' })
@@ -335,9 +352,12 @@ describe('上書きの確認（ダイアログの中）', () => {
     expect(screen.getByLabelText('打者Aの表示名')).toHaveValue('打者A')
   })
 
-  test('「上書きする」で読み込み、ダイアログを閉じる', async () => {
+  test('「上書きする」で読み込み、ダイアログを閉じる（「続けて次の打者を選ぶ」がオフのとき）', async () => {
     const user = userEvent.setup()
     render(<App />)
+    await user.click(openButton('打者B'))
+    await user.click(continueSwitch())
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
     const confirm = await chooseForFilledCard(user)
     await user.click(within(confirm).getByRole('button', { name: '上書きする' }))
 
@@ -665,6 +685,376 @@ describe('コピーと、カードの状態', () => {
     expect(input('打者D', 'PA')).toHaveValue('600')
     expect(input('打者I', 'HR')).toHaveValue('15')
     expect(within(card('打者B')).getByRole('status')).toHaveTextContent('打者B の成績を、ほかの7人にコピーしました。')
+  })
+})
+
+// jsdom は幅を計算しないため、狭い画面で検索の入力欄がダイアログからはみ出さないことは、CSS の規則の中身で確かめる
+// (実際の幅は Edge で実測。幅 320px で 22px の横スクロールが出ていた)。テストは frontend/ を起点に実行する
+describe('検索の入力欄の幅', () => {
+  const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
+  // 同じ選択子が、ほかの規則とまとめて先に書かれていることがあるため、最後の規則を見る
+  const ruleBody = (selector: string) => {
+    const start = css.lastIndexOf(`\n${selector} {`)
+    return start === -1 ? null : css.slice(start, css.indexOf('}', start))
+  }
+
+  test('入力欄は 16em で、包む欄の幅より広くならない', () => {
+    expect(ruleBody('.preset-search input')).toMatch(/width: min\(16em, 100%\);/)
+  })
+
+  test('入力欄を包む欄は 16em を基準に、ダイアログの幅まで縮められる', () => {
+    const body = ruleBody('.preset-search .field') as string
+    expect(body).toMatch(/flex: 0 1 16em;/)
+    expect(body).toMatch(/min-width: 0;/)
+  })
+})
+
+describe('続けて次の打者を選ぶ', () => {
+  const announcement = () => dialog().querySelector('.preset-announcement') as HTMLElement
+
+  test('スイッチは初期はオン。クリックとスペースキーで切り替わり、ダイアログを閉じて開き直しても保たれる', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    expect(continueSwitch()).toBeChecked()
+    await user.click(continueSwitch())
+    expect(continueSwitch()).not.toBeChecked()
+    continueSwitch().focus()
+    await user.keyboard(' ')
+    expect(continueSwitch()).toBeChecked()
+    await user.keyboard(' ')
+    expect(continueSwitch()).not.toBeChecked()
+
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
+    await user.click(openButton('打者B'))
+    expect(continueSwitch()).not.toBeChecked()
+  })
+
+  test('オフのときは今までどおり、読み込むとダイアログを閉じて「編集する」へ移る', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(continueSwitch())
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Alphaを編集する' })).toHaveFocus()
+    // 未選択の打者に読み込んだときのカードの知らせは、今までの文のまま
+    expect(within(card('Test Alpha')).getByRole('status')).toHaveTextContent('選手データ「Test Alpha」を読み込みました。')
+  })
+
+  test('オンのときは閉じずに、読み込み先を次の未選択の打者へ移し、そのことを知らせる。選んだ球団の一覧はそのまま', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+
+    expect(dialog()).toBeInTheDocument()
+    expect(within(dialog()).getByText('読み込み先：打者B')).toBeInTheDocument()
+    expect(announcement()).toHaveAttribute('role', 'status')
+    expect(announcement()).toHaveTextContent('打者Aに Test Alpha を読み込みました。読み込み先は打者Bです。')
+    // 選んだ球団と選手の一覧はそのまま (読み込み先だけが変わる)
+    expect(await teamButton('Test Team A')).toHaveAttribute('aria-expanded', 'true')
+    expect(await loadButton('Test Beta', '打者B')).toBeInTheDocument()
+    // カードには読み込まれている
+    expect(card('Test Alpha')).toHaveTextContent('選手データ：Test Alpha')
+  })
+
+  test('後ろに未選択の打者がいなければ、先頭から探す', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者H'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者H'))
+    expect(within(dialog()).getByText('読み込み先：打者I')).toBeInTheDocument()
+    await user.click(await loadButton('Test Beta', '打者I'))
+    expect(within(dialog()).getByText('読み込み先：打者A')).toBeInTheDocument()
+  })
+
+  test('検索の入力と結果も、そのまま保つ', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.type(within(dialog()).getByLabelText('選手名で検索（すべての球団）'), 'test')
+    await user.keyboard('{Enter}')
+    const results = await within(dialog()).findByRole('region', { name: '「test」の検索結果' })
+    await user.click(await within(results).findByRole('button', { name: /を打者Aに読み込む$/ }))
+
+    expect(within(dialog()).getByLabelText('選手名で検索（すべての球団）')).toHaveValue('test')
+    expect(within(dialog()).getByRole('region', { name: '「test」の検索結果' })).toBeInTheDocument()
+    expect(await within(dialog()).findByRole('button', { name: /を打者Bに読み込む$/ })).toBeInTheDocument()
+  })
+
+  test('入力済みの手入力のカードから開くと、今までどおり確認を出し、上書きしたら1人で閉じる（続けて選ぶのは未選択のカードから開いたときだけ）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    startManualEntry('打者A')
+    fireEvent.change(input('打者A', 'PA'), { target: { value: '123' } })
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    const confirm = screen.getByRole('alertdialog', { name: '打者Aの入力を上書きします。よろしいですか？' })
+    await user.click(within(confirm).getByRole('button', { name: '上書きする' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Alphaを編集する' })).toHaveFocus()
+    // 移った先 (未選択の打者B) へは続けない
+    expect(openButton('打者B')).toBeInTheDocument()
+  })
+
+  test('閉じる操作（Esc）では、最後に読み込んだ打者の「編集する」へフォーカスを戻す', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    fireEvent.keyDown(await loadButton('Test Beta', '打者B'), { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Alphaを編集する' })).toHaveFocus()
+  })
+
+  test('最後の未選択の打者に読み込むと閉じて、その打者の「編集する」へ移り、そろったことを知らせる。操作の回数はスイッチなしより少ない', async () => {
+    // スイッチあり (初期のまま): 9人を続けて選ぶ操作 (クリック・キー) の回数を数える
+    const user = userEvent.setup()
+    let actions = 0
+    const press = async (element: Element) => {
+      actions += 1
+      await user.click(element)
+    }
+    const { unmount } = render(<App />)
+    await press(openButton('打者A'))
+    await press(await teamButton('Test Team A'))
+    for (const letter of 'ABCDEFGHI') {
+      const player = letter.charCodeAt(0) % 2 === 0 ? 'Test Beta' : 'Test Alpha'
+      await press(await loadButton(player, `打者${letter}`))
+    }
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('list', { name: '成績の要約' })).toHaveLength(9)
+    const lastEdit = screen.getAllByRole('button', { name: /を編集する$/ })[8]
+    expect(lastEdit).toHaveFocus()
+    expect(within(screen.getAllByRole('region', { name: /^Test (Alpha|Beta)/ })[8]).getByRole('status')).toHaveTextContent(
+      '9人の選手がそろいました。',
+    )
+    const withSwitch = actions
+    unmount()
+
+    // スイッチなし: 最初にスイッチをオフにし、打者ごとにダイアログを開いて選ぶ (選んだ球団はダイアログを開き直しても保たれる)
+    actions = 0
+    render(<App />)
+    for (const [index, letter] of [...'ABCDEFGHI'].entries()) {
+      await press(openButton(`打者${letter}`))
+      if (index === 0) {
+        await press(continueSwitch())
+        await press(await teamButton('Test Team A'))
+      }
+      await press(await loadButton(letter.charCodeAt(0) % 2 === 0 ? 'Test Beta' : 'Test Alpha', `打者${letter}`))
+    }
+    expect(screen.getAllByRole('list', { name: '成績の要約' })).toHaveLength(9)
+    const withoutSwitch = actions
+
+    expect([withSwitch, withoutSwitch]).toEqual([11, 20])
+  })
+
+  test('9人とも読み込み済みのときに1人を「選び直す」と、読み込んだらダイアログを閉じる（未選択が残っていないため）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    for (const letter of 'ABCDEFGHI') {
+      await user.click(await loadButton('Test Alpha', `打者${letter}`))
+    }
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // 3人目 (表示名「Test Alpha (3)」) を選び直す
+    await user.click(screen.getByRole('button', { name: 'Test Alpha (3)の選手を選び直す' }))
+    expect(within(dialog()).getByText('読み込み先：Test Alpha (3)（入れ替え）')).toBeInTheDocument()
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Beta', 'Test Alpha \\(3\\)'))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Betaを編集する' })).toHaveFocus()
+  })
+
+  test('未選択が残っていても、「選び直す」から開いたときは、スイッチを出さず1人で閉じる（入れ替えの文言で知らせる）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await loadPlayer(user, '打者B', 'Test Team A', 'Test Alpha')
+    await user.click(screen.getByRole('button', { name: 'Test Alphaの選手を選び直す' }))
+    expect(within(dialog()).getByText('読み込み先：Test Alpha（入れ替え）')).toBeInTheDocument()
+    expect(within(dialog()).queryByRole('switch')).not.toBeInTheDocument()
+    expect(within(dialog()).getByText('1人を読み込むと、この画面を閉じます。')).toBeInTheDocument()
+    await user.click(await loadButton('Test Beta', 'Test Alpha'))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Betaを編集する' })).toHaveFocus()
+    expect(card('Test Beta')).toHaveTextContent('選手データ：Test Beta')
+    // 入れ替えたことは、閉じたあとも読まれるカードの知らせ (ダイアログの外) で伝える。ダイアログの中の知らせには書かない
+    expect(within(card('Test Beta')).getByRole('status')).toHaveTextContent('Test Alpha を Test Beta に入れ替えました。')
+    expect(document.querySelector('.preset-announcement')).toBeEmptyDOMElement()
+  })
+
+  test('手入力のカード（値なし）から開くと、スイッチを出さず1人で閉じる。カードの知らせは「（表示名）に（選手名）を読み込みました。」', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    startManualEntry('打者C')
+    fireEvent.change(screen.getByLabelText('打者Cの表示名'), { target: { value: '控え' } })
+    await user.click(openButton('控え'))
+    expect(within(dialog()).getByText('読み込み先：控え')).toBeInTheDocument()
+    expect(within(dialog()).queryByRole('switch')).not.toBeInTheDocument()
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '控え'))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Test Alphaを編集する' })).toHaveFocus()
+    // 表示名は読み込む前の名前。閉じたあとも読まれるカードの知らせに出す
+    expect(within(card('Test Alpha')).getByRole('status')).toHaveTextContent('控えに Test Alpha を読み込みました。')
+    expect(document.querySelector('.preset-announcement')).toBeEmptyDOMElement()
+  })
+
+  test('スイッチの状態は、「選び直す」で開いたあとも保たれ、未選択のカードから開いたときに引き継ぐ', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    // オフにしてから1人読み込む (オフなので閉じる)
+    await user.click(openButton('打者A'))
+    await user.click(continueSwitch())
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // 選び直す (スイッチは出ない) → 閉じる → 未選択のカードから開くと、オフのまま
+    await user.click(screen.getByRole('button', { name: 'Test Alphaの選手を選び直す' }))
+    expect(within(dialog()).queryByRole('switch')).not.toBeInTheDocument()
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
+    await user.click(openButton('打者B'))
+    expect(continueSwitch()).not.toBeChecked()
+
+    // オンに戻すと、選び直すのあとでもオンのまま
+    await user.click(continueSwitch())
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
+    await user.click(screen.getByRole('button', { name: 'Test Alphaの選手を選び直す' }))
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
+    await user.click(openButton('打者B'))
+    expect(continueSwitch()).toBeChecked()
+  })
+})
+
+// 入れ替え・手入力のカードへの読み込みは1人で閉じるので、読み込み先の行と行の下の文言は、ダイアログの部品だけで確かめる
+// (読み込んでも閉じない形で描画する: onChoose は何もしない)
+describe('読み込み先の行と、行の下の表示の文言（ダイアログの部品）', () => {
+  const renderDialog = (props: { targetName: string; targetReplacing: boolean }) =>
+    render(
+      <PresetDialog
+        open
+        targetName={props.targetName}
+        targetHasValues={false}
+        targetReplacing={props.targetReplacing}
+        continuable={false}
+        announcement=""
+        onClose={() => {}}
+        onChoose={() => {}}
+      />,
+    )
+
+  test('入れ替えのときは、読み込み先の行に「（入れ替え）」を付け、スイッチの代わりに1人で閉じることを示す', async () => {
+    renderDialog({ targetName: 'Abraham Toro', targetReplacing: true })
+    expect(within(dialog()).getByText('読み込み先：Abraham Toro（入れ替え）')).toBeInTheDocument()
+    expect(within(dialog()).queryByRole('switch')).not.toBeInTheDocument()
+    expect(within(dialog()).getByText('1人を読み込むと、この画面を閉じます。')).toBeInTheDocument()
+    // 入れ替えの文は、ダイアログの中には出さない (閉じたあとのカードの知らせで伝える)
+    expect(within(dialog()).queryByText(/入れ替えました/)).not.toBeInTheDocument()
+  })
+
+  test('手入力のカードのときは「✓ （表示名）に読み込みました」', async () => {
+    const user = userEvent.setup()
+    renderDialog({ targetName: '控え', targetReplacing: false })
+    expect(within(dialog()).getByText('読み込み先：控え')).toBeInTheDocument()
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '控え'))
+    expect(within(dialog()).getByText('控えに読み込みました')).toHaveClass('preset-player-loaded')
+  })
+})
+
+describe('選手の行の下の「読み込みました」', () => {
+  const loadedText = (player: string) =>
+    // 球団の行 (li) も選手の一覧を含むので、選手の行 (.preset-player) だけから探す
+    within(dialog())
+      .getAllByRole('listitem')
+      .filter((item) => item.classList.contains('preset-player'))
+      .find((item) => within(item).queryByText(player, { selector: 'strong' }) !== null)
+      ?.querySelector('.preset-player-loaded') ?? null
+
+  test('読み込んだ選手の行の下にだけ「打者Aに読み込みました」を出し、続けて読み込むとどの行にも残る。読み込むボタンの説明に結びつける', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    expect(loadedText('Test Alpha')).toBeNull()
+
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    expect(loadedText('Test Alpha')).toHaveTextContent('打者Aに読み込みました')
+    expect(loadedText('Test Beta')).toBeNull()
+    // チェックの記号は見た目だけ
+    expect(loadedText('Test Alpha')?.querySelector('[aria-hidden="true"]')).toHaveTextContent('✓')
+    // 知らせの領域 (aria-live) の中には置かない。ボタンの説明として読み上げる
+    expect(loadedText('Test Alpha')?.closest('[aria-live], [role="status"]')).toBeNull()
+    const alphaButton = await loadButton('Test Alpha', '打者B')
+    expect(alphaButton).toHaveAccessibleDescription(/打者Aに読み込みました$/)
+    expect(await loadButton('Test Beta', '打者B')).not.toHaveAccessibleDescription(/読み込みました/)
+
+    await user.click(await loadButton('Test Beta', '打者B'))
+    expect(loadedText('Test Alpha')).toHaveTextContent('打者Aに読み込みました')
+    expect(loadedText('Test Beta')).toHaveTextContent('打者Bに読み込みました')
+  })
+
+  test('同じ選手を別の打者に読み込み直すと、その行の打者名を新しいほうにする', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    await user.click(await loadButton('Test Alpha', '打者B'))
+    expect(loadedText('Test Alpha')).toHaveTextContent('打者Bに読み込みました')
+    expect(within(dialog()).getAllByText(/に読み込みました$/)).toHaveLength(1)
+  })
+
+  test('球団や検索を切り替えても、その選手の行がまた出たときに残っている', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+
+    // 別の球団へ切り替えて、戻る
+    await user.click(await teamButton('Test Team B'))
+    await within(dialog()).findByRole('region', { name: /^Test Team B .*の選手$/ })
+    expect(within(dialog()).queryByText(/に読み込みました$/)).not.toBeInTheDocument()
+    await user.click(await teamButton('Test Team A'))
+    await loadButton('Test Alpha', '打者B')
+    expect(loadedText('Test Alpha')).toHaveTextContent('打者Aに読み込みました')
+
+    // 検索の結果にも出る (同じ選手)
+    await user.type(within(dialog()).getByLabelText('選手名で検索（すべての球団）'), 'test')
+    await user.keyboard('{Enter}')
+    const results = await within(dialog()).findByRole('region', { name: '「test」の検索結果' })
+    await within(results).findByRole('button', { name: /を打者Bに読み込む$/ })
+    expect(within(results).getByText('打者Aに読み込みました')).toBeInTheDocument()
+  })
+
+  test('ダイアログを閉じて開き直すと消える', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(openButton('打者A'))
+    await user.click(await teamButton('Test Team A'))
+    await user.click(await loadButton('Test Alpha', '打者A'))
+    expect(loadedText('Test Alpha')).not.toBeNull()
+
+    await user.click(within(dialog()).getByRole('button', { name: '閉じる' }))
+    await user.click(openButton('打者B'))
+    await loadButton('Test Alpha', '打者B')
+    expect(loadedText('Test Alpha')).toBeNull()
+    expect(within(dialog()).queryByText(/に読み込みました$/)).not.toBeInTheDocument()
   })
 })
 

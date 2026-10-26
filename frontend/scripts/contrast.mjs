@@ -49,6 +49,10 @@ const PAIRS = [
   ['accent', 'surface', TEXT, 'カードの副のボタンの文字（手入力する・選び直す など）'],
   ['text', 'surface', TEXT, 'カードの見出し（打者の表示名）'],
   ['muted', 'surface', TEXT, 'カードの要約の指標の略号'],
+  // 選手を選ぶダイアログの「続けて次の打者を選ぶ」
+  ['text', 'surface', TEXT, '「続けて次の打者を選ぶ」の文字・知らせ（ダイアログの地）'],
+  ['accent', 'surface', COMPONENT, '「続けて次の打者を選ぶ」のチェック（ダイアログの地との区別）'],
+  ['muted', 'surface', TEXT, '選手の行の下の「打者Aに読み込みました」（ダイアログの地）'],
 ]
 
 function readVariables(block) {
