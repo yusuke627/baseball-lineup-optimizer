@@ -667,3 +667,11 @@
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: （Mac側でコミット後に記入）
 - 注意点: 変更後の frontend-ci.yml と既存の2つのワークフローは、frontend/node_modules の js-yaml 4.3.2 で読み込めた。GitHub Actions での実行は未確認。npm audit --package-lock-only の結果（high 2件：undici 8.11.2（jsdom 30.1.2 から）、zod 4.6.5（eslint-plugin-react-hooks 7.1.1 から）。どちらも開発・テスト用の依存で、build した dist には含まれない）は利用者に報告しただけで、package.json と package-lock.json は変更していない（npm audit fix・npm update・npm install は実行していない）
+
+## 2026-10-26 13:54 開発用の依存（undici、zod）を lock ファイルの範囲内で更新する
+- 依頼内容: npm audit の警告（high 2件）に対応するため、frontend で npm update undici zod を実行し、undici と zod だけを package-lock.json の範囲内で更新する
+- 変更ファイル: frontend/package-lock.json, docs/EDIT_LOG.md
+- 変更理由: npm audit --package-lock-only で high が2件出ていたため。undici 8.11.2（jsdom 30.1.2 の依存。jsdom の指定は ^8.11.2）は GHSA-4qv8-2p9j-2685・GHSA-f72v-6w45-q472・GHSA-xjj6-f33q-929c、zod 4.6.5（eslint-plugin-react-hooks 7.1.1 の依存。指定は ^3.25.0 || ^4.0.0）は GHSA-mrhx-c7xc-m3w5 の対象だった。どちらも devDependencies から入る推移的な依存で、build した dist には含まれない。修正版はどちらも親の指定の範囲内にあるため、package.json は変えずに lock だけを更新した
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: （Mac側でコミット後に記入）
+- 注意点: package-lock.json で変わったのは、node_modules/undici 8.11.2 → 8.12.3 と node_modules/zod 4.6.5 → 4.6.7 の2件だけ（どちらも version・resolved・integrity のみ。追加・削除されたパッケージは無く、lockfileVersion なども変わらない。改行は LF、末尾の改行ありのまま）。package.json は、更新前にスクラッチパッドへ保存したコピーと完全に一致（変わっていない）。npm audit --package-lock-only は、更新前 high 2件、更新後 0件。更新の前と後のそれぞれで、node_modules と dist を消してから、ワークフローと同じ順で npm ci → typecheck → lint → test → build → contrast を実行し、どちらもすべて終了コード 0、test は 314件が通った（Windows 11・Node 24.19.0・npm 11.17.0）。npm ci は lock を書き換えなかった（ハッシュが update 直後と同じ）。docs/DESIGN.md には依存全般の記述が無いため変えていない。npm audit fix・npm install・パッケージ名なしの npm update は実行していない。以前の npm audit が0件だったのは利用者の記憶によるもので、いつ警告が増えたかは分からない
