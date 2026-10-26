@@ -481,6 +481,20 @@ wOBA・wRC+ は、API でもフロントエンドでも計算していない。�
 
 READMEには④⑤の具体的な検証結果を実装後に数値・グラフ付きで記載する。
 
+**CI（自動チェック。`.github/workflows/`）**
+
+| ワークフロー | 動く条件（push・pull_request の paths） | 内容 |
+|---|---|---|
+| `backend-ci.yml` | `backend/**`・`data/**`・`schemas/**`・`scripts/**`・このファイル | ubuntu-latest、Python 3.12 と 3.13。ruff（`.` と `../scripts`）→ mypy → pytest |
+| `preset-validation.yml` | `data/presets/**`・`data/overrides/**`・`schemas/**`・このファイル | ubuntu-latest、Python 3.13。プリセットと表示名の上書きを JSON Schema で検証 |
+| `frontend-ci.yml`（2026-10-26 追加） | `frontend/**`・`schemas/**`・`data/presets/**`・このファイル | 下記 |
+
+- `frontend-ci.yml`：ubuntu-latest。`actions/checkout@v7`（`persist-credentials: false`）→ `actions/setup-node@v7`（Node の版は `frontend/.nvmrc` の 24.19.0。npm のキャッシュは `frontend/package-lock.json` をキーにする）→ `frontend/` で `npm ci` → `npm run typecheck`（tsc）→ `npm run lint`（eslint）→ `npm run test`（`vitest run`。ウォッチにならず1回だけ実行）→ `npm run build`（vite）→ `npm run contrast`（色の組み合わせの検査）
+  - 権限は `contents: read` だけ。同じブランチで新しい実行が始まったら古い実行を取り消す（`concurrency`）。1回の上限は15分（`timeout-minutes`）。秘密情報は使わない
+  - Node の版を `.nvmrc` から読むのは、手元（Windows）の版と CI の版を1か所で合わせるため（`package.json` に `engines` は無い）
+  - Linux で動かすための確認（2026-10-26、Windows の手元で実施）：相対パスの import など 123件が、実際のファイル名と大文字小文字まで一致する。改行コードは `.gitattributes`（`* text=auto eol=lf`）で LF にそろう。スナップショットのテストは無い。日時・タイムゾーン・ロケールに依存するテストは無い（`sort()` は文字コード順）。CSS を読むテストとスクリプトは、`path.resolve`・`fileURLToPath` と `/` 区切りの相対パスで、OS の区切り文字に依存しない
+  - フロントエンドのテストは、`schemas/` の検証の例（`batter_stats_validation_cases.json`・`display_name_validation_cases.json`）と、`data/presets/mlb/2025/` の2件（Judge・Arraez）も読み込む。そのため paths に `schemas/**` と `data/presets/**` も入れ、これらだけを変えたときも `frontend-ci` が動くようにした（2026-10-26）
+
 ---
 
 ## 6. README：考慮していない点・モデルの限界
