@@ -57,7 +57,7 @@ npm run dev
 
 - 選手データは、2025年のMLBレギュラーシーズンの選手348人です（`data/presets/mlb/2025/`。コードと API では preset と呼びます）
   - 346人：The SABR Lahman Baseball Database 1871-2025（Release Date: Dec 10, 2025。取得日 2026-10-14）から、計算した打席数（AB + BB + HBP + SF + SH）が 200 以上の選手を、`scripts/build_lahman_presets.py` で機械的に作りました。10人は、作者が公式サイトの数値と目視で照合し、一致しました（照合先は記録していません）。残りは第二の出典と照合していません（`verified: false`）
-  - 2人：Baseball Savant と Baseball-Reference の数値が一致することを確かめた成績です（取得日 2026-09-29。`verified: true`）。打順による違いが分かりやすいよう、長打力型の Aaron Judge（本塁打53本）と、コンタクト型の Luis Arraez（三振21個・犠打12）を選びました
+  - 2人：Baseball Savant と Baseball-Reference の両方で数値の一致を確かめた成績です（取得日 2026-09-29。`verified: true`）。成績の14項目は、Lahman の2025年の同じ選手の行とも同じ値です（打席数は AB + BB + HBP + SF + SH で計算した値）。打順による違いが分かりやすいよう、長打力型の Aaron Judge（本塁打53本）と、コンタクト型の Luis Arraez（三振21個・犠打12）を選びました
 - シーズン中に移籍した選手は、成績を合計して1人分にまとめ、最後に出場した球団の選手として置いています。2026年の選手データはありません（無い選手は手入力してください）
 - 進塁確率は、James Click「Run Expectancy Matrix and base-advancement rates (2003 MLB season data)」（Baseball Prospectus、2004年5月6日掲載。2003年シーズンの数値）の値で、打者の成績（2025年）と年代が違う暫定の値です。wOBA・wRC+ は計算しません
 
@@ -115,7 +115,7 @@ npm run typecheck         # ほかに npm run lint・test・build・contrast（�
 
 ソースコードは MIT ライセンスです（[`LICENSE`](LICENSE)）。`data/` の選手データの出典とライセンスは [`data/NOTICE`](data/NOTICE) を参照してください。統計データ自体の著作権は出典元に帰属します。
 
-Lahman Baseball Database から生成した選手データは、元のデータベースのライセンスである Creative Commons Attribution-ShareAlike 3.0 Unported（CC BY-SA 3.0、http://creativecommons.org/licenses/by-sa/3.0/ ）で提供します。元のデータベースの著作権表示（原文）は「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」です。元のデータからの改変の内容（同じシーズンの複数球団の成績の合算、打席数の計算など）は [`data/NOTICE`](data/NOTICE) に書いています。
+Lahman Baseball Database から生成した選手データは、元のデータベースのライセンスである Creative Commons Attribution-ShareAlike 3.0 Unported（CC BY-SA 3.0、http://creativecommons.org/licenses/by-sa/3.0/ ）で提供します。元のデータベースの著作権表示（原文）は「This database is copyright 1996-2025 by SABR, via generious donation from Sean Lahman.」です。元のデータからの改変の内容（同じシーズンの複数球団の成績の合算、打席数の計算など）は [`data/NOTICE`](data/NOTICE) に書いています。照合済みの2人（`verified: true`）の選手データも、成績が Lahman の値と同じなので、ライセンスの扱いは Lahman から生成した選手データに準じます（CC BY-SA 3.0）。Baseball Savant と Baseball-Reference の利用規約は未確認です。
 
 依存ライブラリは、このリポジトリには含めていません（`npm ci`・`pip install` で取得します）。実行時に使う主な依存のライセンスは、各パッケージの公開情報で次のとおりです：react・react-dom（MIT）、@dnd-kit/core・@dnd-kit/sortable・@dnd-kit/utilities（MIT）、fastapi（MIT）、pydantic（MIT）、uvicorn（BSD-3-Clause）、starlette（BSD-3-Clause）、numpy（BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0）。
 
