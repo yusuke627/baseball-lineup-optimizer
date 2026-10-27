@@ -1,4 +1,4 @@
-// 段階9B: 画面の文章の整理 (残した文が見え、「説明」のボタンへ移した文は閉じているあいだ見えず、開くと原文のまま見える)
+// 画面の文章の整理 (残した文が見え、「説明」のボタンへ移した文は閉じているあいだ見えず、開くと原文のまま見える)
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -90,7 +90,7 @@ async function openDisclosure(user: ReturnType<typeof userEvent.setup>, containe
 }
 
 describe('ページ上部と、成績の入力・打順の案内', () => {
-  // ページ上部の説明の文 (「打順の期待得点を比べます。」) は、段階9C の仕上げで削除した。帯の中はタイトルだけ
+  // ページ上部の帯の中はタイトル (と装飾の印) だけで、説明の文 (「打順の期待得点を比べます。」) は置かない
   test('ページ上部（帯）はタイトル「打順シミュレーター」だけで、説明の文は置かない', () => {
     renderAppInManualEntry()
     const header = document.querySelector('.page-header') as HTMLElement
@@ -99,7 +99,7 @@ describe('ページ上部と、成績の入力・打順の案内', () => {
     expect(screen.queryByText('打順の期待得点を比べます。')).not.toBeInTheDocument()
   })
 
-  // 段階9C の追加修正: タイトルの左にダイヤモンドの印 (インライン SVG の装飾) を置いた
+  // タイトルの左には、ダイヤモンドの印 (インライン SVG の装飾) を置く
   test('タイトルの左のダイヤモンドの印は読み上げに含めず、見出し（h1）の名前は「打順シミュレーター」のまま', () => {
     renderAppInManualEntry()
     const h1 = screen.getByRole('heading', { level: 1, name: '打順シミュレーター' })

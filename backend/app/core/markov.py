@@ -1,7 +1,7 @@
 """
 案A: マルコフ連鎖（吸収連鎖）による厳密な得点期待値計算。
 
-設計方針 (docs/DESIGN.md 9章):
+設計方針 (docs/DESIGN.md 3-5):
   1. 打者ごとに 25x25 の1打席遷移行列 T_k と 報酬ベクトル reward_k を作る
   2. (base_out_state 0-23, 打者index 1-9) の 216 状態からなる
      「1イニング分」の吸収マルコフ連鎖を組み、
@@ -97,7 +97,7 @@ def expected_runs_per_game(
 
     steal_probs (打順順、metrics.steal_probabilities の戻り値) を渡すと盗塁を反映する。
     案Aは走者個人を状態に持たないため、打者kの打席前の一塁走者は
-    「直前の打者 k-1」とみなして、その打者の盗塁確率を使う近似を行う (docs/DESIGN.md 1章)。
+    「直前の打者 k-1」とみなして、その打者の盗塁確率を使う近似を行う (docs/DESIGN.md 3-4)。
     steal_probs が None なら盗塁なし (従来と同一の厳密計算)。
     """
     if len(lineup_event_probs) != NUM_BATTERS:

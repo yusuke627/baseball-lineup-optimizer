@@ -2,14 +2,14 @@
 全打順探索(9! = 362,880通り)による最適打順の探索。
 
 計算量の観点から、探索には案A(マルコフ連鎖、行列演算のみで高速)を使用する。
-docs/DESIGN.md 9章「使い分けの推奨」を参照。
+docs/DESIGN.md 3-7「使い分けの推奨」を参照。
 
 【パフォーマンス】
 find_optimal_lineup による全探索は、現行コードの実測で約8.5分かかる
-(計測条件は docs/DESIGN.md 9章「計算速度の改善」)。API経由での同期的な応答には
+(計測条件は docs/VALIDATION.md 8-1、高速化の方式は docs/DESIGN.md 4-2「計算速度の改善」)。API経由での同期的な応答には
 重すぎるため、API は multi_restart_hill_climb（複数回のランダム再スタートによる
 山登り法、近似解）を使う。全探索は、バックグラウンドジョブ等での利用を想定している
-(docs/DESIGN.md 9章「最適打順探索の実運用方式」、README「推奨打順の探索について」)。
+(docs/DESIGN.md 4-1「最適打順探索の実運用方式」、README「推奨打順の探索について」)。
 """
 from __future__ import annotations
 

@@ -13,7 +13,7 @@ with open(SCHEMA_PATH, encoding="utf-8") as f:
     SCHEMA = json.load(f)
 
 # 検証器は1回だけ作って使い回す。jsonschema.validate() は呼ぶたびにスキーマ自体の検査からやり直すため、
-# プリセットが数百件あると遅い (docs/DESIGN.md 2-4 に測定値)
+# プリセットが数百件あると遅い (docs/VALIDATION.md 7-4 に測定値)
 jsonschema.Draft7Validator.check_schema(SCHEMA)
 VALIDATOR = jsonschema.Draft7Validator(SCHEMA)
 

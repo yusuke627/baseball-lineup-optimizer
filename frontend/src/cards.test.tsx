@@ -1,4 +1,4 @@
-// 段階9D: 成績の入力のカードの状態 (未選択 → 手入力)。選手データを使う場面は preset.test.tsx で確かめる
+// 成績の入力のカードの状態 (未選択 → 手入力)。選手データを使う場面は preset.test.tsx で確かめる
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'

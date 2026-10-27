@@ -1,7 +1,7 @@
 """
 表示用の打撃指標 (打率・出塁率・長打率) と、モデルの入力となるイベント確率・盗塁確率の算出。
 
-wOBA・wRC+ は、このアプリでは計算しない (docs/DESIGN.md 3-2章を参照)。
+wOBA・wRC+ は、このアプリでは計算しない (docs/DESIGN.md 7-5 を参照)。
 """
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def steal_probabilities(s: BasicStats) -> dict:
 
     企図率は「一塁に出塁した回数」を盗塁機会とみなし、(SB+CS) / (単打+四球+死球) で近似する。
     モデルではこの確率を「一塁走者がいて二塁が空いている打席」ごとに適用するため、
-    一塁に滞在したまま複数打席を迎える場合はやや過大になりうる (docs/DESIGN.md 1章)。
+    一塁に滞在したまま複数打席を迎える場合はやや過大になりうる (docs/DESIGN.md 3-4)。
     """
     attempts = s.SB + s.CS
     opportunities = s.singles + s.BB + s.HBP

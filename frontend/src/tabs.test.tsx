@@ -74,7 +74,7 @@ describe('タブの役割と属性', () => {
     renderAppInManualEntry()
     const tablist = screen.getByRole('tablist', { name: '手順' })
     const tabs = within(tablist).getAllByRole('tab')
-    // タブには手順の名前だけを出す (番号の丸は、段階9C の仕上げで外した)
+    // タブには手順の名前だけを出す (番号の丸などの子要素は置かない)
     expect(tabs.map((t) => t.textContent)).toEqual(['成績の入力', '打順', '計算と結果'])
     expect(tabs.every((t) => t.children.length === 0)).toBe(true)
     expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false'])
