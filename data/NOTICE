@@ -1,10 +1,10 @@
 data/ 配下のデータについて
 ==========================
 
-1. Lahman Baseball Database から生成したプリセット
+1. Lahman Baseball Database から生成した選手データ
 --------------------------------------------------
 
-data/presets/ のうち、出典（source.provider）が "Lahman Baseball Database (SABR)" のプリセットは、
+data/presets/ のうち、出典（source.provider）が "Lahman Baseball Database (SABR)" の選手データは、
 次のデータベースから生成したものです。
 
   The SABR Lahman Baseball Database 1871-2025（Release Date: Dec 10, 2025）
@@ -25,7 +25,7 @@ data/presets/ のうち、出典（source.provider）が "Lahman Baseball Databa
     合算した成績は、そのシーズンの最後に出場した球団の選手として置いています（在籍した球団は teams_played に記録）。
   - 打席数（PA）は元のデータに無いため、AB + BB + HBP + SF + SH で計算しました。
   - 計算した打席数が 200 以上の選手だけを選びました。
-  - プリセットの JSON の形式（schemas/batter_preset.schema.json）に並べ替えました。
+  - 選手データの JSON の形式（schemas/batter_preset.schema.json）に並べ替えました。
   - 選手名は People.csv の nameFirst と nameLast、球団名は Teams.csv の name を使いました。
   - 一部の選手名（13人）には、接尾辞（Jr.、II、III）を加えました。People.csv には接尾辞の項目がないため、
     data/overrides/display_names.json に記録した表記を、生成時に選手名へ反映しています
@@ -36,15 +36,20 @@ data/presets/ のうち、出典（source.provider）が "Lahman Baseball Databa
     元の teamID は team_info.lahman_id に残しています。
   - 生成に使ったスクリプトは scripts/build_lahman_presets.py です。
 
-これらのプリセットのうち一部（生成スクリプトの --sample で、固定のシードにより選んだ10人）は、
+これらの選手データのうち一部（生成スクリプトの --sample で、固定のシードにより選んだ10人）は、
 公式サイトの数値と目視で照合し、一致を確認しました（照合先の公式サイト名は記録していません）。
 残りは、独立した第二の出典との照合を行っていません。いずれも verified は false です。
 
 2. ライセンスの範囲
 --------------------
 
-  - 上記の Lahman Baseball Database から生成したプリセットは、元のデータと同じ CC BY-SA 3.0 で提供します。
+  - 上記の Lahman Baseball Database から生成した選手データは、元のデータと同じ CC BY-SA 3.0 で提供します。
   - リポジトリのコード（backend/、frontend/、scripts/ など）は、このファイルの対象ではありません。
     コードのライセンスは、リポジトリのルートの LICENSE を参照してください。
-  - Baseball Savant と Baseball-Reference の数値を照合して作ったプリセット（verified: true の2件）は、
-    Lahman Baseball Database から生成したものではありません。出典は各ファイルの source に書いています。
+  - verified: true の2件の選手データ（aaron_judge_2025、luis_arraez_2025）の成績14項目は、
+    Baseball Savant と Baseball-Reference の両方で、数値が一致することを確かめた値です。
+    この14項目は、上記の Lahman Baseball Database の2025年の行（judgeaa01、arraelu01）の値とも同じです。
+    打席数（PA）は AB + BB + HBP + SF + SH で計算した値で、Lahman の値から同じ式で計算した値と一致します。
+    Baseball Savant と Baseball-Reference の利用規約は、確認していません（未確認）。
+    この2件のライセンスの扱いは、Lahman Baseball Database から生成した選手データに準じます（CC BY-SA 3.0）。
+    出典は各ファイルの source 欄に書いています。
