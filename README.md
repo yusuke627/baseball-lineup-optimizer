@@ -1,5 +1,9 @@
 # 打順シミュレーター
 
+[![backend-ci の状態](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/backend-ci.yml/badge.svg?branch=main)](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/backend-ci.yml)
+[![preset-validation の状態](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/preset-validation.yml/badge.svg?branch=main)](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/preset-validation.yml)
+[![frontend-ci の状態](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/frontend-ci.yml/badge.svg?branch=main)](https://github.com/yusuke627/baseball-lineup-optimizer/actions/workflows/frontend-ci.yml)
+
 MLBの打撃成績から、9人の打順の1試合あたりの期待得点を計算し、「入力打順」と、探索で求めた「推奨打順」を比べるアプリです。推奨打順は近似の探索で求めた、期待得点が高くなる打順で、最も期待得点が高い打順とは限りません。
 
 手元で起動して、ブラウザで使います。公開版の URL は、準備でき次第ここに掲載します。
@@ -26,7 +30,7 @@ MLBの打撃成績から、9人の打順の1試合あたりの期待得点を計
 **ターミナル1：取得、仮想環境、バックエンド**
 
 ```bash
-git clone <このリポジトリの URL>
+git clone https://github.com/yusuke627/baseball-lineup-optimizer.git
 cd baseball-lineup-optimizer
 python3 -m venv .venv          # Windows（PowerShell）：py -3.13 -m venv .venv（3.12 以上の版を指定）
 source .venv/bin/activate      # Windows（PowerShell）：.\.venv\Scripts\Activate.ps1
