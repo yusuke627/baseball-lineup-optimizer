@@ -1,0 +1,42 @@
+# イメージに不要なもの・公開しないものを、ビルドの対象から外す (Dockerfile は必要なものだけを COPY する)
+
+# git とローカルの作業用の設定・作業の記録
+.git
+.github
+CLAUDE.md
+.claude
+docs/EDIT_LOG.md
+
+# 依存とビルドの出力 (イメージの中で作り直す)
+**/node_modules
+**/dist
+**/build
+**/*.egg-info
+
+# キャッシュ
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+.coverage
+htmlcov
+
+# 仮想環境
+.venv
+venv
+env
+
+# 秘密情報
+.env
+.env.*
+
+# 外部から取得した元データ (イメージには data/presets だけを入れる)
+data/raw
+
+# OS とエディタが作るファイル
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+.idea
+.vscode
