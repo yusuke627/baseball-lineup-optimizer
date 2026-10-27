@@ -675,3 +675,11 @@
 - コミット: （Mac側でコミット後に記入）
 - 戻し方: （Mac側でコミット後に記入）
 - 注意点: package-lock.json で変わったのは、node_modules/undici 8.11.2 → 8.12.3 と node_modules/zod 4.6.5 → 4.6.7 の2件だけ（どちらも version・resolved・integrity のみ。追加・削除されたパッケージは無く、lockfileVersion なども変わらない。改行は LF、末尾の改行ありのまま）。package.json は、更新前にスクラッチパッドへ保存したコピーと完全に一致（変わっていない）。npm audit --package-lock-only は、更新前 high 2件、更新後 0件。更新の前と後のそれぞれで、node_modules と dist を消してから、ワークフローと同じ順で npm ci → typecheck → lint → test → build → contrast を実行し、どちらもすべて終了コード 0、test は 314件が通った（Windows 11・Node 24.19.0・npm 11.17.0）。npm ci は lock を書き換えなかった（ハッシュが update 直後と同じ）。docs/DESIGN.md には依存全般の記述が無いため変えていない。npm audit fix・npm install・パッケージ名なしの npm update は実行していない。以前の npm audit が0件だったのは利用者の記憶によるもので、いつ警告が増えたかは分からない
+
+## 2026-10-27 08:40 CI でのテストの時間切れの対策（上限を上げ、CI では並列数を2にする）
+- 依頼内容: GitHub Actions の frontend-ci で2件（result.test.tsx「入力打順と推奨打順を、入力打順を先にして並べる」、tabs.test.tsx「入力・打順・計算結果・試合数の選択・開いた欄は、タブを行き来しても消えない」）が「Test timed out in 5000ms」で失敗したため、テストの内容を変えずに時間切れを防ぐ
+- 変更ファイル: frontend/vite.config.ts, frontend/src/result.test.tsx, frontend/src/texts.test.tsx, docs/DESIGN.md（5章「CI（自動チェック）」に時間切れの対策の1項目）, docs/EDIT_LOG.md
+- 変更理由: 失敗した2件は、9人分の成績を入れて計算するテストで、手元の既定の並列実行でも 4.16秒・4.03秒（上位1位・2位）と、上限 5000ms に近かった。vite.config.ts の test に testTimeout: 30000・hookTimeout: 30000 を足し、環境変数 CI があるときだけ maxWorkers: 2 にした（vitest 5.0.3 の設定の型で、この3つの名前を確かめた。GitHub Actions は CI を自動で設定するので、ワークフローは変えていない）。30000ms は、手元の1ワーカー実行の最大 2.52秒の約12倍、既定の並列実行の最大 4.16秒の約7倍。共通の補助のうち userEvent.setup() を呼ぶ calculate（result.test.tsx と texts.test.tsx）で delay: null を指定した（操作の間の待ち時間をなくすだけで、操作の内容と順番は同じ）。user.type は preset.test.tsx の検索の4か所（4〜5文字）だけで、検索の入力を確かめるテストなので置き換えていない。テストの期待値・検査の範囲は変えていない
+- コミット: （Mac側でコミット後に記入）
+- 戻し方: （Mac側でコミット後に記入）
+- 注意点: 原因は CI の実行環境の遅さ（CPU の取り合い）と推測しているが、未確認（CI の CPU の性能も未確認）。CI での効果は push 後に利用者が確認する。手元（Windows 11・Node 24.19.0）の測定：変更前は、既定の並列実行で全体 58.8秒・1件の最大 4.16秒、1ワーカー実行（--maxWorkers=1）で全体 155.2秒・最大 2.52秒。変更後は、既定の並列実行で全体 49.1秒・最大 3.20秒、1ワーカー実行で全体 143.0秒・最大 2.42秒、CI=true（2ワーカー）で全体 73.4秒・最大 2.41秒（2ワーカーになったことは、全体の時間が既定と1ワーカーの間になったことからの判断）。変更しなかった tabs.test.tsx の対象のテストも 4.16秒 → 3.04秒になっており、前後の差には実行ごとのばらつきが含まれる（delay: null だけの効果は切り分けていない）。どの実行でも 314件がすべて通った
