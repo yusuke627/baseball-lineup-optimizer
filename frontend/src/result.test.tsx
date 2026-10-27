@@ -77,7 +77,8 @@ afterEach(() => {
 
 /** 9人に成績を入れて計算する。rename で、既定の名前 → 新しい表示名 に変えてから計算できる */
 async function calculate(rename: Record<string, string> = {}) {
-  const user = userEvent.setup()
+  // 操作の間に待ち時間を入れない (delay: null)。操作の内容と順番は同じ
+  const user = userEvent.setup({ delay: null })
   renderAppInManualEntry()
   for (const [from, to] of Object.entries(rename)) {
     fireEvent.change(screen.getByLabelText(`${from}の表示名`), { target: { value: to } })

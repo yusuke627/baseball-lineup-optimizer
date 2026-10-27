@@ -135,7 +135,8 @@ describe('ページ上部と、成績の入力・打順の案内', () => {
 
 describe('計算と結果', () => {
   async function calculate() {
-    const user = userEvent.setup()
+    // 操作の間に待ち時間を入れない (delay: null)。操作の内容と順番は同じ
+    const user = userEvent.setup({ delay: null })
     renderAppInManualEntry()
     fillAll()
     showTab('打順')
