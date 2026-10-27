@@ -688,30 +688,30 @@
 - 依頼内容: 「（Mac側でコミット後に記入）」が残っている記録に、利用者から受け取ったコミットのハッシュを記入する。あわせて README に CI のバッジを足す
 - 変更ファイル: docs/EDIT_LOG.md（2026-10-26 13:32・13:38・13:54、2026-10-27 08:40 の4件の記録のコミット・戻し方の行にハッシュを記入し、この記録を追記）
 - 変更理由: 各記録の変更ファイルに合わせてハッシュを入れた。frontend-ci.yml の追加（13:32）と paths の追加（13:38）は、ワークフローが dc35eaf、DESIGN と EDIT_LOG が b8d50a6。依存の更新（13:54）は、package-lock.json が 5bad7f7、EDIT_LOG が e369884。時間切れの対策（08:40）は、テストの設定と補助が c972933、DESIGN と EDIT_LOG が 517755d。戻し方は、これまでの記録に合わせて新しいコミットから並べた
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: （Mac側でコミット後に記入）
+- コミット: 83adf3f（段階9C の記録と同じコミットに含めた。この記録の変更は EDIT_LOG.md のみ）
+- 戻し方: git revert 83adf3f（段階9C の DESIGN と EDIT_LOG の変更も戻る）
 - 注意点: README のバッジは足していない。README に GitHub のリポジトリの URL（所有者名とリポジトリ名）が書かれておらず、推測で書かない指示のため、作業を止めて利用者に報告した。README は変更していない。ハッシュはコミットの内容と照らし合わせていない（git を実行しないため。利用者から受け取った対応のとおりに記入した）
 
 ## 2026-10-27 11:39 見た目のトークンを整理し、2つの案（案A：紺の帯／案B：スレートと落ち着いた青緑）を作る（段階9C）
 - 依頼内容: 画面の見た目を整えるため、デザインのトークン（CSS 変数）を整理し、見比べ用の2案を作る。案は html の data-design 属性（URL の ?design=a / ?design=b、初期値 a）で切り替え、開発サーバーだけ右下に切り替えボタンを出す
 - 変更ファイル: frontend/src/index.css, frontend/src/design.ts（新規）, frontend/src/components/DesignSwitcher.tsx（新規）, frontend/src/components/NumberWithUnit.tsx（新規）, frontend/src/main.tsx, frontend/src/components/ResultSummary.tsx, frontend/src/components/OrderList.tsx, frontend/scripts/contrast.mjs, frontend/src/design.test.tsx（新規）, frontend/src/App.test.tsx, docs/DESIGN.md（0章に「見た目（デザインのトークンと2つの案）」）, docs/EDIT_LOG.md
 - 変更理由: 画面がシンプルすぎたため。index.css の直接書かれた色・角の丸み・文字の大きさ・影をトークンに置き換え、色は「案 × ライト／ダーク」の4つのパレット（同じ名前の変数）にした。部品の規則はトークンだけを参照し、案の違いはトークンの値だけで表す。案Aの全幅の帯は、ヘッダーを main の中に置いたまま box-shadow と clip-path で左右に伸ばした（100vw は使わない）。数値は太字の等幅数字にし、単位が元の文にあるところ（%・点・試合）だけ span（.unit）で包んで小さく添えた（文字列は変えない）。結果の主要な数値（1試合あたりの期待得点、非効率%）は幅 800px 未満 1.75rem、以上 2rem。切り替えボタンは main.tsx で import.meta.env.DEV のときだけ App の外に描画し、本番のビルドからは取り除かれる。contrast.mjs は4つのパレットを印（@palette）で読み、32の組み合わせを確かめる形にした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: （Mac側でコミット後に記入）
+- コミット: a51bfa8、83adf3f（目的別に分けてコミット。a51bfa8 はフロントのコード・テスト、83adf3f は DESIGN と EDIT_LOG。README の変更は無い）
+- 戻し方: git revert 83adf3f a51bfa8
 - 注意点: 既存のテストは削っていない。App.test.tsx の1件（getByText('2.62%')）は、「%」を span で包んだため要素の中の文字だけで探す照合が成り立たなくなり、textContent が「2.62%」と完全に一致する要素がちょうど1つあることを確かめる形に直した（利用者の承認済み）。CSS の規則を確かめる既存のテスト（検索欄の幅、結果の札・列の幅の切り替え）は、規則の書き方と順番を残して、そのまま通る。副のボタンの文字を強調の色から本文の色に変えた（主と副は面の有無で分かる）。成績の入力欄の項目名は 0.875rem にすると幅 400px でもはみ出したため 0.8rem にした（幅 320・360px のはみ出しは以前の 0.85rem からあり、直していない。利用者に報告）。dist の CSS には .design-switcher の規則が残る（JS には切り替えボタンの文字も部品も無い）。Edge 156（ヘッドレス）で、幅 320〜1200px の7つ × 2案 × ライト・ダークの28通りで、横スクロール 0、結果の左右の行の高さの差 0 を実測した。test 324件（既存314件＋新規10件）・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1344件が通った（backend は変更なし）。実際のスマホ（実機）での見え方は未確認
 
 ## 2026-10-27 12:42 見た目を案A（紺の帯）に確定し、タイトル・見出しを変え、項目名のはみ出しと OPS のはみ出しを直す（段階9C の仕上げ）
 - 依頼内容: 見た目の案A（紺の帯）に確定して案Bと切り替えの仕組みを削除し、タイトルを「打順シミュレーター」にしてページ上部の説明の文を削除し、タブと見出しの数字の丸を外して見出しに縦線を付け、成績の入力欄の項目名のはみ出し（幅 320・360px）と、結果の OPS が1以上のときのはみ出し（幅 320px）を直す
 - 変更ファイル: frontend/src/index.css, frontend/src/main.tsx, frontend/src/design.ts（削除）, frontend/src/components/DesignSwitcher.tsx（削除）, frontend/src/design.test.tsx（削除）, frontend/src/main.test.tsx（新規）, frontend/scripts/contrast.mjs, frontend/src/App.tsx, frontend/src/components/StepTabs.tsx, frontend/index.html, frontend/src/App.test.tsx, frontend/src/order.test.tsx, frontend/src/preset.test.tsx, frontend/src/tabs.test.tsx, frontend/src/texts.test.tsx, frontend/src/result.test.tsx, README.md（先頭の見出し）, docs/DESIGN.md（0章のタブの記述と「見た目」の節）, docs/EDIT_LOG.md
 - 変更理由: 2つの案を見比べて、利用者が案Aを採用したため。案Aの値を属性なしの :root とダークの @media に統合し、[data-design] の規則・案Bの値・切り替えの部品と CSS を削除した。案Aでしか使わない色の変数のうち、ほかと同じ値だったもの（選んだ選択肢・選んだタブの下線は primary、選んだタブの文字は text、フォーカスの枠は accent）は1つにまとめた。数字の丸を外したことで使われなくなった --color-on-accent と、説明の文を削除したことで使われなくなった --color-on-band-muted も削除した。見出しの縦線は疑似要素（読み上げに含まれない）。項目名は最大2行で折り返し、同じまとまりの項目名の高さを subgrid でそろえた。結果の指標は、狭い列（列の幅 200px 未満）だけ 0.75rem にした
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: （Mac側でコミット後に記入）
+- コミット: a51bfa8、4287997、83adf3f（目的別に3つに分けてコミット。a51bfa8 はフロントのコード・テスト、4287997 は README、83adf3f は DESIGN と EDIT_LOG）
+- 戻し方: git revert 83adf3f 4287997 a51bfa8
 - 注意点: 案の取り違えがあった。利用者は最初に「案Bに確定する」と指示し、作業の途中でそれを取り消して「案Aに確定する」と指示した。取り消しの前に、index.css の案Aの規則と値、design.ts・DesignSwitcher.tsx・design.test.tsx（削除）、main.tsx の切り替え、contrast.mjs の案Aのパレットを、案Bに確定する形に変えていた。index.css は、書き換えの直前にスクラッチパッドへ保存したコピー（45,345バイト）で上書きして復元し、そこから案Aに統合した。切り替えの3ファイルと main.tsx は、案Aに確定しても不要なため、戻していない（main.tsx は段階9C より前の形）。案Aの見た目が統合の前後で変わらないことは、Edge 156（ヘッドレス）で、統合前は html に data-design="a" を一時的に設定して、ライト・ダーク × 5つの画面 × 7つの幅（70画面）の主要な要素の色・大きさ・位置を記録し、統合後と比べて確かめた（24,276の値のうち差は 0）。contrast の比は、段階9C の案Aの32組の値と、ライト・ダークの64件すべてで一致した（その後、使われなくなった2組を外し、見出しの縦線の1組を足して31組）。「打順の得点期待値」は、画面・index.html・テストから無くなった（README の「入力打順の得点期待値」と DESIGN の「入力した打順の得点期待値」などは、タイトルではなく文の一部なので残した）。test 316件（段階9C の324件から design.test.tsx の10件を削除し、main.test.tsx の2件を追加）・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1344件が通った（backend は変更なし）。実際のスマホ（実機）での見え方は未確認
 
 ## 2026-10-27 14:58 タイトルの左にダイヤモンドの印を置き、タイトルを大きく太くする／項目名の折り返しを確かめる（段階9C の追加修正）
 - 依頼内容: 幅 320px の項目名の折り返しが必要以上でないかを実測して、必要なら直す。タイトルが質素すぎるので、紺の帯のまま、左に野球のダイヤモンドの印を置き、タイトルを大きく太くし、幅 800px 以上で帯の余白を広げる。フォントの候補を調べる（調べるだけ）
 - 変更ファイル: frontend/src/components/DiamondMark.tsx（新規）, frontend/src/App.tsx, frontend/src/index.css, frontend/scripts/contrast.mjs, frontend/src/texts.test.tsx, docs/DESIGN.md（0章の「見た目」の節のヘッダー・文字・項目名・コントラスト・実測、ページ上部の文の注記）, docs/EDIT_LOG.md
 - 変更理由: 印はインライン SVG（回した正方形の細い線と、4つの塁の点）で、色は帯の文字の色、読み上げなし（aria-hidden）。タイトルは太さ 800・字間 0.03em・文字の大きさ clamp(1.5rem, 1rem + 2.5vw, 2.25rem)、印は文字の 1.35 倍、間隔は文字の 0.6 倍。帯の上下の余白は幅 800px 以上だけ 24px から 32px にした。項目名は、折り返している項目名がどれも1行の自然な幅が使える幅（列の幅）を超えていて、折り返す項目名の無いまとまりは既に1行の高さだったため、変更しなかった
-- コミット: （Mac側でコミット後に記入）
-- 戻し方: （Mac側でコミット後に記入）
+- コミット: a51bfa8、83adf3f（目的別に分けてコミット。a51bfa8 はフロントのコード・テスト、83adf3f は DESIGN と EDIT_LOG。README の変更は無い）
+- 戻し方: git revert 83adf3f a51bfa8
 - 注意点: Windows（Edge 156）では、タイトルは Yu Gothic UI の Bold で表示され、800 の太さが無いため見た目は 700 と同じ。幅 320px の「死球 HBP」は、自然な幅 51.7px に対して使える幅 51px で、0.7px 足りずに折り返している。「併殺打 GIDP」が収まって見えるのは、右隣の4列目が空いているため。contrast は印と帯の1組を足して32組（ライト 13.32:1、ダーク 16.82:1）。フォントの調査では、何も変更していない（候補のパッケージは、スクラッチパッドの空のフォルダで npm pack して調べ、package.json には入れていない）。調査の中で、Windows では結果の数字（太字）が Yu Gothic UI の Bold で表示され、tabular-nums を指定しても「1」の幅だけ狭い（20px で 8.05px、ほかの数字は 10.73〜11.53px）ことを実測した。これは以前からのことで、直していない（利用者に報告）。test 317件（既存316件＋新規1件）・typecheck・lint・build・contrast、backend の ruff・mypy・pytest 1344件が通った（backend は変更なし）。Edge 156（ヘッドレス）で、幅 320〜1200px の7つ × ライト・ダークの14通りで、横スクロール 0、文字の切れ 0、結果の左右の行の高さの差 0 を実測した。実際のスマホ（実機）での見え方は未確認
