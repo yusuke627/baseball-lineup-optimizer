@@ -11,10 +11,13 @@ RUN npm run build
 
 # 2段目: 実行用のイメージ。実行時の依存だけを入れる (開発用の [dev] は入れない)
 FROM python:3.13.14-slim-bookworm
+# MONTE_CARLO_TRIALS: 案B (参考のシミュレーション) の試行回数。アプリの既定は 5000 だが、
+# 公開先は無料の枠で CPU が小さいため 1000 にする (推奨打順と期待得点は変わらず、参考値のぶれが大きくなる)
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PORT=8000
+    PORT=8000 \
+    MONTE_CARLO_TRIALS=1000
 WORKDIR /app
 
 # リポジトリと同じ並び (backend・data/presets・frontend/dist) に置く。
