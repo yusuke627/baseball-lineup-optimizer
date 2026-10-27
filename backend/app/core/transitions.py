@@ -2,7 +2,7 @@
 打撃イベント別の遷移ルール (resolve_event) と、
 打者1人分の「1打席あたりの状態遷移行列 T」「報酬ベクトル reward」の構築。
 
-設計仕様書 (docs/DESIGN.md) の 1章・9章に対応する実装。
+設計 (docs/DESIGN.md) の 3章「計算モデル」に対応する実装。
 """
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ from .states import (
     outs_bucket,
 )
 
-# デフォルトの進塁確率（出典: Baseball Prospectus, 2003年MLBデータに基づく研究）。
+# デフォルトの進塁確率（出典: James Click, Baseball Prospectus, 2004年掲載の記事（2003年シーズンの数値））。
 # 打者データ年度(2025年)とは異なる年度の値を暫定使用している点に注意。
-# docs/DESIGN.md 6章「進塁確率データの年代のズレ」を参照。
+# docs/DESIGN.md 10章「モデル全般の限界」を参照。
 DEFAULT_ADVANCE_PROBS = {
     # 単打で一塁走者が三塁まで進む確率
     "first_to_third_on_single": {"less_than_two_outs": 0.251, "two_outs": 0.306},
@@ -78,7 +78,12 @@ def _single_branches(bases: Bases, outs: int, adv: dict) -> list[tuple[Bases, in
     on3_scores = bases.on3  # 三塁走者は単打で常に生還する前提
 
     for r2_scores, p2 in case2_options:
-        for r1_to_3, p1 in case1_options:
+        # 後ろの走者は、前の走者の塁を超えず、同じ塁にも重ならない。
+        # 二塁走者が三塁で止まったときは、一塁走者は二塁まで (二塁走者が生還したときは、独立に三塁まで進める)
+        r1_options = case1_options
+        if bases.on1 and bases.on2 and r2_scores is False:
+            r1_options = [(False, 1.0)]
+        for r1_to_3, p1 in r1_options:
             prob = p2 * p1
             runs = 1 if on3_scores else 0  # 打者自身は生還しない
             new_on3 = False
@@ -157,9 +162,9 @@ def resolve_event(event: str, base_code: int, outs: int, adv: dict) -> list[Bran
         return [Branch(bases, outs + 1, 0, 1.0)]
 
     if event == "SH":
-        # 犠打成功: 打者アウト、走者は全員1つずつ進塁 (成功パターンのみモデル化)
+        # 犠打成功: 打者アウト、走者は全員1つずつ進塁 (成功パターンのみモデル化)。三塁走者は生還して三塁を空ける
         runs = 1 if bases.on3 else 0
-        new_bases = Bases(on1=False, on2=bases.on1, on3=bases.on2 or bases.on3)
+        new_bases = Bases(on1=False, on2=bases.on1, on3=bases.on2)
         return [Branch(new_bases, outs + 1, runs, 1.0)]
 
     if event == "GIDP":
