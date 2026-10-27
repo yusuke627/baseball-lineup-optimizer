@@ -7,7 +7,7 @@
      「1イニング分」の吸収マルコフ連鎖を組み、
        - 状態(0/0アウト, k)から吸収されるまでの期待得点 V[k]
        - 吸収時に次の先頭打者が j になる確率 M[k][j]
-     を基本行列 N=(I-Q)^-1 で厳密に求める
+     を基本行列 N=(I-Q)^-1 で厳密に求める (必要な9行だけを線形方程式で解く)
   3. 9イニング分、先頭打者の分布を M で遷移させながら V を足し合わせることで
      1試合(9イニング)の期待得点を求める
 
@@ -42,46 +42,35 @@ def _half_inning_chain(
     Q = np.zeros((n_transient, n_transient))
     R_absorb = np.zeros((n_transient, NUM_BATTERS))  # 吸収時にどの打者が次の先頭になるか
     reward_vec = np.zeros(n_transient)
-
-    def idx(bo: int, batter: int) -> int:
-        # bo: 0-23, batter: 0-8 (0-indexed)
-        return bo * NUM_BATTERS + batter
+    # 合成状態 (bo, batter) の番号は bo * 9 + batter (bo: 0-23, batter: 0-8)。
+    # 最適打順の探索で何度も呼ばれるため、Python のループではなく、打者ごとのブロックを配列の操作で置く
+    base_outs = np.arange(NUM_TRANSIENT_STATES)
 
     for batter in range(NUM_BATTERS):
         T = batter_transitions[batter]
         reward = batter_rewards[batter]
         next_batter = (batter + 1) % NUM_BATTERS
+        rows = base_outs * NUM_BATTERS + batter
         if steal_transitions is not None:
             S = steal_transitions[batter]
             S_transient = S[:NUM_TRANSIENT_STATES, :NUM_TRANSIENT_STATES]
             # 盗塁ステップ → 打席 の順に合成する (盗塁自体では得点は入らない)
             T = S_transient @ T[:NUM_TRANSIENT_STATES, :]
             reward = S_transient @ reward
-            for bo in range(NUM_TRANSIENT_STATES):
-                R_absorb[idx(bo, batter), batter] += S[bo, TERMINAL_STATE]
-        for bo in range(NUM_TRANSIENT_STATES):
-            i = idx(bo, batter)
-            reward_vec[i] = reward[bo]
-            for j_state in range(NUM_TRANSIENT_STATES + 1):
-                p = T[bo, j_state]
-                if p == 0:
-                    continue
-                if j_state == TERMINAL_STATE:
-                    R_absorb[i, next_batter] += p
-                else:
-                    Q[i, idx(j_state, next_batter)] += p
+            R_absorb[rows, batter] += S[:NUM_TRANSIENT_STATES, TERMINAL_STATE]
+        reward_vec[rows] = reward[:NUM_TRANSIENT_STATES]
+        # 3アウトにならない遷移は、次の打者の合成状態へ。3アウトの遷移は、次のイニングの先頭が次の打者になる
+        Q[np.ix_(rows, base_outs * NUM_BATTERS + next_batter)] = T[:NUM_TRANSIENT_STATES, :NUM_TRANSIENT_STATES]
+        R_absorb[rows, next_batter] += T[:NUM_TRANSIENT_STATES, TERMINAL_STATE]
 
-    identity = np.eye(n_transient)
-    N = np.linalg.inv(identity - Q)
-    expected_reward_from_state = N @ reward_vec          # (216,)
-    next_batter_dist_from_state = N @ R_absorb            # (216, 9)
-
-    V = np.zeros(NUM_BATTERS)
-    M = np.zeros((NUM_BATTERS, NUM_BATTERS))
-    for batter in range(NUM_BATTERS):
-        start_idx = idx(0, batter)  # base_out=0 は (走者なし, 0アウト)
-        V[batter] = expected_reward_from_state[start_idx]
-        M[batter] = next_batter_dist_from_state[start_idx]
+    # 基本行列 N = (I-Q)^-1 のうち、各打者が先頭 (走者なし・0アウト。番号は 0 * 9 + batter) の9行だけを使う。
+    # 逆行列を全部求める代わりに、N[s, :] = e_s^T (I-Q)^-1 を (I-Q)^T x = e_s の線形方程式で解く
+    starts = np.arange(NUM_BATTERS)
+    rhs = np.zeros((n_transient, NUM_BATTERS))
+    rhs[starts, starts] = 1.0
+    N_rows = np.linalg.solve((np.eye(n_transient) - Q).T, rhs).T  # (9, 216)
+    V = N_rows @ reward_vec   # (9,)
+    M = N_rows @ R_absorb     # (9, 9)
     return V, M
 
 

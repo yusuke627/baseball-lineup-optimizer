@@ -48,6 +48,21 @@ def evaluate_lineup(batters: dict[str, dict], order: list[str], steals: dict[str
     return expected_runs_per_game(lineup, steal_probs=steal_probs)
 
 
+def _evaluate_cached(
+    batters: dict[str, dict],
+    order: list[str],
+    steals: dict[str, dict] | None,
+    cache: dict[tuple[str, ...], float] | None,
+) -> float:
+    """同じ打順の評価を使い回す (cache が None なら毎回計算する)。値は毎回計算した場合と同じ"""
+    if cache is None:
+        return evaluate_lineup(batters, order, steals)
+    key = tuple(order)
+    if key not in cache:
+        cache[key] = evaluate_lineup(batters, order, steals)
+    return cache[key]
+
+
 def inefficiency_percent(input_runs: float, best_runs: float) -> float:
     if best_runs == 0:
         return 0.0
@@ -59,25 +74,28 @@ def hill_climb_lineup(
     start_order: list[str] | None = None,
     max_iterations: int = 200,
     steals: dict[str, dict] | None = None,
+    cache: dict[tuple[str, ...], float] | None = None,
 ) -> dict:
     """
     全探索(362,880通り)が重すぎる場合の近似解を高速に求めるヒューリスティック。
     2人の打順を入れ替える近傍探索を、改善が見られなくなるまで繰り返す(山登り法)。
     厳密な最適解を保証するものではない点に注意(README上に明記すること)。
+
+    cache (打順のタプル → 期待得点) を渡すと、一度評価した打順の値を使い回す (探索の道筋と結果は変わらない)。
     """
     ids = list(batters.keys())
     if len(ids) != 9:
         raise ValueError("exactly 9 batters are required")
 
     order = list(start_order) if start_order else list(ids)
-    best_runs = evaluate_lineup(batters, order, steals)
+    best_runs = _evaluate_cached(batters, order, steals, cache)
 
     for _ in range(max_iterations):
         improved = False
         for i, j in itertools.combinations(range(9), 2):
             candidate = order.copy()
             candidate[i], candidate[j] = candidate[j], candidate[i]
-            runs = evaluate_lineup(batters, candidate, steals)
+            runs = _evaluate_cached(batters, candidate, steals, cache)
             if runs > best_runs:
                 order, best_runs = candidate, runs
                 improved = True
@@ -106,11 +124,15 @@ def multi_restart_hill_climb(
 
     1回目の試行は、指定があれば start_order（ユーザーが入力した打順）から、
     2回目以降はランダムな初期打順から開始する。
+
+    1回の探索の中では、同じ打順の評価を使い回す (リスタートをまたいで同じ打順を何度も評価するため。
+    乱数の使い方と探索の道筋は変わらない)。
     """
     ids = list(batters.keys())
     if len(ids) != 9:
         raise ValueError("exactly 9 batters are required")
     rng = rng or random.Random()
+    cache: dict[tuple[str, ...], float] = {}
 
     best_order = None
     best_runs = -1.0
@@ -126,7 +148,7 @@ def multi_restart_hill_climb(
             init = ids.copy()
             rng.shuffle(init)
 
-        result = hill_climb_lineup(batters, start_order=init, steals=steals)
+        result = hill_climb_lineup(batters, start_order=init, steals=steals, cache=cache)
         n_restarts += 1
 
         if result["best_runs"] > best_runs:

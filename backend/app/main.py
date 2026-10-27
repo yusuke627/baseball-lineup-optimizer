@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import unicodedata
+from collections.abc import Mapping
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
@@ -34,6 +36,27 @@ from app.schemas.batter import (
     stats_warning_items,
     stats_warnings,
 )
+
+# 案B (モンテカルロ) の試行回数。環境変数 MONTE_CARLO_TRIALS で変えられる (公開先は CPU が小さいため小さくする)。
+# 未設定または空なら 5000。1 以上の整数でなければ、設定の誤りに気づけるよう起動時にエラーにする
+MONTE_CARLO_TRIALS_ENV = "MONTE_CARLO_TRIALS"
+DEFAULT_MONTE_CARLO_TRIALS = 5000
+
+
+def monte_carlo_trials_from_env(environ: Mapping[str, str] = os.environ) -> int:
+    value = environ.get(MONTE_CARLO_TRIALS_ENV, "").strip()
+    if value == "":
+        return DEFAULT_MONTE_CARLO_TRIALS
+    try:
+        trials = int(value)
+    except ValueError:
+        raise ValueError(f"{MONTE_CARLO_TRIALS_ENV} は 1 以上の整数で指定してください (指定された値: {value!r})") from None
+    if trials < 1:
+        raise ValueError(f"{MONTE_CARLO_TRIALS_ENV} は 1 以上の整数で指定してください (指定された値: {value!r})")
+    return trials
+
+
+MONTE_CARLO_TRIALS = monte_carlo_trials_from_env()
 
 app = FastAPI(
     title="Baseball Lineup Run-Expectancy API",
@@ -278,7 +301,7 @@ def evaluate(req: LineupEvaluationRequest):
 
     lineup = [event_probs_by_id[bid] for bid in req.input_order]
     lineup_steals = [steal_probs_by_id[bid] for bid in req.input_order]
-    mc = estimate_expected_runs(lineup, steal_probs=lineup_steals, n_trials=5000)
+    mc = estimate_expected_runs(lineup, steal_probs=lineup_steals, n_trials=MONTE_CARLO_TRIALS)
 
     return LineupEvaluationResponse(
         input_order=req.input_order,
