@@ -38,6 +38,7 @@ MLBの打撃成績（回数で数えた成績）から、9人の打順の1試合
   - `app/core/optimizer.py`：推奨打順の探索（4章）
   - `app/core/metrics.py`：表示用の指標と、イベント確率・盗塁の確率の算出
   - `app/data_loader.py`：選手データの読み込み
+  - `app/web.py`：公開用の配信アプリ（API を `/api` の下に載せ、ビルドしたフロントエンドも配信する。下の「デプロイの構成」）
 - **フロントエンド**（`frontend/`、React + TypeScript + Vite）
   - `src/App.tsx` と `src/components/`：画面（8章）
   - `src/api/client.ts`：API の呼び出し。画面は API を相対パス `/api/...` で呼び、開発サーバーが `/api` をバックエンド（`http://127.0.0.1:8000`）に転送する（`vite.config.ts`）
@@ -56,6 +57,16 @@ MLBの打撃成績（回数で数えた成績）から、9人の打順の1試合
 5. 期待得点、試合数ごとの合計、非効率%、損失点、注意の文を返す
 
 画面に出す数値は、API が返した値だけです。フロントエンドでは、確率・期待得点・指標を計算せず、桁をそろえるなどの表示の整形だけを行います。
+
+### デプロイの構成
+
+公開用には、1つの Web サービスとして動かします。FastAPI が、API とビルドしたフロントエンドの両方を配信します。
+
+- **配信用のアプリ**（`backend/app/web.py`、起動は `uvicorn app.web:app`）：今の API（`app.main` の app）は変えずに `/api` の下に載せる。パスは、開発時の Vite の中継（`/api` を取り除いて転送）と同じになる（例：`/api/lineup/evaluate`）。API の自動ドキュメントは `/api/docs`。それ以外のパスは `frontend/dist` のファイルを返し、存在しないパスには `index.html` を返す。`/api` の下の存在しないパスは 404 のまま。ビルド出力（`index.html`）が無いときは、`app.main` の app をそのまま使う（開発時は今までどおり `uvicorn app.main:app` と Vite の開発サーバーを使う）
+- **イメージ**（リポジトリの直下の `Dockerfile`）：2段階で作る。1段目は `node:24.19.0-bookworm-slim` で `npm ci` と `npm run build`、2段目は `python:3.13.14-slim-bookworm` で、実行時の依存だけを入れる（開発用の `[dev]` は入れない）。リポジトリと同じ並び（`backend`・`data/presets`・`frontend/dist`）に置き、選手データの場所がソースの位置から決まるため、`app` はソースのまま動かす。root ではないユーザーで動かす。ヘルスチェックは `/api/health`。イメージに入れないものは `.dockerignore` に書く
+- **環境変数**：`PORT`（待ち受けるポート。既定 8000）、`FRONTEND_DIST_DIR`（ビルド出力の場所。既定はリポジトリの `frontend/dist`）。`OPENBLAS_NUM_THREADS` の既定値（1）は、今までどおり `app/__init__.py` が設定する（4-2）。秘密情報は使わない
+- **無料の枠で想定される制約**：使われない時間が続くとサービスが止まり、次のアクセスで再開するまでに時間がかかる（どれだけかかるかは未確認）。推奨打順の探索は1回あたり数秒かかる（VALIDATION.md 8-2 の測定は手元の PC での値で、公開先での時間は未確認）
+- イメージのビルドと起動は、まだ確かめていない（未確認）。手元では、同じ並びと実行時だけの依存で `uvicorn app.web:app` を起動し、画面が開き、計算が動くことを確かめた
 
 ## 3. 計算モデル
 
