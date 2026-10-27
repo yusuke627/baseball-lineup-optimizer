@@ -15,11 +15,12 @@ htmlcov/
 venv/
 env/
 
-# 秘密情報
+# 秘密情報（設定の見本の .env.example は除外しない）
 .env
 .env.*
+!.env.example
 
-# OS・同期ツール（Macの .DS_Store、OneDrive・Windows が作るファイル）
+# OS が作るファイル
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -28,13 +29,16 @@ desktop.ini
 .idea/
 .vscode/
 
-# Claude Code のローカル用指示・設定（公開しない）
+# ローカルの作業用の設定（公開しない）
 CLAUDE.md
 .claude/
+
+# 作業の記録は、手元だけに置く
+docs/EDIT_LOG.md
 
 # 外部から取得した元データ（Lahman Baseball Database など）。リポジトリには含めない
 data/raw/
 
-# フロントエンド（今後の実装に備えて）
+# フロントエンドの依存とビルドの出力
 node_modules/
 frontend/dist/
