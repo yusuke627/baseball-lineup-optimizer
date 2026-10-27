@@ -74,8 +74,9 @@ describe('タブの役割と属性', () => {
     renderAppInManualEntry()
     const tablist = screen.getByRole('tablist', { name: '手順' })
     const tabs = within(tablist).getAllByRole('tab')
-    expect(tabs.map((t) => t.textContent)).toEqual(['1成績の入力', '2打順', '3計算と結果'])
-    // 番号は見た目だけで、タブの名前は手順の名前
+    // タブには手順の名前だけを出す (番号の丸は、段階9C の仕上げで外した)
+    expect(tabs.map((t) => t.textContent)).toEqual(['成績の入力', '打順', '計算と結果'])
+    expect(tabs.every((t) => t.children.length === 0)).toBe(true)
     expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false'])
     for (const [index, t] of tabs.entries()) {
       expect(t).toHaveAccessibleName(TAB_NAMES[index])
@@ -180,7 +181,7 @@ describe('切り替えても状態が残る', () => {
 
     // 打順を並べ替える
     showTab('打順')
-    const order = screen.getByRole('region', { name: '2打順' })
+    const order = screen.getByRole('region', { name: '打順' })
     await within(order).findAllByRole('list', { name: '指標' })
     await user.click(within(order).getByRole('button', { name: '打者Iを上へ（9番から8番へ）' }))
     const orderNames = () => [...order.querySelectorAll('.order-name')].map((el) => el.textContent)

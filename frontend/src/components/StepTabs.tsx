@@ -89,9 +89,6 @@ export default function StepTabs<T extends string>({ label, tabs, selected, onSe
               onClick={() => onSelect(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, index)}
             >
-              <span className="step-tab-number" aria-hidden="true">
-                {index + 1}
-              </span>
               {tab.label}
             </button>
           )

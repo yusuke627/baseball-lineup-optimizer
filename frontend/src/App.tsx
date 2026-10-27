@@ -8,6 +8,7 @@ import ErrorSummary, { summarizeErrors, type BatterErrorSummary } from './compon
 import BatterCards from './components/BatterCards'
 import BatterWarnings from './components/BatterWarnings'
 import DataSources from './components/DataSources'
+import DiamondMark from './components/DiamondMark'
 import Disclosure from './components/Disclosure'
 import OrderList, { type OrderEntry } from './components/OrderList'
 import ResultSummary from './components/ResultSummary'
@@ -204,7 +205,7 @@ export default function App() {
     <>
       <section aria-labelledby="input-heading" className="step">
         <h2 id="input-heading">
-          <span className="step-number">1</span>成績の入力
+          成績の入力
         </h2>
         <p>選手の成績を入力してください。</p>
         <Disclosure name="入力のしかたの説明">
@@ -240,7 +241,7 @@ export default function App() {
     <>
       <section aria-labelledby="order-heading" className="step">
         <h2 id="order-heading">
-          <span className="step-number">2</span>打順
+          打順
         </h2>
         <p>選んだ選手を、打順に並べ替えてください。</p>
         <Disclosure name="並べ替えのしかたの説明">
@@ -261,7 +262,7 @@ export default function App() {
 
       <section aria-labelledby="run-heading" className="step">
         <h2 id="run-heading">
-          <span className="step-number">3</span>計算と結果
+          計算と結果
         </h2>
         <div className="run-controls">
           <button type="button" onClick={handleRun} disabled={isRunning}>
@@ -303,10 +304,10 @@ export default function App() {
     <>
       <main>
         <header className="page-header">
-          <h1>打順の得点期待値</h1>
-          <p>
-            打順の期待得点を比べます。
-          </p>
+          <h1>
+            <DiamondMark />
+            <span>打順シミュレーター</span>
+          </h1>
         </header>
 
         <StepTabs

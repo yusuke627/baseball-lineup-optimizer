@@ -548,7 +548,7 @@ describe('カードへの読み込み', () => {
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
     showTab('打順')
-    expect(screen.getByRole('region', { name: '2打順' })).toHaveTextContent('Test Alpha')
+    expect(screen.getByRole('region', { name: '打順' })).toHaveTextContent('Test Alpha')
   })
 })
 
@@ -1076,7 +1076,7 @@ describe('打順の欄との関係', () => {
     render(<App />)
     await loadPlayer(user, '打者A', 'Test Team A', 'Test Alpha')
     showTab('打順')
-    const order = screen.getByRole('region', { name: '2打順' })
+    const order = screen.getByRole('region', { name: '打順' })
     expect([...order.querySelectorAll('.order-name')].map((el) => el.textContent)).toEqual([
       'Test Alpha', '打者B', '打者C', '打者D', '打者E', '打者F', '打者G', '打者H', '打者I',
     ])

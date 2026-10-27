@@ -5,6 +5,7 @@ import { formatRate, shortDisplayName } from '../format'
 import { warningButtonName } from '../messages'
 import type { MetricsState } from '../useBatterMetrics'
 import Disclosure from './Disclosure'
+import NumberWithUnit from './NumberWithUnit'
 import WarningText from './WarningText'
 
 // 表示する数値はすべて API が返した値。ここでは桁をそろえるだけで、計算はしない。
@@ -82,7 +83,8 @@ export default function ResultSummary({ result, names, metrics, games, onGamesCh
                 checked={entry.n_games === games}
                 onChange={() => onGamesChange(entry.n_games)}
               />
-              {entry.n_games}試合
+              {entry.n_games}
+              <span className="unit">試合</span>
             </label>
           ))}
         </div>
@@ -94,15 +96,19 @@ export default function ResultSummary({ result, names, metrics, games, onGamesCh
       {/* 非効率% と損失点は、2つの打順の期待得点の近く (一覧より上) に目立たせて出す */}
       <div className="inefficiency">
         <p className="inefficiency-label">入力打順の非効率</p>
-        <p className="inefficiency-value number">{formatPercent(result.inefficiency_percent)}</p>
+        <p className="inefficiency-value number">
+          <NumberWithUnit text={formatPercent(result.inefficiency_percent)} />
+        </p>
         <p className="inefficiency-loss">
           {result.runs_lost_per_game === 0 ? (
             '入力打順と推奨打順の期待得点は同じです。'
           ) : (
             <>
-              入力打順だと、推奨打順より、1試合あたり <strong className="number">{formatRuns(result.runs_lost_per_game)}</strong> 点・
-              {games}試合で <strong className="number">{total === undefined ? '—' : formatTotal(total.runs_lost)}</strong>{' '}
-              点少なくなります。
+              {/* 数字の後ろの「点」だけを .unit で包む (文は変えない) */}
+              入力打順だと、推奨打順より、1試合あたり <strong className="number">{formatRuns(result.runs_lost_per_game)}</strong>{' '}
+              <span className="unit">点</span>・{games}試合で{' '}
+              <strong className="number">{total === undefined ? '—' : formatTotal(total.runs_lost)}</strong>{' '}
+              <span className="unit">点</span>少なくなります。
             </>
           )}
         </p>

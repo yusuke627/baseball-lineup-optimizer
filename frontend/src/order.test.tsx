@@ -99,7 +99,7 @@ function fillAll() {
 // 打順の欄は「打順」のタブ、計算のボタンは「計算と結果」のタブにある (選んでから探す)
 const orderRegion = () => {
   showTab('打順')
-  return screen.getByRole('region', { name: '2打順' })
+  return screen.getByRole('region', { name: '打順' })
 }
 const runButton = () => {
   showTab('計算と結果')
@@ -276,7 +276,7 @@ describe('打者ごとの指標と注意', () => {
     expect(summary).not.toHaveTextContent(MISMATCH_FIRST)
 
     // 一覧は「計算と結果」の見出しより前にある
-    const resultHeading = screen.getByRole('heading', { name: '3計算と結果' })
+    const resultHeading = screen.getByRole('heading', { name: '計算と結果' })
     expect(summary.compareDocumentPosition(resultHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 

@@ -87,25 +87,25 @@ afterEach(() => {
 describe('入力フォーム', () => {
   test('9人分の表示名と14項目の入力欄がある', () => {
     renderAppInManualEntry()
-    expect(screen.getByRole('heading', { level: 1, name: '打順の得点期待値' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: '打順シミュレーター' })).toBeInTheDocument()
     expect(screen.getAllByRole('textbox')).toHaveLength(9 * (1 + 14))
   })
 
   test('画面は「成績の入力 → 打順 → 計算と結果」の3つの段階に分かれている', () => {
     renderAppInManualEntry()
     // 3つの段階はタブで切り替える。最初は「成績の入力」
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['1成績の入力', '2打順', '3計算と結果'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['成績の入力', '打順', '計算と結果'])
     expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName('成績の入力')
     // 各パネルの見出し (隠れたパネルも含めて、この順)
     const panels = screen.getAllByRole('tabpanel', { hidden: true })
     expect(panels.map((panel) => within(panel).getAllByRole('heading', { level: 2, hidden: true })[0].textContent)).toEqual([
-      '1成績の入力',
-      '2打順',
-      '3計算と結果',
+      '成績の入力',
+      '打順',
+      '計算と結果',
     ])
     // 見えている見出しは、選んだパネルの見出しと、ページの一番下の「データの出典」欄
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
-    expect(headings).toEqual(['1成績の入力', 'データの出典'])
+    expect(headings).toEqual(['成績の入力', 'データの出典'])
   })
 
   test('打者ごとにカードがあり、項目はまとまりごとに分かれている', () => {
@@ -136,7 +136,7 @@ describe('入力フォーム', () => {
   test('打順の欄には、表示名が入力の順に並ぶ', () => {
     renderAppInManualEntry()
     showTab('打順')
-    const order = screen.getByRole('region', { name: '2打順' })
+    const order = screen.getByRole('region', { name: '打順' })
     const names = () => [...order.querySelectorAll('.order-name')].map((item) => item.textContent)
     expect(names()).toEqual(NAMES)
 
@@ -351,7 +351,14 @@ describe('計算の実行', () => {
     const result = await screen.findByRole('region', { name: '結果' })
     expect(within(result).getByText('4.123')).toBeInTheDocument()
     expect(within(result).getByText('4.235')).toBeInTheDocument()
-    expect(within(result).getByText('2.62%')).toBeInTheDocument()
+    // 「%」は小さく添える span (.unit) で包んでいるため、要素の中の文字だけで探す照合は使えない。
+    // 文字列全体 (textContent) が「2.62%」と完全に一致する要素が、ちょうど1つあることを確かめる (子に同じ文字列を持つ外側の要素は除く)
+    expect(
+      within(result).getByText(
+        (_, element) =>
+          element?.textContent === '2.62%' && ![...element.children].some((child) => child.textContent === '2.62%'),
+      ),
+    ).toBeInTheDocument()
     // API は打順を内部IDで返す。画面には表示名で出す
     const namesIn = (title: string) =>
       [...within(result).getByRole('region', { name: title }).querySelectorAll('.result-order-name')].map(

@@ -21,6 +21,7 @@ import type { BatterMetrics, Preset } from '../api/types'
 import { formatRate, formatShare } from '../format'
 import { warningButtonName } from '../messages'
 import type { MetricsState } from '../useBatterMetrics'
+import NumberWithUnit from './NumberWithUnit'
 import WarningText from './WarningText'
 
 export interface OrderEntry {
@@ -306,7 +307,7 @@ function MetricsLine({ metrics }: { metrics: BatterMetrics | undefined }) {
             <abbr title={column.spoken} aria-hidden="true">
               {column.label}
             </abbr>
-            <span className="visually-hidden">{column.spoken}</span> {column.value(metrics)}
+            <span className="visually-hidden">{column.spoken}</span> <NumberWithUnit text={column.value(metrics)} />
           </li>
         ))}
       </ul>
@@ -316,7 +317,7 @@ function MetricsLine({ metrics }: { metrics: BatterMetrics | undefined }) {
     <ul className="order-metrics order-metrics-placeholder" aria-hidden="true">
       {METRIC_COLUMNS.map((column) => (
         <li key={column.label}>
-          <abbr>{column.label}</abbr> {PLACEHOLDER_VALUES[column.label]}
+          <abbr>{column.label}</abbr> <NumberWithUnit text={PLACEHOLDER_VALUES[column.label]} />
         </li>
       ))}
     </ul>

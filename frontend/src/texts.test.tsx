@@ -90,15 +90,33 @@ async function openDisclosure(user: ReturnType<typeof userEvent.setup>, containe
 }
 
 describe('ページ上部と、成績の入力・打順の案内', () => {
-  test('ページ上部の文は「打順の期待得点を比べます。」', () => {
+  // ページ上部の説明の文 (「打順の期待得点を比べます。」) は、段階9C の仕上げで削除した。帯の中はタイトルだけ
+  test('ページ上部（帯）はタイトル「打順シミュレーター」だけで、説明の文は置かない', () => {
     renderAppInManualEntry()
-    expect(document.querySelector('.page-header p')).toHaveTextContent(/^打順の期待得点を比べます。$/)
+    const header = document.querySelector('.page-header') as HTMLElement
+    expect(header).toHaveTextContent(/^打順シミュレーター$/)
+    expect(header.querySelector('p')).toBeNull()
+    expect(screen.queryByText('打順の期待得点を比べます。')).not.toBeInTheDocument()
+  })
+
+  // 段階9C の追加修正: タイトルの左にダイヤモンドの印 (インライン SVG の装飾) を置いた
+  test('タイトルの左のダイヤモンドの印は読み上げに含めず、見出し（h1）の名前は「打順シミュレーター」のまま', () => {
+    renderAppInManualEntry()
+    const h1 = screen.getByRole('heading', { level: 1, name: '打順シミュレーター' })
+    const mark = h1.querySelector('svg') as SVGElement
+    expect(mark).not.toBeNull()
+    expect(h1.firstElementChild).toBe(mark)
+    expect(mark).toHaveAttribute('aria-hidden', 'true')
+    expect(mark).toHaveAttribute('focusable', 'false')
+    expect(mark.querySelectorAll('circle')).toHaveLength(4)
+    expect(h1).toHaveTextContent(/^打順シミュレーター$/)
+    expect(mark.querySelector('image, use, text')).toBeNull()
   })
 
   test('成績の入力：「選手の成績を入力してください。」を表示し、残りは「入力のしかたの説明」の中（先頭に、回数で入力することの1文）', async () => {
     const user = userEvent.setup()
     renderAppInManualEntry()
-    const section = screen.getByRole('region', { name: '1成績の入力' })
+    const section = screen.getByRole('region', { name: '成績の入力' })
     expect(within(section).getByText('選手の成績を入力してください。')).toBeVisible()
     const body = await openDisclosure(user, section, '入力のしかたの説明')
     expect([...body.querySelectorAll('p')].map((p) => p.textContent?.trim())).toEqual([
@@ -111,7 +129,7 @@ describe('ページ上部と、成績の入力・打順の案内', () => {
     const user = userEvent.setup()
     renderAppInManualEntry()
     showTab('打順')
-    const section = screen.getByRole('region', { name: '2打順' })
+    const section = screen.getByRole('region', { name: '打順' })
     expect(within(section).getByText('選んだ選手を、打順に並べ替えてください。')).toBeVisible()
     const body = await openDisclosure(user, section, '並べ替えのしかたの説明')
     expect(body).toHaveTextContent(
@@ -140,7 +158,7 @@ describe('計算と結果', () => {
     renderAppInManualEntry()
     fillAll()
     showTab('打順')
-    await within(screen.getByRole('region', { name: '2打順' })).findAllByRole('list', { name: '指標' })
+    await within(screen.getByRole('region', { name: '打順' })).findAllByRole('list', { name: '指標' })
     showTab('計算と結果')
     await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
     const result = await screen.findByRole('region', { name: '結果' })
