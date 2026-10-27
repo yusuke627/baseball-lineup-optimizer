@@ -276,7 +276,7 @@ export default function App() {
         </div>
         {isRunning && (
           <p role="status" className="note">
-            計算中です（数秒かかります）。
+            計算中です。しばらくかかることがあります。
           </p>
         )}
         {run.status === 'idle' && run.cleared && (

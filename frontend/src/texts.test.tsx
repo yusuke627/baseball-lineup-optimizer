@@ -212,7 +212,8 @@ describe('計算と結果', () => {
     )
   })
 
-  test('計算中は「計算中です（数秒かかります）。」。キャンセルの補足は「キャンセルについての説明」の中', async () => {
+  // 計算にかかる時間は環境によって大きく違うので、時間を約束しない文にしている
+  test('計算中は「計算中です。しばらくかかることがあります。」。キャンセルの補足は「キャンセルについての説明」の中', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(
@@ -227,7 +228,8 @@ describe('計算と結果', () => {
     fillAll()
     showTab('計算と結果')
     await user.click(screen.getByRole('button', { name: '期待得点を計算する' }))
-    expect(screen.getByText('計算中です（数秒かかります）。')).toBeVisible()
+    expect(screen.getByText('計算中です。しばらくかかることがあります。')).toBeVisible()
+    expect(screen.queryByText(/数秒/)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'キャンセル' }))
 
     const banner = (await screen.findByText('キャンセル：')).closest('.banner') as HTMLElement

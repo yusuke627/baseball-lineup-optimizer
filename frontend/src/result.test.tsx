@@ -422,6 +422,18 @@ describe('参考：シミュレーション', () => {
     expect(body).not.toBeVisible()
   })
 
+  // 試行回数はサーバーの設定 (環境変数 MONTE_CARLO_TRIALS) で変わるので、画面は API の n_trials をそのまま出す
+  test('試行回数は API の n_trials をそのまま出す（5000 と決めて書かない）', async () => {
+    response = { ...RESPONSE, monte_carlo: { mean: 4.0987, std: 2.9512, min: 0, max: 19, n_trials: 1000 } }
+    const { user, result } = await calculate()
+    const input = column(result, '入力打順')
+    const toggle = within(input).getByRole('button', { name: '参考：シミュレーション' })
+    await user.click(toggle)
+    const body = document.getElementById(toggle.getAttribute('aria-controls') as string) as HTMLElement
+    expect(body).toHaveTextContent('1000試合の1試合あたりの得点：平均 4.099、標準偏差 2.951')
+    expect(body).not.toHaveTextContent('5000')
+  })
+
   test('キーボード（Enter・Space）で開閉でき、推奨打順の側には欄がない', async () => {
     const { user, result } = await calculate()
     const toggle = within(column(result, '入力打順')).getByRole('button', { name: '参考：シミュレーション' })
