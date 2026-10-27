@@ -6,7 +6,9 @@
 
 MLBの打撃成績から、9人の打順の1試合あたりの期待得点を計算し、「入力打順」と、探索で求めた「推奨打順」を比べるアプリです。推奨打順は近似の探索で求めた、期待得点が高くなる打順で、最も期待得点が高い打順とは限りません。
 
-手元で起動して、ブラウザで使います。公開版の URL は、準備でき次第ここに掲載します。
+公開版：<https://baseball-lineup-optimizer.onrender.com>（手元で起動して使うこともできます。「起動のしかた」の節）
+
+公開版は無料の枠で動かしています。Render の説明では、15分間アクセスが無いと停止し、次のアクセスで再開するまで約1分かかります（この公開版での再開の時間は未確認）。計算には約12秒かかります（目安）。公開版では、参考のシミュレーションを1000試行にしています。
 
 ## 免責
 
@@ -18,7 +20,7 @@ MLBの打撃成績から、9人の打順の1試合あたりの期待得点を計
 
 1. **成績の入力**：打者ごとに、選手データ（2025年のMLBの選手348人）から選ぶか、成績（打席数・安打・本塁打・四球・三振など14項目の回数）を手入力します
 2. **打順**：ドラッグ、「上へ」「下へ」、移動先の番号で並べ替えます。打者ごとの打率・出塁率・OPS などを見ながら決められます
-3. **計算と結果**：入力打順と推奨打順の1試合あたりの期待得点と、143試合・162試合の合計、非効率%（推奨打順に比べて少ない割合）と損失点、推奨打順で動いた打者、参考としてシミュレーション（5000試合）の平均と標準偏差を表示します
+3. **計算と結果**：入力打順と推奨打順の1試合あたりの期待得点と、143試合・162試合の合計、非効率%（推奨打順に比べて少ない割合）と損失点、推奨打順で動いた打者、参考としてシミュレーション（既定は5000試合。環境変数 `MONTE_CARLO_TRIALS` で変えられ、公開版は1000試合）の平均と標準偏差を表示します
 
 ## 起動のしかた
 
@@ -100,6 +102,7 @@ npm run typecheck         # ほかに npm run lint・test・build・contrast（�
 
 - CI（GitHub Actions）：`backend-ci`（Python 3.12・3.13 で ruff・mypy・pytest）、`preset-validation`（選手データと選手名の上書きを JSON Schema で検証）、`frontend-ci`（npm ci・typecheck・lint・test・build・contrast）。動く条件は [`docs/DESIGN.md`](docs/DESIGN.md) 9章
 - ESLint は 9系を使っています。アクセシビリティの検査に使う `eslint-plugin-jsx-a11y` が ESLint 10 に未対応のためです
+- **Docker**：リポジトリのフォルダで `docker build -t baseball-lineup-optimizer .` → `docker run --rm -p 8000:8000 baseball-lineup-optimizer` とすると、API（`/api` の下）と画面を1つのサービスとして起動し、`http://localhost:8000` で開けます（起動するのは `uvicorn app.web:app`）。環境変数 `PORT`（既定 8000）と `MONTE_CARLO_TRIALS`（シミュレーションの試行回数。イメージでは 1000。例：`-e MONTE_CARLO_TRIALS=5000`）で変えられます。手元での Docker の手順は未確認で、公開版（Render）では動いています。詳しくは [`docs/DESIGN.md`](docs/DESIGN.md) 2章「デプロイの構成」
 - **選手データの追加**：`schemas/batter_preset.schema.json` の形式で `data/presets/mlb/<season>/<id>.json` を作り（回数の成績だけを書く）、`verified: true` にする場合は `source` に取得元の URL と取得日を正確に書きます。リポジトリのフォルダで `pytest backend/tests/test_preset_schema.py` を実行して、検証が通ることを確かめます（CI でも検証されます）。wOBA・wRC+ の公表値は、出典で確かめた値だけを `reference_metrics` に書けます（DESIGN 7-5）
 
 **API**（入力の検証は [`docs/DESIGN.md`](docs/DESIGN.md) 5章、出力は6章）
@@ -113,7 +116,7 @@ npm run typecheck         # ほかに npm run lint・test・build・contrast（�
 
 ## 今後の拡張候補
 
-公開用のサーバーへの配置（デプロイ）、進塁確率の差し替え（打者の成績と同じ年度・より詳しい状況別）、三盗・本盗・スクイズ・打球アウトでの進塁・状況別の併殺の割合のモデル化、対戦投手（プラットーン効果）とパークファクターの反映など。一覧は [`docs/DESIGN.md`](docs/DESIGN.md) 11章にあります。
+進塁確率の差し替え（打者の成績と同じ年度・より詳しい状況別）、三盗・本盗・スクイズ・打球アウトでの進塁・状況別の併殺の割合のモデル化、対戦投手（プラットーン効果）とパークファクターの反映など。一覧は [`docs/DESIGN.md`](docs/DESIGN.md) 11章にあります。
 
 ## ライセンス
 
